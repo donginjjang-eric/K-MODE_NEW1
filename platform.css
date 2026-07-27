@@ -170,20 +170,20 @@ body.dark-theme .brand img {
 }
 
 .beauty-market-hero {
-  min-height: 520px;
+  min-height: 440px;
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(340px, .65fr);
   gap: clamp(44px, 7vw, 120px);
   align-items: end;
-  padding: clamp(78px, 9vw, 138px) clamp(28px, 6vw, 90px) 74px;
+  padding: clamp(58px, 6vw, 96px) clamp(28px, 6vw, 90px) 56px;
   border-bottom: 1px solid var(--line);
 }
 
 .beauty-market-heading h1 {
-  max-width: 980px;
+  max-width: 760px;
   margin: 0;
-  font-size: clamp(58px, 7.8vw, 124px);
-  line-height: .82;
+  font-size: clamp(52px, 6vw, 92px);
+  line-height: .86;
   font-weight: var(--fw-medium);
   letter-spacing: -.082em;
   text-transform: uppercase;
@@ -233,6 +233,10 @@ body.dark-theme .brand img {
   margin: 0 clamp(28px, 6vw, 90px);
   border-inline: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+}
+
+.beauty-value-strip[hidden] {
+  display: none !important;
 }
 
 .beauty-value-strip article {
@@ -696,12 +700,13 @@ body.dark-theme .brand img {
 
 @media (max-width: 760px) {
   .beauty-market-hero {
-    padding: 58px 20px 44px;
+    gap: 26px;
+    padding: 44px 20px 36px;
   }
 
   .beauty-market-heading h1 {
-    font-size: clamp(46px, 15vw, 72px);
-    line-height: .86;
+    font-size: clamp(42px, 12vw, 56px);
+    line-height: .9;
   }
 
   .beauty-market-intro .beauty-market-lead {
