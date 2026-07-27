@@ -275,12 +275,20 @@ body.dark-theme .brand img {
   padding: 120px clamp(28px, 6vw, 90px) 132px;
 }
 
+.beauty-product-section.is-headless {
+  padding-top: 64px;
+}
+
 .beauty-product-head {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr);
   gap: 60px;
   align-items: end;
   margin-bottom: 54px;
+}
+
+.beauty-product-head[hidden] {
+  display: none !important;
 }
 
 .beauty-product-head h2,
@@ -723,6 +731,10 @@ body.dark-theme .brand img {
 
   .beauty-product-section {
     padding: 84px 20px 148px;
+  }
+
+  .beauty-product-section.is-headless {
+    padding-top: 48px;
   }
 
   .beauty-product-head h2 {
