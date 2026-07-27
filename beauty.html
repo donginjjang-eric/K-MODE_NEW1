@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ko-KR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="한국 뷰티 제품을 글로벌 크리에이터의 콘텐츠와 판매로 연결하는 K-MODU 뷰티 제품 마켓입니다." />
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" href="/assets/favicon.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="K-Beauty Product Market | K-MODU" />
+  <meta property="og:description" content="제품을 먼저 보고, 글로벌 크리에이터가 콘텐츠와 판매 협업을 선택합니다." />
+  <meta property="og:image" content="/assets/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <title>K-Beauty Product Market | K-MODU</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="/platform.css?v=20260727-beauty-market" />
+</head>
+<body>
+  <main class="platform beauty-market">
+    <header class="topbar beauty-topbar">
+      <a class="brand" href="/#home"><img src="/assets/k-modu-logo.png" width="480" height="86" decoding="async" alt="K-MODU" /></a>
+      <nav class="topnav" aria-label="주요 메뉴">
+        <a href="/#about">소개</a>
+        <a href="/beauty" aria-current="page">뷰티</a>
+        <a href="/designers">디자이너</a>
+        <a href="/creators">크리에이터</a>
+        <a href="/#contact">문의</a>
+      </nav>
+      <div class="top-actions">
+        <div class="locale-switch platform-locale-switch" id="beautyLocaleSwitch" aria-label="언어 선택"></div>
+        <a class="pill" data-auth-link href="/login">로그인</a>
+      </div>
+      <details class="platform-menu">
+        <summary aria-label="메뉴"><span></span></summary>
+        <div class="platform-menu-panel">
+          <a href="/#about">소개</a>
+          <a href="/beauty" aria-current="page">뷰티</a>
+          <a href="/designers">디자이너</a>
+          <a href="/creators">크리에이터</a>
+          <a href="/#contact">문의</a>
+          <a href="#partner">제품 입점 문의</a>
+          <a data-auth-link href="/login">로그인</a>
+        </div>
+      </details>
+    </header>
+
+    <section class="beauty-market-hero">
+      <div class="beauty-market-heading">
+        <p class="eyebrow">K-Beauty Export Market</p>
+        <h1>Products ready for<br />global creators.</h1>
+      </div>
+      <div class="beauty-market-intro">
+        <p class="beauty-market-lead">한국 뷰티 제품을 글로벌 크리에이터의 콘텐츠와 판매로 연결합니다.</p>
+        <p>업체명보다 제품의 강점, 타깃 시장, 판매 포인트를 먼저 보여주고 크리에이터가 직접 협업할 제품을 선택합니다.</p>
+        <div class="beauty-market-actions">
+          <a class="pill" href="#products">제품 둘러보기</a>
+          <a class="beauty-text-link" href="#partner">제품 입점 문의 <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="beauty-value-strip" aria-label="K-MODU 뷰티 제품 연결 방식">
+      <article><span>01</span><strong>Product First</strong><small>브랜드보다 제품의 판매 포인트를 먼저</small></article>
+      <article><span>02</span><strong>Market Fit</strong><small>베트남·대만·미국 시장별 크리에이터 연결</small></article>
+      <article><span>03</span><strong>Creator Led</strong><small>콘텐츠 제작에서 공동 판매까지</small></article>
+    </section>
+
+    <section class="beauty-product-section" id="products">
+      <div class="beauty-product-head">
+        <div>
+          <p class="eyebrow">Creator-ready products</p>
+          <h2>제품을 보고<br />협업을 선택합니다.</h2>
+        </div>
+        <p>현재 화면은 제품이 등록됐을 때 크리에이터에게 보이는 형식입니다. 공급사명은 협업이 확정된 이후 공개해 제품 자체의 경쟁력에 먼저 집중합니다.</p>
+      </div>
+
+      <div class="beauty-product-toolbar" aria-label="뷰티 제품 필터">
+        <div class="beauty-category-tabs" role="group" aria-label="제품 카테고리">
+          <button class="is-active" type="button" data-beauty-category="all" aria-pressed="true">전체</button>
+          <button type="button" data-beauty-category="skincare" aria-pressed="false">스킨케어</button>
+          <button type="button" data-beauty-category="makeup" aria-pressed="false">메이크업</button>
+          <button type="button" data-beauty-category="hair-body" aria-pressed="false">헤어·바디</button>
+        </div>
+        <label class="beauty-select">
+          <span>판매 희망 국가</span>
+          <select id="beautyMarketFilter">
+            <option value="all">전체 국가</option>
+            <option value="VN">베트남</option>
+            <option value="TW">대만</option>
+            <option value="US">미국</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="beauty-product-grid" id="beautyProductGrid">
+        <article class="beauty-product-item" data-category="skincare" data-market="VN TW US">
+          <button class="beauty-product-card" type="button"
+            data-name="Barrier Recovery Serum"
+            data-category-label="SKINCARE · SERUM"
+            data-description="가볍게 흡수되는 수분 장벽 세럼. 사용 전후 비교와 데일리 루틴 콘텐츠에 적합합니다."
+            data-markets="베트남 · 대만 · 미국"
+            data-format="숏폼 리뷰 · 스킨 루틴 · 라이브 커머스"
+            data-slots="12"
+            data-image="/assets/beauty-products/barrier-serum.webp">
+            <span class="beauty-product-image"><img src="/assets/beauty-products/barrier-serum.webp" alt="Barrier Recovery Serum 제품 이미지" width="720" height="720" decoding="async" /></span>
+            <span class="beauty-product-meta"><b>SKINCARE</b><em>VN · TW · US</em></span>
+            <strong>Barrier Recovery Serum</strong>
+            <small>수분 장벽 · 데일리 루틴 · 민감 피부</small>
+            <span class="beauty-product-status"><b>크리에이터 12팀 모집</b><em>제품 보기 →</em></span>
+          </button>
+        </article>
+
+        <article class="beauty-product-item" data-category="skincare" data-market="VN TW">
+          <button class="beauty-product-card" type="button"
+            data-name="Daily Sun Fluid SPF"
+            data-category-label="SKINCARE · SUNCARE"
+            data-description="백탁과 끈적임을 줄인 데일리 선 플루이드. 야외 테스트와 메이크업 전 단계 콘텐츠에 어울립니다."
+            data-markets="베트남 · 대만"
+            data-format="야외 테스트 · 데일리 GRWM · 비교 리뷰"
+            data-slots="8"
+            data-image="/assets/beauty-products/daily-sun-fluid.webp">
+            <span class="beauty-product-image"><img src="/assets/beauty-products/daily-sun-fluid.webp" alt="Daily Sun Fluid SPF 제품 이미지" width="720" height="720" loading="lazy" decoding="async" /></span>
+            <span class="beauty-product-meta"><b>SUNCARE</b><em>VN · TW</em></span>
+            <strong>Daily Sun Fluid SPF</strong>
+            <small>산뜻한 마무리 · 야외 테스트 · GRWM</small>
+            <span class="beauty-product-status"><b>크리에이터 8팀 모집</b><em>제품 보기 →</em></span>
+          </button>
+        </article>
+
+        <article class="beauty-product-item" data-category="makeup" data-market="VN TW US">
+          <button class="beauty-product-card" type="button"
+            data-name="Skin Fit Cushion"
+            data-category-label="MAKEUP · BASE"
+            data-description="얇고 정돈된 피부 표현을 위한 쿠션. 반쪽 얼굴 테스트와 패션 룩별 베이스 연출에 적합합니다."
+            data-markets="베트남 · 대만 · 미국"
+            data-format="반쪽 얼굴 테스트 · GRWM · 패션 룩 매칭"
+            data-slots="15"
+            data-image="/assets/beauty-products/skin-fit-cushion.webp">
+            <span class="beauty-product-image"><img src="/assets/beauty-products/skin-fit-cushion.webp" alt="Skin Fit Cushion 제품 이미지" width="720" height="720" loading="lazy" decoding="async" /></span>
+            <span class="beauty-product-meta"><b>MAKEUP</b><em>VN · TW · US</em></span>
+            <strong>Skin Fit Cushion</strong>
+            <small>얇은 밀착 · 세미 글로우 · 룩 매칭</small>
+            <span class="beauty-product-status"><b>크리에이터 15팀 모집</b><em>제품 보기 →</em></span>
+          </button>
+        </article>
+
+        <article class="beauty-product-item" data-category="makeup" data-market="VN TW">
+          <button class="beauty-product-card" type="button"
+            data-name="Layering Rose Lip Tint"
+            data-category-label="MAKEUP · LIP"
+            data-description="한 번과 여러 번 발랐을 때 다른 무드를 만드는 로즈 립 틴트. 톤별 발색과 패션 스타일링 콘텐츠에 적합합니다."
+            data-markets="베트남 · 대만"
+            data-format="발색 비교 · 퍼스널 컬러 · 룩 스타일링"
+            data-slots="20"
+            data-image="/assets/beauty-products/rose-lip-tint.webp">
+            <span class="beauty-product-image"><img src="/assets/beauty-products/rose-lip-tint.webp" alt="Layering Rose Lip Tint 제품 이미지" width="720" height="720" loading="lazy" decoding="async" /></span>
+            <span class="beauty-product-meta"><b>LIP COLOR</b><em>VN · TW</em></span>
+            <strong>Layering Rose Lip Tint</strong>
+            <small>레이어링 발색 · 퍼스널 컬러 · 숏폼</small>
+            <span class="beauty-product-status"><b>크리에이터 20팀 모집</b><em>제품 보기 →</em></span>
+          </button>
+        </article>
+
+        <article class="beauty-product-item" data-category="skincare" data-market="US TW">
+          <button class="beauty-product-card" type="button"
+            data-name="Cooling Hydrogel Eye Patch"
+            data-category-label="SKINCARE · EYE CARE"
+            data-description="촬영 전 피부 컨디션을 빠르게 정돈하는 하이드로겔 아이 패치. 준비 과정과 여행 콘텐츠에 적합합니다."
+            data-markets="미국 · 대만"
+            data-format="촬영 준비 · 여행 루틴 · 사용 전후"
+            data-slots="10"
+            data-image="/assets/beauty-products/hydrogel-eye-patch.webp">
+            <span class="beauty-product-image"><img src="/assets/beauty-products/hydrogel-eye-patch.webp" alt="Cooling Hydrogel Eye Patch 제품 이미지" width="720" height="720" loading="lazy" decoding="async" /></span>
+            <span class="beauty-product-meta"><b>EYE CARE</b><em>US · TW</em></span>
+            <strong>Cooling Hydrogel Eye Patch</strong>
+            <small>쿨링 케어 · 촬영 준비 · 트래블 루틴</small>
+            <span class="beauty-product-status"><b>크리에이터 10팀 모집</b><em>제품 보기 →</em></span>
+          </button>
+        </article>
+
+        <article class="beauty-product-item" data-category="hair-body" data-market="VN US">
+          <button class="beauty-product-card" type="button"
+            data-name="Scalp Balance Ampoule"
+            data-category-label="HAIR · SCALP CARE"
+            data-description="두피에 직접 사용하는 가벼운 앰플. 헤어 스타일링 전 관리와 장기 사용 기록 콘텐츠에 어울립니다."
+            data-markets="베트남 · 미국"
+            data-format="두피 루틴 · 장기 기록 · 헤어 스타일링"
+            data-slots="6"
+            data-image="/assets/beauty-products/scalp-care-ampoule.webp">
+            <span class="beauty-product-image"><img src="/assets/beauty-products/scalp-care-ampoule.webp" alt="Scalp Balance Ampoule 제품 이미지" width="720" height="720" loading="lazy" decoding="async" /></span>
+            <span class="beauty-product-meta"><b>SCALP CARE</b><em>VN · US</em></span>
+            <strong>Scalp Balance Ampoule</strong>
+            <small>두피 루틴 · 장기 사용 · 헤어 콘텐츠</small>
+            <span class="beauty-product-status"><b>크리에이터 6팀 모집</b><em>제품 보기 →</em></span>
+          </button>
+        </article>
+      </div>
+      <p class="beauty-empty" id="beautyEmpty" hidden>선택한 조건에 맞는 제품을 준비 중입니다.</p>
+    </section>
+
+    <section class="beauty-partner-section" id="partner">
+      <div>
+        <p class="eyebrow">For beauty suppliers</p>
+        <h2>제품을 먼저<br />보여주세요.</h2>
+      </div>
+      <div class="beauty-partner-copy">
+        <p>수출과 판매를 원하는 화장품의 이미지, 핵심 성분, 소비자가, 판매 희망 국가를 보내주시면 K-MODU가 크리에이터용 제품 페이지와 캠페인 포인트로 정리합니다.</p>
+        <ol>
+          <li><b>01</b><span>제품 정보 접수</span></li>
+          <li><b>02</b><span>글로벌 판매 포인트 정리</span></li>
+          <li><b>03</b><span>크리에이터 콘텐츠·판매 매칭</span></li>
+        </ol>
+        <a class="pill" href="mailto:hello@markbridge.co?subject=K-MODU%20뷰티%20제품%20입점%20문의">제품 입점 문의하기</a>
+      </div>
+    </section>
+
+    <footer class="footer-mini footer-mini--board">
+      <span>K-MODU Beauty Product Market</span>
+      <a class="footer-cross" href="/creators?category=beauty#creatorGrid">뷰티 크리에이터 보기 →</a>
+    </footer>
+  </main>
+
+  <div class="beauty-product-sheet" id="beautyProductSheet" aria-hidden="true">
+    <div class="beauty-product-sheet-card" role="dialog" aria-modal="true" aria-labelledby="beautySheetName">
+      <button class="beauty-product-sheet-close" id="beautySheetClose" type="button" aria-label="닫기">×</button>
+      <div class="beauty-product-sheet-visual">
+        <span>PRODUCT PREVIEW</span>
+        <img id="beautySheetImage" src="/assets/beauty-products/barrier-serum.webp" alt="" width="720" height="720" decoding="async" />
+      </div>
+      <div class="beauty-product-sheet-content">
+        <p class="eyebrow" id="beautySheetCategory">SKINCARE · SERUM</p>
+        <h2 id="beautySheetName">Barrier Recovery Serum</h2>
+        <p class="beauty-sheet-description" id="beautySheetDescription"></p>
+        <dl class="beauty-sheet-facts">
+          <div><dt>판매 희망 국가</dt><dd id="beautySheetMarkets"></dd></div>
+          <div><dt>추천 콘텐츠</dt><dd id="beautySheetFormat"></dd></div>
+          <div><dt>모집 규모</dt><dd><span id="beautySheetSlots"></span>팀</dd></div>
+          <div><dt>공급사</dt><dd>협업 승인 후 공개</dd></div>
+        </dl>
+        <p class="beauty-sheet-note">제품과 크리에이터의 국가·콘텐츠 방향을 먼저 확인한 뒤 K-MODU 운영팀이 공급사와 연결합니다.</p>
+        <a class="pill" id="beautySheetApply" href="#">이 제품 판매 협업 문의하기</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const categoryButtons = [...document.querySelectorAll('[data-beauty-category]')];
+      const marketSelect = document.getElementById('beautyMarketFilter');
+      const items = [...document.querySelectorAll('.beauty-product-item')];
+      const empty = document.getElementById('beautyEmpty');
+      let category = 'all';
+
+      const applyFilters = () => {
+        const market = marketSelect.value;
+        let visible = 0;
+        items.forEach((item) => {
+          const categoryMatch = category === 'all' || item.dataset.category === category;
+          const marketMatch = market === 'all' || item.dataset.market.split(' ').includes(market);
+          const show = categoryMatch && marketMatch;
+          item.hidden = !show;
+          if (show) visible += 1;
+        });
+        empty.hidden = visible > 0;
+      };
+
+      categoryButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          category = button.dataset.beautyCategory;
+          categoryButtons.forEach((item) => {
+            const active = item === button;
+            item.classList.toggle('is-active', active);
+            item.setAttribute('aria-pressed', String(active));
+          });
+          applyFilters();
+        });
+      });
+      marketSelect.addEventListener('change', applyFilters);
+
+      const sheet = document.getElementById('beautyProductSheet');
+      const closeButton = document.getElementById('beautySheetClose');
+      const fields = {
+        image: document.getElementById('beautySheetImage'),
+        category: document.getElementById('beautySheetCategory'),
+        name: document.getElementById('beautySheetName'),
+        description: document.getElementById('beautySheetDescription'),
+        markets: document.getElementById('beautySheetMarkets'),
+        format: document.getElementById('beautySheetFormat'),
+        slots: document.getElementById('beautySheetSlots'),
+        apply: document.getElementById('beautySheetApply'),
+      };
+      let lastTrigger = null;
+
+      const closeSheet = () => {
+        sheet.classList.remove('is-open');
+        sheet.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('sheet-open');
+        lastTrigger?.focus();
+      };
+
+      document.querySelectorAll('.beauty-product-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          lastTrigger = card;
+          const data = card.dataset;
+          fields.image.src = data.image;
+          fields.image.alt = `${data.name} 제품 이미지`;
+          fields.category.textContent = data.categoryLabel;
+          fields.name.textContent = data.name;
+          fields.description.textContent = data.description;
+          fields.markets.textContent = data.markets;
+          fields.format.textContent = data.format;
+          fields.slots.textContent = data.slots;
+          fields.apply.href = `mailto:hello@markbridge.co?subject=${encodeURIComponent(`K-MODU 뷰티 제품 협업 문의 · ${data.name}`)}`;
+          sheet.classList.add('is-open');
+          sheet.setAttribute('aria-hidden', 'false');
+          document.body.classList.add('sheet-open');
+          closeButton.focus();
+        });
+      });
+
+      closeButton.addEventListener('click', closeSheet);
+      sheet.addEventListener('click', (event) => {
+        if (event.target === sheet) closeSheet();
+      });
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && sheet.classList.contains('is-open')) closeSheet();
+      });
+    })();
+  </script>
+  <script src="/site-i18n.js?v=20260727-beauty-market" defer></script>
+  <script src="/auth-nav.js" defer></script>
+</body>
+</html>

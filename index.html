@@ -32,15 +32,15 @@
   <meta property="og:locale" content="ko_KR" />
   <meta property="og:site_name" content="K-MODU 케이모두" />
   <meta property="og:url" content="https://www.k-modu.co.kr/" />
-  <meta property="og:title" content="K-패션의 세계 진출을 위한 글로벌 크리에이터 매칭 플랫폼" />
+  <meta property="og:title" content="K-뷰티와 K-패션의 세계 진출을 위한 글로벌 크리에이터 매칭 플랫폼" />
   <meta property="og:description" content="한국 디자이너 브랜드를 글로벌 패션·뷰티 크리에이터와 연결하는 K-패션 매칭 플랫폼입니다." />
   <meta property="og:image" content="https://www.k-modu.co.kr/assets/og-image.png" />
   <meta property="og:image:alt" content="K-MODU 케이모두 by MARKBRIDGE" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="K-패션의 세계 진출을 위한 글로벌 크리에이터 매칭 플랫폼" />
+  <meta name="twitter:title" content="K-뷰티와 K-패션의 세계 진출을 위한 글로벌 크리에이터 매칭 플랫폼" />
   <meta name="twitter:description" content="한국 디자이너 브랜드와 글로벌 패션·뷰티 크리에이터를 연결합니다." />
   <meta name="twitter:image" content="https://www.k-modu.co.kr/assets/og-image.png" />
-  <title>K-패션의 세계 진출을 위한 글로벌 크리에이터 매칭 플랫폼</title>
+  <title>K-뷰티와 K-패션의 세계 진출을 위한 글로벌 크리에이터 매칭 플랫폼</title>
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -303,22 +303,26 @@
       position: relative;
       min-height: 820px;
       padding: 38px clamp(32px, 5vw, 72px) 0;
+      background:
+        radial-gradient(circle at 50% 34%, rgba(210, 187, 151, .13), transparent 33%),
+        var(--paper);
+      overflow: hidden;
     }
 
     .hero-title {
       position: absolute;
       z-index: 3;
-      top: 126px;
+      top: 205px;
       left: 50%;
       margin: 0;
-      font-size: clamp(76px, 10.5vw, 148px);
+      font-size: clamp(112px, 13.8vw, 218px);
       line-height: .82;
       font-weight: var(--fw-medium);
-      letter-spacing: -.082em;
+      letter-spacing: -.09em;
       text-transform: uppercase;
       transform: translateX(-50%);
       white-space: nowrap;
-      color: rgba(7, 7, 7, .055);
+      color: var(--ink);
     }
 
     .hero-copy {
@@ -380,6 +384,27 @@
       transform: translateY(-2px);
     }
 
+    .hero-mini-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 14px;
+    }
+
+    .hero-mini-actions .hero-mini-cta {
+      margin-top: 0;
+    }
+
+    .hero-mini-cta.is-light {
+      background: transparent;
+      color: var(--ink);
+    }
+
+    .hero-mini-cta.is-light:hover {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
     .kicker {
       margin: 0 0 12px;
       font-size: var(--fs-title-sm);
@@ -401,9 +426,9 @@
       position: absolute;
       z-index: 4;
       left: 50%;
-      bottom: 82px;
-      width: min(78vw, 960px);
-      height: 690px;
+      bottom: 64px;
+      width: min(82vw, 1040px);
+      height: 720px;
       transform: translateX(-50%);
       pointer-events: none;
       overflow: visible;
@@ -1026,6 +1051,194 @@
       letter-spacing: .12em;
       text-transform: uppercase;
       color: rgba(247, 247, 244, .78);
+    }
+
+    .beauty-extension {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(540px, 1.1fr);
+      min-height: 640px;
+      overflow: hidden;
+      background: #eee9e2;
+      color: #050505;
+      border-top: 1px solid rgba(5, 5, 5, .1);
+      border-bottom: 1px solid rgba(5, 5, 5, .1);
+    }
+
+    .beauty-extension-copy {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 82px clamp(34px, 6vw, 92px);
+    }
+
+    .beauty-extension-eyebrow {
+      margin: 0 0 24px;
+      font-size: var(--fs-label-sm);
+      font-weight: var(--fw-semibold);
+      letter-spacing: .22em;
+      text-transform: uppercase;
+    }
+
+    .beauty-extension h2 {
+      margin: 0;
+      font-size: clamp(54px, 6.8vw, 112px);
+      font-weight: var(--fw-regular);
+      line-height: .82;
+      letter-spacing: -.085em;
+      text-transform: uppercase;
+    }
+
+    .beauty-extension h2 span {
+      display: block;
+    }
+
+    .beauty-extension-lead {
+      max-width: 560px;
+      margin: 34px 0 0;
+      font-size: clamp(18px, 1.45vw, 24px);
+      font-weight: var(--fw-medium);
+      line-height: 1.48;
+      letter-spacing: -.035em;
+      word-break: keep-all;
+    }
+
+    .beauty-extension-body {
+      max-width: 560px;
+      margin: 13px 0 0;
+      color: rgba(5, 5, 5, .58);
+      font-size: var(--fs-sm);
+      line-height: 1.72;
+      word-break: keep-all;
+    }
+
+    .beauty-extension-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .beauty-extension-tags span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 12px;
+      border: 1px solid rgba(5, 5, 5, .24);
+      border-radius: 999px;
+      font-size: var(--fs-label-sm);
+      font-weight: var(--fw-medium);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .beauty-extension-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 32px;
+    }
+
+    .beauty-extension-actions a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 20px;
+      border: 1px solid #050505;
+      border-radius: 999px;
+      font-size: var(--fs-label);
+      font-weight: var(--fw-bold);
+      letter-spacing: .02em;
+      transition: transform .2s ease, background-color .2s ease, color .2s ease;
+    }
+
+    .beauty-extension-actions a:first-child {
+      background: #050505;
+      color: #f7f7f4;
+    }
+
+    .beauty-extension-actions a:hover {
+      transform: translateY(-2px);
+    }
+
+    .beauty-extension-actions a:last-child:hover {
+      background: #050505;
+      color: #f7f7f4;
+    }
+
+    .beauty-extension-recruit {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 24px;
+      font-size: var(--fs-label-sm);
+      font-weight: var(--fw-semibold);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .beauty-extension-recruit::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #050505;
+      box-shadow: 0 0 0 5px rgba(5, 5, 5, .1);
+    }
+
+    .beauty-extension-visual {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 34px 34px 34px 0;
+    }
+
+    .beauty-extension-image {
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+      background: #ddd6cc;
+    }
+
+    .beauty-extension-image:first-child {
+      grid-row: 1 / span 2;
+    }
+
+    .beauty-extension-image img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center top;
+      filter: saturate(.78) contrast(1.02);
+      transition: transform .7s cubic-bezier(.2, .7, .2, 1);
+    }
+
+    .beauty-extension-image:hover img {
+      transform: scale(1.025);
+    }
+
+    .beauty-extension-image span {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      display: inline-flex;
+      min-height: 28px;
+      align-items: center;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(247, 247, 244, .88);
+      backdrop-filter: blur(10px);
+      color: #050505;
+      font-size: var(--fs-nano);
+      font-weight: var(--fw-semibold);
+      letter-spacing: .12em;
+      text-transform: uppercase;
     }
 
     .designer-editorial {
@@ -1781,42 +1994,41 @@
         transform: translateY(1px);
       }
 
-      /* 모바일 히어로: 고정 픽셀 절대배치 → 세로 흐름 스택 (화면 크기와 무관하게 겹침 없음) */
+      /* 모바일에서도 K-MODU 타이포 뒤로 모델이 겹치는 브랜드 히어로를 유지 */
       .hero {
-        min-height: 0;
-        padding: 18px 20px 36px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 14px;
+        min-height: clamp(490px, 128vw, 560px);
+        padding: 0;
+        display: block;
       }
 
       .hero-title {
-        position: static;
-        transform: none;
-        top: auto;
-        left: auto;
-        order: 1;
-        font-size: 52px;
-        line-height: .9;
+        position: absolute;
+        z-index: 2;
+        top: clamp(178px, 46vw, 218px);
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: clamp(66px, 19.2vw, 104px);
+        line-height: .82;
         text-align: center;
-        color: rgba(7, 7, 7, .1);
+        color: var(--ink);
       }
 
       .models {
-        position: static;
-        transform: none;
-        top: auto;
+        position: absolute;
+        z-index: 3;
+        top: 68px;
         bottom: auto;
-        left: auto;
-        order: 2;
-        width: 100%;
-        height: auto;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(154vw, 760px);
+        height: clamp(420px, 110vw, 500px);
       }
 
       .hero-person {
-        height: auto;
-        max-height: 58vh;
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        object-position: center top;
       }
 
       .hero-copy,
@@ -2024,6 +2236,49 @@
       .platform-tag {
         margin: 0 10px 10px;
         font-size: var(--fs-label-sm);
+      }
+
+      .beauty-extension {
+        grid-template-columns: 1fr;
+        min-height: 0;
+      }
+
+      .beauty-extension-copy {
+        padding: 66px 24px 38px;
+      }
+
+      .beauty-extension h2 {
+        font-size: clamp(46px, 15vw, 72px);
+        line-height: .84;
+      }
+
+      .beauty-extension-lead {
+        margin-top: 28px;
+        font-size: 20px;
+      }
+
+      .beauty-extension-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .beauty-extension-actions a {
+        min-width: 0;
+        padding-inline: 12px;
+        text-align: center;
+      }
+
+      .beauty-extension-visual {
+        grid-template-columns: 1.2fr .8fr;
+        height: 360px;
+        gap: 6px;
+        padding: 0 18px 18px;
+      }
+
+      .beauty-extension-image span {
+        left: 9px;
+        bottom: 9px;
+        font-size: 9px;
       }
 
       .designer-editorial {
@@ -2430,6 +2685,7 @@
       <a class="brand" href="#home"><img src="assets/k-modu-logo.png" alt="K-MODU" width="480" height="86" /></a>
       <nav class="nav-center">
         <a href="#about">소개</a>
+        <a href="/beauty">뷰티</a>
         <a href="/designers">디자이너</a>
         <a href="/creators">크리에이터</a>
         <a href="#contact">문의</a>
@@ -2453,6 +2709,7 @@
       </button>
       <div class="mobile-menu" aria-label="모바일 내비게이션">
         <a href="#about">소개</a>
+        <a href="/beauty">뷰티</a>
         <a href="/designers">디자이너</a>
         <a href="/creators">크리에이터</a>
         <a href="#contact">문의</a>
@@ -2467,26 +2724,29 @@
     </header>
 
     <section class="hero" id="home">
-      <h1 class="hero-title">DESIGNER</h1>
+      <h1 class="hero-title" aria-label="K-MODU">K-MODU</h1>
 
       <div class="hero-copy right">
-        <h2 class="kicker">디자이너 브랜드 모집</h2>
-        <p class="body">전세계 패션 크리에이터와 협업할 한국 디자이너 브랜드를 모집합니다.</p>
-        <a class="hero-mini-cta" href="/apply">디자이너 등록</a>
+        <h2 class="kicker">패션·뷰티 파트너 모집</h2>
+        <p class="body">글로벌 크리에이터와 협업할 디자이너 브랜드와 뷰티 제품 파트너를 모집합니다.</p>
+        <div class="hero-mini-actions">
+          <a class="hero-mini-cta" href="/apply">디자이너 등록</a>
+          <a class="hero-mini-cta is-light" href="/beauty#partner">뷰티 입점</a>
+        </div>
       </div>
 
       <div class="hero-copy">
         <h2 class="kicker">서비스 소개</h2>
-        <p class="body">K-MODU는 한국 디자이너 브랜드를 글로벌 패션 크리에이터와 연결하고, 캠페인 브리프를 통해 협업 방향을 정리합니다.</p>
+        <p class="body">K-MODU는 K-패션과 K-뷰티 제품을 글로벌 크리에이터의 콘텐츠와 판매로 연결합니다.</p>
       </div>
 
       <div class="models" aria-label="K-MODU main campaign model">
-        <img decoding="async" fetchpriority="high" class="hero-person" src="assets/hero-group-transparent.webp" alt="K-MODU campaign model group" width="1536" height="1024" />
+        <img decoding="async" fetchpriority="high" class="hero-person" src="assets/hero-concepts/kmodu-fashion-beauty-a-cutout-v2.webp" alt="K-MODU 패션과 뷰티 캠페인 모델 3인" width="1536" height="1024" />
       </div>
     </section>
 
     <section class="vision" id="campaign">
-      <div class="match-node"><span>K-패션의 세계 진출을 위한 글로벌 크리에이터 매칭 플랫폼</span></div>
+      <div class="match-node"><span>K-뷰티와 K-패션의 세계 진출을 위한 글로벌 크리에이터 매칭 플랫폼</span></div>
       <div class="strip" aria-hidden="true">
         <div class="thumb"><img loading="lazy" decoding="async" src="assets/mainmodel_2.webp" alt="" width="1448" height="1086" /></div>
         <div class="thumb"><img loading="lazy" decoding="async" src="assets/mainmodel_3.webp" alt="" width="1448" height="1086" /></div>
@@ -2502,8 +2762,8 @@
         <div class="thumb"><img loading="lazy" decoding="async" src="assets/mainmodel_3.webp" alt="" width="1448" height="1086" /></div>
         <div class="thumb"><img loading="lazy" decoding="async" src="assets/mainmodel_3.webp" alt="" width="1448" height="1086" /></div>
       </div>
-      <h2><span>K-FASHION,</span><span class="line-soft">ALL <br class="mobile-title-break" />CONNECTED</span></h2>
-      <p class="vision-subcopy">K-패션과 글로벌 크리에이터를 연결짓는 가장 빠른 길</p>
+      <h2><span>K-BEAUTY, K-FASHION</span><span class="line-soft">ALL <br class="mobile-title-break" />CONNECTED</span></h2>
+      <p class="vision-subcopy">K-뷰티와 K-패션을 글로벌 크리에이터와 연결짓는 가장 빠른 길</p>
       <div class="center-model">
         <img loading="lazy" decoding="async" src="assets/us-influencer-2-transparent.webp" alt="US influencer profile" width="1122" height="1402" />
       </div>
@@ -2529,6 +2789,37 @@
         <div class="kpi"><div class="kpi-num" data-target="3240">0</div><div class="kpi-label">Orders</div></div>
         <div class="kpi"><div class="kpi-num" data-target="48.2" data-decimals="1" data-suffix="M">0</div><div class="kpi-label">Influencer Followers</div></div>
         <div class="kpi"><div class="kpi-num" data-prefix="$" data-target="2.1" data-decimals="1" data-suffix="M">0</div><div class="kpi-label">Revenue</div></div>
+      </div>
+    </section>
+
+    <section class="beauty-extension" id="beauty">
+      <div class="beauty-extension-copy">
+        <p class="beauty-extension-eyebrow">K-STYLE EXTENSION · BEAUTY</p>
+        <h2><span>Beauty</span><span>Completes</span><span>The Look</span></h2>
+        <p class="beauty-extension-lead">패션에서 뷰티까지, K-스타일을 완성하는 글로벌 크리에이터 매칭</p>
+        <p class="beauty-extension-body">메이크업, 스킨케어, 헤어, K-뷰티 시딩까지 패션 룩의 완성도를 높이는 뷰티 브랜드와 크리에이터를 함께 연결합니다.</p>
+        <div class="beauty-extension-tags" aria-label="뷰티 협업 분야">
+          <span>Makeup</span><span>Skincare</span><span>Hair</span><span>Beauty Seeding</span>
+        </div>
+        <div class="beauty-extension-actions">
+          <a href="/beauty">뷰티 제품 마켓</a>
+          <a href="/creators?category=beauty#creatorGrid">뷰티 크리에이터 보기</a>
+        </div>
+        <p class="beauty-extension-recruit">Beauty brand · Creator · Agency 파트너 모집 중</p>
+      </div>
+      <div class="beauty-extension-visual" aria-label="K-MODU 뷰티 크리에이터 에디토리얼">
+        <figure class="beauty-extension-image">
+          <img loading="lazy" decoding="async" src="assets/influencer-sourcing/cards/vietnam-beauty/rosermae.webp" alt="Beauty and makeup creator Rosermae" width="1086" height="1448" />
+          <span>Beauty &amp; Makeup</span>
+        </figure>
+        <figure class="beauty-extension-image">
+          <img loading="lazy" decoding="async" src="assets/influencer-sourcing/cards/vietnam-beauty/ha-linh-official.webp" alt="Beauty review creator Ha Linh Official" width="1086" height="1448" />
+          <span>Beauty Review</span>
+        </figure>
+        <figure class="beauty-extension-image">
+          <img loading="lazy" decoding="async" src="assets/influencer-sourcing/cards/pdf-malaysia/18-gigi-cheoh-poster.webp" alt="Makeup transition creator Gigi Cheoh" width="900" height="1200" />
+          <span>Makeup Transition</span>
+        </figure>
       </div>
     </section>
 
@@ -3271,7 +3562,7 @@
     sw.querySelectorAll('.locale-opt.is-soon').forEach((o) => o.addEventListener('click', (e) => e.preventDefault()));
   })();
   </script>
-  <script src="/site-i18n.js?v=20260723-global5" defer></script>
+  <script src="/site-i18n.js?v=20260724-beauty1" defer></script>
   <script src="/auth-nav.js" defer></script>
 </body>
 </html>
