@@ -1384,10 +1384,11 @@
 
     .designer-story img {
       width: 100%;
-      aspect-ratio: 4 / 5;
+      height: clamp(270px, 22vw, 320px);
+      aspect-ratio: 5 / 4;
       display: block;
       object-fit: cover;
-      object-position: center top;
+      object-position: center 16%;
       margin-bottom: 16px;
       filter: grayscale(100%);
     }
@@ -3083,8 +3084,8 @@
       </div>
     </div>
 
-    <!-- 하단 캠페인 캐러셀: 실제 노출 위치에 두어 초기 화면 이미지와 경쟁하지 않게 합니다. -->
-    <section class="hero-carousel" id="campaignCarousel" aria-label="K-MODU 캠페인" aria-roledescription="carousel">
+    <!-- 임시 비노출: 캠페인 캐러셀은 추후 다시 호출할 수 있도록 마크업을 보존합니다. -->
+    <section class="hero-carousel" id="campaignCarousel" aria-label="K-MODU 캠페인" aria-roledescription="carousel" hidden>
       <div class="hc-scroller" id="hcScroller">
         <figure class="hc-slide"><img src="assets/home-carousel/designer-profile-01-640.webp" alt="K-MODU 디자이너 캠페인 1" loading="lazy" decoding="async" width="640" height="962" /></figure>
         <figure class="hc-slide"><img src="assets/home-carousel/designer-profile-02-640.webp" alt="K-MODU 디자이너 캠페인 2" loading="lazy" decoding="async" width="640" height="960" /></figure>
@@ -3427,7 +3428,7 @@
   // 캠페인 히어로 캐러셀 — 3초 자동, 스와이프, 화살표, 카운터, 재생/정지
   (() => {
     const root = document.querySelector('#campaignCarousel');
-    if (!root) return;
+    if (!root || root.hidden) return;
     const scroller = root.querySelector('#hcScroller');
     const slides = [...scroller.querySelectorAll('.hc-slide')];
     const prevBtn = root.querySelector('.hc-prev');
