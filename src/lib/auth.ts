@@ -1,7 +1,7 @@
 import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getCreatorAccountForUser, getDesignerForUser, getUserByEmail } from "./db";
+import { getApprovedCreatorAccountForAdminPreview, getCreatorAccountForUser, getDesignerForUser, getUserByEmail } from "./db";
 import type { CreatorAccount, Role, User } from "./types";
 
 export const sessionCookieName = "kmodu_session";
@@ -125,7 +125,13 @@ export async function getApprovedDesignerForApi() {
 
 export async function requireApprovedCreator(): Promise<{ user: SessionUser; creator: CreatorAccount }> {
   const user = await getCurrentUser();
-  if (!user || user.role !== "creator") redirect("/login?error=creator_required");
+  if (!user || (user.role !== "creator" && user.role !== "admin")) redirect("/login?error=creator_required");
+
+  if (user.role === "admin") {
+    const previewCreator = await getApprovedCreatorAccountForAdminPreview();
+    if (!previewCreator) redirect("/login?notice=creator_preview_unavailable");
+    return { user, creator: previewCreator };
+  }
 
   const creator = await getCreatorAccountForUser(user.id);
   if (!creator) redirect("/login?error=creator_required");

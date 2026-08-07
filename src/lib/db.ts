@@ -1219,6 +1219,21 @@ export async function getCreatorAccountForUser(userId: string): Promise<CreatorA
   }
 }
 
+export async function getApprovedCreatorAccountForAdminPreview(): Promise<CreatorAccount | null> {
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    return null;
+  }
+  try {
+    return await one<CreatorAccount>(
+      "SELECT * FROM creator_accounts WHERE approval_status = 'approved' ORDER BY display_name ASC LIMIT 1",
+    );
+  } catch (error) {
+    if (!canUseDemoData()) throw error;
+    return null;
+  }
+}
+
 export type CreatorMissionParticipation = CampaignParticipation & {
   campaign_title: string;
   campaign_brief: string;

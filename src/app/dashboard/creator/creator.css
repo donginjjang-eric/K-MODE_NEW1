@@ -102,3 +102,31 @@
   .creator-center .creator-campaign-filters select { width: 100%; }
   .creator-center .creator-campaign-filters > button { width: 100%; }
 }
+.creator-admin-preview {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 44px;
+  padding: 9px 20px;
+  border-bottom: 1px solid #d8c59d;
+  background: #fff8e8;
+  color: #18140d;
+  font-size: 13px;
+}
+
+.creator-admin-preview strong { letter-spacing: .08em; }
+.creator-admin-preview a { color: inherit; font-weight: 800; text-decoration: underline; }
+
+@media (max-width: 760px) {
+  .creator-admin-preview {
+    position: relative;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    justify-content: flex-start;
+    padding: 10px 14px;
+  }
+}
