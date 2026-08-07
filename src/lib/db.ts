@@ -1225,9 +1225,27 @@ export async function getApprovedCreatorAccountForAdminPreview(): Promise<Creato
     return null;
   }
   try {
-    return await one<CreatorAccount>(
+    const approved = await one<CreatorAccount>(
       "SELECT * FROM creator_accounts WHERE approval_status = 'approved' ORDER BY display_name ASC LIMIT 1",
     );
+    if (approved) return approved;
+
+    const snapshot = (await getPublicCreatorSnapshots())[0];
+    if (!snapshot) return null;
+    const now = new Date().toISOString();
+    return {
+      id: `catalogue-${snapshot.creatorKey}`,
+      user_id: null,
+      creator_key: snapshot.creatorKey,
+      display_name: snapshot.displayName,
+      google_email: "",
+      approval_status: "approved",
+      platform: snapshot.platform,
+      market: snapshot.market,
+      categories: snapshot.categories,
+      created_at: now,
+      updated_at: now,
+    };
   } catch (error) {
     if (!canUseDemoData()) throw error;
     return null;

@@ -17,6 +17,8 @@ test("admins can preview the creator center without receiving creator mutation a
   assert.match(auth, /creator_preview_unavailable/);
   assert.match(db, /export async function getApprovedCreatorAccountForAdminPreview/);
   assert.match(db, /approval_status = 'approved'/);
+  assert.match(db, /catalogue-\$\{snapshot\.creatorKey\}/);
+  assert.match(db, /approval_status: "approved"/);
   assert.match(layout, /관리자 미리보기/);
   assert.match(layout, /\/dashboard\/admin\/campaigns/);
 
