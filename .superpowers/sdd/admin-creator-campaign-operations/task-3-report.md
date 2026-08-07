@@ -33,3 +33,10 @@ Completed and committed as `feat: add admin campaign workflow controls`.
 
 - The production build passes with the repository's pre-existing Turbopack workspace-root/NFT tracing warnings.
 - `agent-browser` is unavailable in this environment, so a screenshot-based local visual inspection was not possible. The local server responded on port 8010 and the production build completed.
+
+## Fix round 1
+
+- Root cause: participation mutation validation, error mapping, and revalidation lived directly in the route, leaving only source-regex coverage and omitting the creator submissions route.
+- RED: the new `admin-participation-route-handlers` behavioral test failed because the handler did not exist and the route had not delegated to it.
+- GREEN: a production route handler now validates payloads before mutation, maps not-found and illegal state failures to 404/409, and revalidates `/dashboard/creator/submissions` with every other affected route.
+- Verification: 11 focused operation/invitation/creator regression tests passed; `npm.cmd run build` passed.

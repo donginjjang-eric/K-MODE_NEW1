@@ -4,22 +4,14 @@ import { readFile } from "node:fs/promises";
 
 const source = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-test("campaign operations are guarded, validate state changes, and refresh both workspaces", async () => {
+test("campaign operation routes remain admin guarded and delegate to tested handlers", async () => {
   const [route, statusRoute] = await Promise.all([
     source("../src/app/api/admin/participations/[id]/route.ts"),
     source("../src/app/api/admin/campaigns/[id]/status/route.ts"),
   ]);
 
   assert.match(route, /requireUser\(["']admin["']\)/);
-  assert.match(route, /transitionParticipationAsAdmin\(admin\.id, participationId, action(?: as AdminParticipationAction)?, note\)/);
-  assert.match(route, /status:\s*400/);
-  assert.match(route, /status:\s*404/);
-  assert.match(route, /status:\s*409/);
-  assert.match(route, /revalidatePath\(["']\/dashboard\/admin\/campaigns["']\)/);
-  assert.match(route, /revalidatePath\(`\/dashboard\/admin\/campaigns\/\$\{participation\.campaign_id\}`\)/);
-  assert.match(route, /revalidatePath\(["']\/dashboard\/creator["']\)/);
-  assert.match(route, /revalidatePath\(["']\/dashboard\/creator\/my-campaigns["']\)/);
-  assert.match(route, /revalidatePath\(`\/dashboard\/creator\/my-campaigns\/\$\{participationId\}`\)/);
+  assert.match(route, /handleAdminParticipationMutation/);
   assert.match(statusRoute, /cannot transition/i);
   assert.match(statusRoute, /revalidatePath\(["']\/dashboard\/creator["']\)/);
   assert.match(statusRoute, /revalidatePath\(["']\/dashboard\/creator\/campaigns["']\)/);
