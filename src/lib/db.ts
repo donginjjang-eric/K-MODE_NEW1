@@ -4,7 +4,7 @@ import path from "node:path";
 import { Pool } from "pg";
 import type { PoolClient, QueryResultRow } from "pg";
 import { designer as phaseDesigner, modelTemplates as phaseTemplates, products as phaseProducts } from "./phase1-data";
-import type { ApprovalStatus, CampaignEvent, CampaignParticipation, CollabRequest, CollabRequestStatus, CollabRequestType, ContentSubmission, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User } from "./types";
+import type { ApprovalStatus, CampaignEvent, CampaignParticipation, CampaignPerformance, CollabRequest, CollabRequestStatus, CollabRequestType, ContentSubmission, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User } from "./types";
 
 let pool: Pool | null = null;
 
@@ -1247,6 +1247,87 @@ export async function getParticipationForCreator(creatorId: string, participatio
       WHERE p.id = $2 AND p.creator_account_id = $1`,
     [creatorId, participationId],
   );
+}
+
+const CREATOR_PERFORMANCE_CURRENCIES = ["KRW", "USD", "VND", "TWD", "MYR"] as const;
+export type CreatorPerformanceCurrency = typeof CREATOR_PERFORMANCE_CURRENCIES[number];
+export type CreatorPerformanceInput = {
+  views: number;
+  likes: number;
+  comments: number;
+  orders: number;
+  revenue: number;
+  currency: CreatorPerformanceCurrency;
+};
+
+function assertCreatorPerformanceInput(input: CreatorPerformanceInput) {
+  for (const value of [input.views, input.likes, input.comments, input.orders]) {
+    if (!Number.isInteger(value) || value < 0) throw new Error("Performance counts must be non-negative integers.");
+  }
+  if (typeof input.revenue !== "number" || !Number.isFinite(input.revenue) || input.revenue < 0) {
+    throw new Error("Revenue must be a non-negative number.");
+  }
+  if (!CREATOR_PERFORMANCE_CURRENCIES.includes(input.currency)) {
+    throw new Error("Currency is not supported.");
+  }
+}
+
+export async function upsertCampaignPerformance(creatorId: string, participationId: string, input: CreatorPerformanceInput): Promise<CampaignPerformance> {
+  assertCreatorPerformanceInput(input);
+  return withDatabaseTransaction(async (client) => {
+    const participationResult = await client.query<CampaignParticipation>(
+      "SELECT * FROM campaign_participations WHERE id = $1 AND creator_account_id = $2 FOR UPDATE",
+      [participationId, creatorId],
+    );
+    const participation = participationResult.rows[0];
+    if (!participation) throw new Error("Campaign participation was not found.");
+    if (participation.status !== "published" && participation.status !== "settlement" && participation.status !== "completed") {
+      throw new Error("Performance is not available for this mission.");
+    }
+    const saved = await client.query<CampaignPerformance>(
+      `INSERT INTO campaign_performance (participation_id, views, likes, comments, orders, revenue, currency)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (participation_id) DO UPDATE
+         SET views = EXCLUDED.views, likes = EXCLUDED.likes, comments = EXCLUDED.comments,
+             orders = EXCLUDED.orders, revenue = EXCLUDED.revenue, currency = EXCLUDED.currency, updated_at = now()
+       RETURNING *`,
+      [participationId, input.views, input.likes, input.comments, input.orders, input.revenue, input.currency],
+    );
+    const performance = saved.rows[0];
+    if (!performance) throw new Error("Campaign performance could not be saved.");
+    return performance;
+  });
+}
+
+export type CreatorSettlementSummary = Array<{
+  currency: CreatorPerformanceCurrency;
+  expected: number;
+  pending: number;
+  confirmed: number;
+  paid: number;
+}>;
+
+export async function getCreatorSettlementSummary(creatorId: string): Promise<CreatorSettlementSummary> {
+  if (!hasDatabase()) return [];
+  const rows = await query<{ settlement_status: CampaignParticipation["settlement_status"]; currency: CreatorPerformanceCurrency; total: string }>(
+    `SELECT p.settlement_status, performance.currency, COALESCE(SUM(performance.revenue), 0)::text AS total
+       FROM campaign_participations p
+       JOIN campaign_performance performance ON performance.participation_id = p.id
+      WHERE p.creator_account_id = $1
+      GROUP BY p.settlement_status, performance.currency`,
+    [creatorId],
+  );
+  const grouped = new Map<CreatorPerformanceCurrency, CreatorSettlementSummary[number]>();
+  for (const row of rows) {
+    const summary = grouped.get(row.currency) ?? { currency: row.currency, expected: 0, pending: 0, confirmed: 0, paid: 0 };
+    const total = Number(row.total);
+    summary.expected += total;
+    if (row.settlement_status === "pending" || row.settlement_status === "confirmed" || row.settlement_status === "paid") {
+      summary[row.settlement_status] += total;
+    }
+    grouped.set(row.currency, summary);
+  }
+  return [...grouped.values()];
 }
 
 export async function getContentSubmissionsForParticipation(participationId: string): Promise<ContentSubmission[]> {
