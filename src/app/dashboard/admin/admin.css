@@ -47,6 +47,40 @@
 
 .admin-studio .admin-campaign-form { max-width: 760px; }
 
+.admin-studio .admin-campaign-detail,
+.admin-studio .admin-campaign-operations { display: grid; gap: 18px; }
+
+.admin-studio .admin-campaign-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid #e2ddd4; background: #fff; }
+.admin-studio .admin-campaign-summary div { display: grid; gap: 5px; padding: 14px; border-right: 1px solid #eee9e1; border-bottom: 1px solid #eee9e1; }
+.admin-studio .admin-campaign-summary span,
+.admin-studio .admin-campaign-operation-data dt { color: #918a80; font-size: 11px; font-weight: 800; }
+.admin-studio .admin-campaign-summary strong { color: #28231e; font-size: 14px; overflow-wrap: anywhere; }
+
+.admin-studio .admin-campaign-status-action,
+.admin-studio .admin-campaign-invite,
+.admin-studio .admin-campaign-participant { display: grid; gap: 12px; padding: 18px; border: 1px solid #e2ddd4; background: #fff; }
+.admin-studio .admin-campaign-status-action h2,
+.admin-studio .admin-campaign-invite h2,
+.admin-studio .admin-campaign-participant h3 { margin: 0; color: #171411; font-size: 16px; }
+.admin-studio .admin-campaign-status-action p,
+.admin-studio .admin-campaign-operations > div > p,
+.admin-studio .admin-campaign-participant p,
+.admin-studio .admin-campaign-invite p { margin: 0; color: #706a61; font-size: 12px; line-height: 1.5; }
+.admin-studio .admin-campaign-note { display: grid; gap: 7px; color: #514a43; font-size: 12px; font-weight: 800; }
+.admin-studio .admin-campaign-note textarea,
+.admin-studio .admin-campaign-invite input { box-sizing: border-box; width: 100%; border: 1px solid #d8d1c7; padding: 10px; background: #fff; color: #171411; font: inherit; }
+.admin-studio .admin-campaign-note textarea { min-height: 76px; resize: vertical; }
+.admin-studio .admin-campaign-participant-list { display: grid; gap: 12px; }
+.admin-studio .admin-campaign-participant header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.admin-studio .admin-campaign-operation-data { display: grid; gap: 8px; margin: 0; }
+.admin-studio .admin-campaign-operation-data div { display: grid; gap: 4px; }
+.admin-studio .admin-campaign-operation-data dd { display: grid; gap: 3px; margin: 0; color: #514a43; font-size: 12px; overflow-wrap: anywhere; }
+.admin-studio .admin-campaign-invite { margin-top: 4px; }
+.admin-studio .admin-campaign-invite label { display: grid; gap: 7px; color: #514a43; font-size: 12px; font-weight: 800; }
+.admin-studio .admin-campaign-invite-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #eee9e1; padding-top: 12px; }
+.admin-studio .admin-campaign-invite-row span { display: grid; gap: 3px; min-width: 0; color: #28231e; font-size: 13px; }
+.admin-studio .admin-campaign-invite-row small { color: #706a61; overflow-wrap: anywhere; }
+
 .admin-studio .admin-campaign-form label,
 .admin-studio .admin-campaign-form fieldset { display: grid; gap: 7px; min-width: 0; margin: 0; border: 0; padding: 0; color: #514a43; font-size: 12px; font-weight: 800; }
 .admin-studio .admin-campaign-form legend { margin-bottom: 7px; }
@@ -65,6 +99,11 @@
   .admin-studio .admin-campaign-page-head { display: grid; }
   .admin-studio .admin-campaign-page-head .st-btn { width: 100%; text-align: center; }
   .admin-studio .admin-campaign-form-grid { grid-template-columns: 1fr; }
+  .admin-studio .admin-campaign-summary { grid-template-columns: 1fr; }
+  .admin-studio .admin-campaign-summary div { border-right: 0; }
+  .admin-studio .admin-campaign-participant header,
+  .admin-studio .admin-campaign-invite-row { align-items: stretch; flex-direction: column; }
+  .admin-studio .admin-campaign-invite-row .st-btn { width: 100%; }
 }
 
 .admin-studio .admin-creator-account-row {

@@ -8,7 +8,7 @@ const VALID_STATUSES = new Set<AdminCampaignStatus>(["recruiting", "active", "cl
 function campaignError(error: unknown) {
   const message = error instanceof Error ? error.message : "캠페인을 처리할 수 없습니다.";
   if (/not found/i.test(message)) return Response.json({ error: "캠페인을 찾을 수 없습니다." }, { status: 404 });
-  if (/closed|conflict|cannot be reopened/i.test(message)) return Response.json({ error: "마감된 캠페인은 다시 열 수 없습니다." }, { status: 409 });
+  if (/closed|conflict|cannot transition|cannot be reopened/i.test(message)) return Response.json({ error: "현재 상태에서는 해당 캠페인 상태로 변경할 수 없습니다." }, { status: 409 });
   if (/required|invalid|positive|at least|before|https/i.test(message)) return Response.json({ error: "변경할 상태를 확인해 주세요." }, { status: 400 });
   return Response.json({ error: "캠페인 상태를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 500 });
 }
@@ -27,6 +27,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const campaign = await setAdminCampaignStatus(admin.id, campaignId, status);
     revalidatePath("/dashboard/admin/campaigns");
     revalidatePath(`/dashboard/admin/campaigns/${campaignId}`);
+    revalidatePath("/dashboard/creator");
+    revalidatePath("/dashboard/creator/campaigns");
+    revalidatePath("/dashboard/creator/my-campaigns");
+    revalidatePath("/dashboard/creator/settlement");
     return Response.json({ campaign });
   } catch (error) {
     return campaignError(error);

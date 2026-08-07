@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createCampaignInvitation } from "@/lib/creator-campaigns";
 
@@ -27,6 +28,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   try {
     const participation = await createCampaignInvitation(admin.id, campaignId, creatorId);
+    revalidatePath("/dashboard/admin/campaigns");
+    revalidatePath(`/dashboard/admin/campaigns/${campaignId}`);
+    revalidatePath("/dashboard/creator");
+    revalidatePath("/dashboard/creator/campaigns");
+    revalidatePath("/dashboard/creator/my-campaigns");
+    revalidatePath(`/dashboard/creator/my-campaigns/${participation.id}`);
+    revalidatePath("/dashboard/creator/settlement");
     return Response.json({ participation: { id: participation.id, status: participation.status } }, { status: 201 });
   } catch (error) {
     return invitationCreationError(error);

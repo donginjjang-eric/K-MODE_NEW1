@@ -1,6 +1,6 @@
 import { hasDatabase, one, query, withDatabaseTransaction } from "./db";
 import type { DatabaseTransactionClient } from "./db";
-import type { AdminCampaignInput, AdminCampaignListItem, AdminCampaignStatus, AdminParticipationAction, Campaign, CampaignParticipation, CreatorAccount, ParticipationStatus } from "./types";
+import type { AdminCampaignInput, AdminCampaignListItem, AdminCampaignStatus, AdminParticipationAction, Campaign, CampaignEvent, CampaignParticipation, CampaignPerformance, ContentSubmission, CreatorAccount, ParticipationStatus } from "./types";
 
 export type CampaignFitCreator = Pick<CreatorAccount, "id" | "market" | "platform" | "categories">;
 export type CampaignFitCampaign = Pick<Campaign, "id" | "category" | "markets" | "platforms" | "application_deadline">;
@@ -201,9 +201,63 @@ export async function listAdminCampaigns(filters: { status?: AdminCampaignStatus
   );
 }
 
-export async function getAdminCampaign(id: string): Promise<Campaign | null> {
+export type AdminCampaignParticipant = CampaignParticipation & {
+  creator_display_name: string;
+  creator_google_email: string;
+  creator_platform: string;
+  creator_market: string;
+  submissions: ContentSubmission[];
+  performance: CampaignPerformance | null;
+  events: CampaignEvent[];
+};
+
+export type AdminCampaignDetail = Campaign & {
+  participants: AdminCampaignParticipant[];
+  application_count: number;
+  occupied_count: number;
+};
+
+export async function getAdminCampaign(id: string): Promise<AdminCampaignDetail | null> {
   if (!hasDatabase()) return null;
-  return one<Campaign>("SELECT * FROM campaigns WHERE id = $1", [id]);
+  const campaign = await one<Campaign>("SELECT * FROM campaigns WHERE id = $1", [id]);
+  if (!campaign) return null;
+
+  const participants = await query<Omit<AdminCampaignParticipant, "submissions" | "performance" | "events">>(
+    `SELECT p.*, creator.display_name AS creator_display_name, creator.google_email AS creator_google_email,
+            creator.platform AS creator_platform, creator.market AS creator_market
+       FROM campaign_participations p
+       JOIN creator_accounts creator ON creator.id = p.creator_account_id
+      WHERE p.campaign_id = $1
+      ORDER BY p.updated_at DESC`,
+    [id],
+  );
+  const participationIds = participants.map((participant) => participant.id);
+  if (!participationIds.length) {
+    return { ...campaign, participants: [], application_count: 0, occupied_count: 0 };
+  }
+
+  const [submissions, performanceRows, events] = await Promise.all([
+    query<ContentSubmission>("SELECT * FROM content_submissions WHERE participation_id = ANY($1::text[]) ORDER BY version DESC", [participationIds]),
+    query<CampaignPerformance>("SELECT * FROM campaign_performance WHERE participation_id = ANY($1::text[])", [participationIds]),
+    query<CampaignEvent>("SELECT * FROM campaign_events WHERE participation_id = ANY($1::text[]) ORDER BY created_at DESC", [participationIds]),
+  ]);
+  const submissionsByParticipation = new Map<string, ContentSubmission[]>();
+  const performanceByParticipation = new Map(performanceRows.map((performance) => [performance.participation_id, performance]));
+  const eventsByParticipation = new Map<string, CampaignEvent[]>();
+  for (const submission of submissions) submissionsByParticipation.set(submission.participation_id, [...(submissionsByParticipation.get(submission.participation_id) ?? []), submission]);
+  for (const event of events) eventsByParticipation.set(event.participation_id, [...(eventsByParticipation.get(event.participation_id) ?? []), event]);
+
+  return {
+    ...campaign,
+    participants: participants.map((participant) => ({
+      ...participant,
+      submissions: submissionsByParticipation.get(participant.id) ?? [],
+      performance: performanceByParticipation.get(participant.id) ?? null,
+      events: eventsByParticipation.get(participant.id) ?? [],
+    })),
+    application_count: participants.filter((participant) => participant.source === "application").length,
+    occupied_count: participants.filter((participant) => participant.status !== "cancelled").length,
+  };
 }
 
 export async function createAdminCampaign(adminId: string, input: AdminCampaignInput): Promise<Campaign> {
@@ -250,7 +304,15 @@ export async function setAdminCampaignStatus(adminId: string, id: string, status
     const current = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [id]);
     const campaign = current.rows[0];
     if (!campaign) throw new Error("Campaign was not found.");
-    if (campaign.status === "closed" && status !== "closed") throw new Error("Closed campaigns cannot be reopened.");
+    const allowed: Record<AdminCampaignStatus, AdminCampaignStatus[]> = {
+      draft: ["recruiting", "closed"],
+      recruiting: ["active", "closed"],
+      active: ["closed"],
+      closed: [],
+    };
+    if (campaign.status !== status && !allowed[campaign.status].includes(status)) {
+      throw new Error(`Cannot transition campaign from ${campaign.status} to ${status}.`);
+    }
     const result = await client.query<Campaign>("UPDATE campaigns SET status = $2, updated_at = now() WHERE id = $1 RETURNING *", [id, status]);
     const updated = result.rows[0];
     if (!updated) throw new Error("Campaign status could not be updated.");
