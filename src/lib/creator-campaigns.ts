@@ -159,6 +159,46 @@ export async function getCreatorActionSummary(creatorId: string): Promise<Creato
   };
 }
 
+export type CreatorCampaignActivity = Pick<CampaignParticipation, "id" | "status" | "next_action" | "expected_reward" | "settlement_status" | "updated_at"> & {
+  campaign_id: string;
+  campaign_title: string;
+};
+
+export async function getCreatorCampaignActivity(creatorId: string): Promise<CreatorCampaignActivity[]> {
+  if (!hasDatabase()) return [];
+  return query<CreatorCampaignActivity>(
+    `SELECT p.id, p.campaign_id, p.status, p.next_action, p.expected_reward, p.settlement_status, p.updated_at,
+            c.title AS campaign_title
+       FROM campaign_participations p
+       JOIN campaigns c ON c.id = p.campaign_id
+      WHERE p.creator_account_id = $1
+      ORDER BY p.updated_at DESC
+      LIMIT 4`,
+    [creatorId],
+  );
+}
+
+export type CreatorSettlementSummary = Record<"pending" | "confirmed" | "paid", number>;
+
+export async function getCreatorSettlementSummary(creatorId: string): Promise<CreatorSettlementSummary> {
+  const empty = { pending: 0, confirmed: 0, paid: 0 };
+  if (!hasDatabase()) return empty;
+  const row = await one<{ pending: string; confirmed: string; paid: string }>(
+    `SELECT
+       COUNT(*) FILTER (WHERE settlement_status = 'pending')::text AS pending,
+       COUNT(*) FILTER (WHERE settlement_status = 'confirmed')::text AS confirmed,
+       COUNT(*) FILTER (WHERE settlement_status = 'paid')::text AS paid
+     FROM campaign_participations
+     WHERE creator_account_id = $1`,
+    [creatorId],
+  );
+  return {
+    pending: Number(row?.pending || 0),
+    confirmed: Number(row?.confirmed || 0),
+    paid: Number(row?.paid || 0),
+  };
+}
+
 export async function applyToCampaign(creatorId: string, campaignId: string): Promise<CampaignParticipation> {
   return withDatabaseTransaction(async (client) => {
     const creator = await getCreatorForUpdate(client, creatorId);

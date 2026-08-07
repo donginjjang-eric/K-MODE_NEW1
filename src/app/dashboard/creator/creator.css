@@ -52,6 +52,35 @@
 .creator-center .creator-mobile-top,
 .creator-center .creator-mobile-nav { display: none; }
 
+.creator-center .creator-action-home,
+.creator-center .creator-campaigns-page { display: grid; gap: 30px; max-width: 1180px; }
+.creator-center .creator-page-heading { display: grid; gap: 8px; max-width: 680px; }
+.creator-center .creator-page-heading > p,
+.creator-center .creator-eyebrow { margin: 0; color: var(--creator-teal); font-size: 11px; font-weight: 900; letter-spacing: .14em; }
+.creator-center .creator-page-heading h1,
+.creator-center .creator-action-home h2,
+.creator-center .creator-campaigns-page h2 { margin: 0; letter-spacing: -.04em; }
+.creator-center .creator-page-heading h1 { font-size: clamp(30px, 4vw, 48px); }
+.creator-center .creator-page-heading span,
+.creator-center .creator-muted { color: #716a5d; }
+.creator-center .creator-action-priority { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 24px; padding: 26px; border-radius: 18px; background: var(--creator-black); color: var(--creator-ivory); }
+.creator-center .creator-stat-row { display: grid; grid-template-columns: repeat(3, auto); gap: 5px 14px; align-items: end; }
+.creator-center .creator-stat-row strong { font-size: 26px; }.creator-center .creator-stat-row span { color: rgba(255,253,248,.65); font-size: 11px; }
+.creator-center .creator-primary-link { padding: 12px 16px; border-radius: 999px; background: var(--creator-teal); color: #fff; font-size: 13px; font-weight: 800; }
+.creator-center .creator-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 14px; }.creator-center .creator-section-heading a { color: var(--creator-teal); font-size: 13px; font-weight: 800; }
+.creator-center .creator-deadlines { padding: 22px; border: 1px solid #e9e1d4; border-radius: 16px; }.creator-center .creator-deadlines ul,
+.creator-center .creator-activity-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }.creator-center .creator-deadlines li { display: flex; justify-content: space-between; gap: 14px; }.creator-center .creator-deadlines li span { color: #716a5d; font-size: 13px; }
+.creator-center .creator-home-campaigns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }.creator-center .creator-home-campaigns article { display: grid; gap: 10px; min-height: 176px; padding: 20px; border-radius: 16px; background: #e8f0eb; }.creator-center .creator-home-campaigns article:nth-child(2) { background: #f5ecd9; }.creator-center .creator-home-campaigns article:nth-child(3) { background: #e8edf5; }.creator-center .creator-home-campaigns p,
+.creator-center .creator-home-campaigns h3 { margin: 0; }.creator-center .creator-home-campaigns p { color: var(--creator-teal); font-size: 12px; font-weight: 900; }.creator-center .creator-home-campaigns h3 { font-size: 19px; }.creator-center .creator-home-campaigns span { font-size: 13px; }.creator-center .creator-home-campaigns small,
+.creator-center .creator-match-tags span { display: inline-flex; margin: 2px 4px 0 0; padding: 5px 7px; border-radius: 999px; background: rgba(255,255,255,.72); font-size: 10px; font-weight: 800; }
+.creator-center .creator-home-columns { display: grid; grid-template-columns: 1.4fr .8fr; gap: 20px; }.creator-center .creator-home-columns > section { padding: 22px; border: 1px solid #e9e1d4; border-radius: 16px; }.creator-center .creator-activity-list li { display: flex; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid #eee7db; }.creator-center .creator-activity-list div { display: grid; gap: 3px; }.creator-center .creator-activity-list span { color: #716a5d; font-size: 13px; }.creator-center .creator-activity-list b { color: var(--creator-teal); font-size: 12px; text-transform: capitalize; }.creator-center .creator-settlement-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 0; }.creator-center .creator-settlement-summary div { padding: 10px; border-radius: 10px; background: #f3eddf; }.creator-center .creator-settlement-summary dt { font-size: 11px; }.creator-center .creator-settlement-summary dd { margin: 5px 0 0; font-size: 23px; font-weight: 900; }
+.creator-center .creator-campaign-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; padding: 18px; border: 1px solid #e9e1d4; border-radius: 16px; }.creator-center .creator-campaign-filters label { display: grid; gap: 5px; color: #625b4f; font-size: 12px; font-weight: 800; }.creator-center .creator-campaign-filters select,
+.creator-center .creator-campaign-filters button,
+.creator-center .creator-apply-action button { min-height: 38px; border: 1px solid #d9d0c2; border-radius: 9px; background: #fffdf8; color: var(--creator-black); font: inherit; font-size: 13px; font-weight: 800; }.creator-center .creator-campaign-filters select { min-width: 150px; padding: 0 10px; }.creator-center .creator-campaign-filters button { padding: 0 14px; background: var(--creator-black); color: #fff; }.creator-center .creator-campaign-filters > a { padding-bottom: 10px; color: var(--creator-teal); font-size: 13px; font-weight: 800; }.creator-center .creator-result-count { margin: -16px 0 0; color: #716a5d; font-size: 13px; }
+.creator-center .creator-campaign-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }.creator-center .creator-campaign-card { overflow: hidden; border: 1px solid #e2dbce; border-radius: 16px; background: #fff; }.creator-center .creator-campaign-card > img { width: 100%; height: 180px; object-fit: cover; }.creator-center .creator-campaign-card-body { display: grid; gap: 15px; padding: 20px; }.creator-center .creator-card-kicker { display: flex; justify-content: space-between; color: var(--creator-teal); font-size: 11px; font-weight: 900; text-transform: uppercase; }.creator-center .creator-card-kicker b { color: #665e50; }.creator-center .creator-campaign-card h2,
+.creator-center .creator-campaign-card p { margin: 0; }.creator-center .creator-campaign-card p { min-height: 40px; color: #625b4f; font-size: 14px; line-height: 1.45; }.creator-center .creator-campaign-card dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }.creator-center .creator-campaign-card dl div { display: grid; gap: 4px; }.creator-center .creator-campaign-card dt { color: #716a5d; font-size: 10px; font-weight: 800; text-transform: uppercase; }.creator-center .creator-campaign-card dd { margin: 0; font-size: 12px; font-weight: 700; }.creator-center .creator-apply-action { display: grid; gap: 7px; }.creator-center .creator-apply-action button { border-color: var(--creator-teal); background: var(--creator-teal); color: #fff; }.creator-center .creator-apply-action button:disabled { cursor: not-allowed; opacity: .65; }.creator-center .creator-apply-action p { min-height: auto; color: #625b4f; font-size: 12px; }.creator-center .creator-empty-state { display: grid; justify-items: start; gap: 10px; padding: 28px; border: 1px dashed #cfc4b3; border-radius: 16px; }.creator-center .creator-empty-state p,
+.creator-center .creator-empty-state h2 { margin: 0; }.creator-center .creator-empty-state a { color: var(--creator-teal); font-weight: 800; }
+
 @media (max-width: 760px) {
   .creator-center { padding-bottom: 75px; }
   .creator-center .creator-shell { display: block; min-height: 0; }
@@ -64,4 +93,12 @@
   .creator-center .creator-mobile-nav a { display: grid; place-items: center; align-content: center; gap: 3px; min-width: 0; color: #7c7569; font-size: 10px; font-weight: 800; }
   .creator-center .creator-mobile-nav a.is-active { color: var(--creator-teal); }
   .creator-center .creator-mobile-nav .nav-svg { width: 19px; height: 19px; }
+  .creator-center .creator-action-priority,
+  .creator-center .creator-home-columns { grid-template-columns: 1fr; }
+  .creator-center .creator-stat-row { justify-content: start; }
+  .creator-center .creator-home-campaigns,
+  .creator-center .creator-campaign-grid { grid-template-columns: 1fr; }
+  .creator-center .creator-campaign-filters label,
+  .creator-center .creator-campaign-filters select { width: 100%; }
+  .creator-center .creator-campaign-filters > button { width: 100%; }
 }
