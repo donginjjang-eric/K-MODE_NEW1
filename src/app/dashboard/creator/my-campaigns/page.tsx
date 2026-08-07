@@ -13,7 +13,7 @@ export default async function MyCampaignsPage() {
       {participations.length ? <ul className="creator-activity-list">{participations.map((participation) => (
         <li key={participation.id}>
           <div><strong>{participation.campaign_title}</strong><span>{participation.next_action || participation.status}</span></div>
-          <div><b>{participation.status}</b>{participation.status === "invited" ? <CreatorInvitationActions participationId={participation.id} /> : <Link href={`/dashboard/creator/my-campaigns/${participation.id}`}>View mission</Link>}</div>
+          <div><b>{participation.status}</b>{participation.status === "invited" ? <><CreatorInvitationActions participationId={participation.id} /><Link href={`/dashboard/creator/my-campaigns/${participation.id}`}>View mission</Link></> : <Link href={`/dashboard/creator/my-campaigns/${participation.id}`}>View mission</Link>}</div>
         </li>
       ))}</ul> : <div className="creator-empty-state"><h2>No campaign missions yet.</h2><p>Accepted invitations and applications will appear here.</p><Link href="/dashboard/creator/campaigns">Explore campaigns</Link></div>}
     </div>

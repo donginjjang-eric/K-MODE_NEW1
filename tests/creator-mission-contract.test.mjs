@@ -63,3 +63,19 @@ test("creator mission pages expose timeline, brief, history, review and publishi
   assert.match(invitationActions, /accept/);
   assert.match(invitationActions, /respond\(false\)/);
 });
+
+test("invited mission cards retain a route to the brief beside invitation actions", async () => {
+  const list = await source("../src/app/dashboard/creator/my-campaigns/page.tsx");
+
+  assert.match(
+    list,
+    /participation\.status === "invited" \? <><CreatorInvitationActions participationId=\{participation\.id\} \/><Link href=\{`\/dashboard\/creator\/my-campaigns\/\$\{participation\.id\}`\}>View mission<\/Link><\/>/,
+  );
+});
+
+test("mission timeline includes application and cancellation states as visible current states", async () => {
+  const detail = await source("../src/app/dashboard/creator/my-campaigns/[id]/page.tsx");
+
+  assert.match(detail, /const timeline = \["applied", "invited", "matched", "shipping", "creating", "review", "published", "settlement", "completed", "cancelled"\]/);
+  assert.match(detail, /participation\.status === status \? "is-current" : ""/);
+});

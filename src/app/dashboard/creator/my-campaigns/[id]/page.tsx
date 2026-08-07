@@ -5,7 +5,7 @@ import CreatorSubmissionForm from "@/components/CreatorSubmissionForm";
 import { requireApprovedCreator } from "@/lib/auth";
 import { getCampaignEventsForParticipation, getContentSubmissionsForParticipation, getParticipationForCreator } from "@/lib/db";
 
-const timeline = ["invited", "matched", "shipping", "creating", "review", "published", "settlement", "completed"];
+const timeline = ["applied", "invited", "matched", "shipping", "creating", "review", "published", "settlement", "completed", "cancelled"];
 
 export default async function CreatorMissionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { creator } = await requireApprovedCreator();
