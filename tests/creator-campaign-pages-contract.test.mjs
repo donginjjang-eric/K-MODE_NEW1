@@ -57,7 +57,7 @@ test("creator campaign action surfaces preserve the guarded recruiting workflow"
 
 test("creator activity query only returns active participation statuses", async () => {
   const domain = await source("../src/lib/creator-campaigns.ts");
-  const activityFunction = domain.match(/export async function getCreatorCampaignActivity[\s\S]*?\n}\n\nexport type CreatorSettlementSummary/);
+  const activityFunction = domain.match(/export async function getCreatorCampaignActivity[\s\S]*?\r?\n}\r?\n\r?\nexport type CreatorSettlementSummary/);
 
   assert.ok(activityFunction, "creator activity query must exist");
   assert.match(activityFunction[0], /p\.status = ANY\(\$2::text\[\]\)/);
