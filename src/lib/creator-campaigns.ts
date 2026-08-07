@@ -63,6 +63,20 @@ export function assertCampaignCanAcceptApplication(
   if (existingStatus && existingStatus !== "invited") throw new Error("Creator already participates in this campaign.");
 }
 
+export function assertCampaignCanCreateInvitation(
+  campaign: Pick<Campaign, "id" | "status" | "application_deadline" | "slots">,
+  occupiedSlots: number,
+  existingStatus: ParticipationStatus | null,
+  now = new Date(),
+) {
+  if (campaign.status !== "recruiting") throw new Error("Campaign is not recruiting.");
+  if (campaign.application_deadline && new Date(campaign.application_deadline).getTime() <= now.getTime()) {
+    throw new Error("Campaign application deadline has passed.");
+  }
+  if (existingStatus) throw new Error("Creator already participates in this campaign.");
+  if (occupiedSlots >= campaign.slots) throw new Error("Campaign is at capacity.");
+}
+
 export function resolveApplicationStatus(existingStatus: ParticipationStatus | null): ParticipationStatus {
   if (!existingStatus) return "applied";
   if (existingStatus === "invited") return "matched";
@@ -229,6 +243,39 @@ export async function applyToCampaign(creatorId: string, campaignId: string): Pr
     const participation = participationResult.rows[0];
     if (!participation) throw new Error("Campaign participation could not be saved.");
     await insertCampaignEvent(client, participation, creator.user_id, existing?.status ?? null, existing ? "application_accepted" : "application_created", existing ? "Application accepted an existing invitation." : "Application submitted.");
+    return participation;
+  });
+}
+
+export async function createCampaignInvitation(actorUserId: string, campaignId: string, creatorId: string): Promise<CampaignParticipation> {
+  return withDatabaseTransaction(async (client) => {
+    const creator = await getCreatorForUpdate(client, creatorId);
+    if (creator.approval_status !== "approved") throw new Error("Creator account is not approved.");
+
+    const campaignResult = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [campaignId]);
+    const campaign = campaignResult.rows[0];
+    if (!campaign) throw new Error("Campaign was not found.");
+
+    const existingResult = await client.query<CampaignParticipation>(
+      "SELECT * FROM campaign_participations WHERE campaign_id = $1 AND creator_account_id = $2 FOR UPDATE",
+      [campaignId, creatorId],
+    );
+    const existing = existingResult.rows[0] ?? null;
+    const occupiedResult = await client.query<{ count: string }>(
+      "SELECT COUNT(*)::text AS count FROM campaign_participations WHERE campaign_id = $1 AND status <> 'cancelled'",
+      [campaignId],
+    );
+    assertCampaignCanCreateInvitation(campaign, Number(occupiedResult.rows[0]?.count || 0), existing?.status ?? null);
+
+    const saved = await client.query<CampaignParticipation>(
+      `INSERT INTO campaign_participations (campaign_id, creator_account_id, source, status, next_action, expected_reward)
+       VALUES ($1, $2, 'invitation', 'invited', 'Review campaign invitation', $3)
+       RETURNING *`,
+      [campaignId, creatorId, campaign.reward_text],
+    );
+    const participation = saved.rows[0];
+    if (!participation) throw new Error("Campaign invitation could not be created.");
+    await insertCampaignEvent(client, participation, actorUserId, null, "invitation_created", "Campaign invitation created.");
     return participation;
   });
 }

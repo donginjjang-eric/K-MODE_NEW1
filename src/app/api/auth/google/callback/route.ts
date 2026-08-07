@@ -50,7 +50,7 @@ export async function GET(request: Request) {
     let approvedCreator = false;
 
     if (creator?.approval_status === "approved") {
-      const linkedCreator = await linkCreatorAccountToUser(creator.id, user.id);
+      const linkedCreator = await linkCreatorAccountToUser(creator.id, user.id, email);
       if (linkedCreator) {
         const creatorUser = await updateUserRole(user.id, "creator");
         if (creatorUser) {

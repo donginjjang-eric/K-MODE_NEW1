@@ -1563,6 +1563,10 @@ export async function upsertCreatorAccountLink(input: {
        ON CONFLICT (creator_key) DO UPDATE
          SET display_name = creator_accounts.display_name,
              google_email = EXCLUDED.google_email,
+             user_id = CASE
+               WHEN lower(creator_accounts.google_email) = EXCLUDED.google_email THEN creator_accounts.user_id
+               ELSE NULL
+             END,
              platform = creator_accounts.platform,
              market = creator_accounts.market,
              categories = creator_accounts.categories,
@@ -1585,7 +1589,7 @@ export async function upsertCreatorAccountLink(input: {
   }
 }
 
-export async function linkCreatorAccountToUser(creatorId: string, userId: string): Promise<CreatorAccount | null> {
+export async function linkCreatorAccountToUser(creatorId: string, userId: string, email: string): Promise<CreatorAccount | null> {
   if (!hasDatabase()) {
     requireDatabaseForProduction();
     return null;
@@ -1594,9 +1598,11 @@ export async function linkCreatorAccountToUser(creatorId: string, userId: string
     `UPDATE creator_accounts
         SET user_id = $1, updated_at = now()
       WHERE id = $2
+        AND approval_status = 'approved'
+        AND lower(google_email) = $3
         AND (user_id IS NULL OR user_id = $1)
       RETURNING *`,
-    [userId, creatorId],
+    [userId, creatorId, email.trim().toLowerCase()],
   );
 }
 

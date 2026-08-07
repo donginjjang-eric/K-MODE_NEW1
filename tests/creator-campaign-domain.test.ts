@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  assertCampaignCanCreateInvitation,
   assertCampaignCanAcceptApplication,
   canTransitionParticipation,
   rankCampaignRecommendations,
@@ -70,6 +71,16 @@ test("rejects duplicate applications and campaigns that are expired or not recru
     /deadline/i,
   );
   assert.throws(() => assertCampaignCanAcceptApplication({ ...recruiting, status: "active" }, null), /recruiting/i);
+});
+
+test("creates invitations only while a recruiting campaign has an open slot and no existing participation", () => {
+  const campaign = { id: "campaign-1", status: "recruiting" as const, application_deadline: futureDeadline, slots: 2 };
+  const now = new Date("2030-01-01T00:00:00.000Z");
+
+  assert.doesNotThrow(() => assertCampaignCanCreateInvitation(campaign, 1, null, now));
+  assert.throws(() => assertCampaignCanCreateInvitation({ ...campaign, status: "active" }, 1, null, now), /recruiting/i);
+  assert.throws(() => assertCampaignCanCreateInvitation(campaign, 2, null, now), /capacity/i);
+  assert.throws(() => assertCampaignCanCreateInvitation(campaign, 0, "applied", now), /already participates/i);
 });
 
 test("converges an invitation response or an application after an invitation to matched", () => {
