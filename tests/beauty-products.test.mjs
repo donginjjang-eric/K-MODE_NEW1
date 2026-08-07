@@ -57,6 +57,7 @@ test('beauty page exposes the product board controls and module entrypoint', asy
   assert.match(html, /id="beautyProductResults"[^>]*aria-live="polite"/);
   assert.match(html, /id="beautyLoadMore"/);
   assert.match(html, /type="module" src="\/beauty-products\.js\?v=/);
+  assert.match(html, /platform\.css\?v=20260807-matching-grid/);
 });
 
 test('beauty board CSS defines matching-card hierarchy and responsive columns', async () => {
