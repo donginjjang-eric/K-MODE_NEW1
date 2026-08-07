@@ -1,13 +1,13 @@
 import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getDesignerForUser, getUserByEmail } from "./db";
-import type { Role, User } from "./types";
+import { getCreatorAccountForUser, getDesignerForUser, getUserByEmail } from "./db";
+import type { CreatorAccount, Role, User } from "./types";
 
 export const sessionCookieName = "kmodu_session";
 export const sessionMaxAgeSeconds = 60 * 60 * 24 * 30;
 
-type SessionUser = Pick<User, "id" | "email" | "role"> & { exp: number; name?: string; avatar?: string };
+export type SessionUser = Pick<User, "id" | "email" | "role"> & { exp: number; name?: string; avatar?: string };
 
 function getAuthSecret() {
   const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
@@ -121,6 +121,32 @@ export async function getApprovedDesignerForApi() {
   }
 
   return { ok: true as const, user, designer };
+}
+
+export async function requireApprovedCreator(): Promise<{ user: SessionUser; creator: CreatorAccount }> {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "creator") redirect("/login?error=creator_required");
+
+  const creator = await getCreatorAccountForUser(user.id);
+  if (!creator) redirect("/login?error=creator_required");
+  if (creator.approval_status !== "approved") redirect("/login?error=creator_approval_required");
+  return { user, creator };
+}
+
+export async function getApprovedCreatorForApi() {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "creator") {
+    return { ok: false as const, status: 401, error: "Creator authentication is required." };
+  }
+
+  const creator = await getCreatorAccountForUser(user.id);
+  if (!creator) {
+    return { ok: false as const, status: 403, error: "Creator account is required." };
+  }
+  if (creator.approval_status !== "approved") {
+    return { ok: false as const, status: 403, error: "Creator approval is required." };
+  }
+  return { ok: true as const, user, creator };
 }
 
 export async function loginUser(email: string, password: string) {

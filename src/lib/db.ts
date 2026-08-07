@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import type { QueryResultRow } from "pg";
 import { designer as phaseDesigner, modelTemplates as phaseTemplates, products as phaseProducts } from "./phase1-data";
-import type { ApprovalStatus, CollabRequest, CollabRequestStatus, CollabRequestType, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, User } from "./types";
+import type { ApprovalStatus, CollabRequest, CollabRequestStatus, CollabRequestType, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User } from "./types";
 
 let pool: Pool | null = null;
 
@@ -1187,6 +1187,61 @@ export async function getUserByEmail(email: string): Promise<(User & { password_
 
 // 같은 이메일로 제출된 미연결 디자이너 신청서를 이 사용자에 연결한다.
 // (스키마는 부팅 시 scripts/ensure-schema.mjs가 보장한다)
+export async function getCreatorAccountForUser(userId: string): Promise<CreatorAccount | null> {
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    return null;
+  }
+  try {
+    return await one<CreatorAccount>("SELECT * FROM creator_accounts WHERE user_id = $1", [userId]);
+  } catch (error) {
+    if (!canUseDemoData()) throw error;
+    return null;
+  }
+}
+
+export async function getCreatorAccountByEmail(email: string): Promise<CreatorAccount | null> {
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    return null;
+  }
+  try {
+    return await one<CreatorAccount>(
+      "SELECT * FROM creator_accounts WHERE lower(google_email) = $1",
+      [email.trim().toLowerCase()],
+    );
+  } catch (error) {
+    if (!canUseDemoData()) throw error;
+    return null;
+  }
+}
+
+export async function linkCreatorAccountToUser(creatorId: string, userId: string): Promise<CreatorAccount | null> {
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    return null;
+  }
+  return one<CreatorAccount>(
+    `UPDATE creator_accounts
+        SET user_id = $1, updated_at = now()
+      WHERE id = $2
+        AND (user_id IS NULL OR user_id = $1)
+      RETURNING *`,
+    [userId, creatorId],
+  );
+}
+
+export async function updateUserRole(userId: string, role: Role): Promise<User | null> {
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    return null;
+  }
+  return one<User>(
+    "UPDATE users SET role = $2, updated_at = now() WHERE id = $1 RETURNING id, email, role, created_at, updated_at",
+    [userId, role],
+  );
+}
+
 async function linkDesignerByEmail(userId: string, email: string): Promise<Designer | null> {
   return one<Designer>(
     `UPDATE designers

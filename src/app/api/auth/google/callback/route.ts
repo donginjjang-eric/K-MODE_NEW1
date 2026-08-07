@@ -1,7 +1,7 @@
 // 구글 로그인 콜백: state 검증 → 토큰 교환 → 사용자 조회/자동 등록 → 세션 발급
 import { cookies } from "next/headers";
 import { createSessionToken, sessionCookieName, sessionMaxAgeSeconds } from "@/lib/auth";
-import { findOrCreateGoogleUser } from "@/lib/db";
+import { findOrCreateGoogleUser, getCreatorAccountByEmail, linkCreatorAccountToUser, updateUserRole } from "@/lib/db";
 import {
   exchangeGoogleCode,
   fetchGoogleProfile,
@@ -45,9 +45,23 @@ export async function GET(request: Request) {
     }
 
     const { user, designer } = await findOrCreateGoogleUser(email);
+    const creator = await getCreatorAccountByEmail(email);
+    let sessionUser = user;
+    let approvedCreator = false;
+
+    if (creator?.approval_status === "approved") {
+      const linkedCreator = await linkCreatorAccountToUser(creator.id, user.id);
+      if (linkedCreator) {
+        const creatorUser = await updateUserRole(user.id, "creator");
+        if (creatorUser) {
+          sessionUser = creatorUser;
+          approvedCreator = true;
+        }
+      }
+    }
 
     cookieStore.set(sessionCookieName, createSessionToken({
-      ...user,
+      ...sessionUser,
       name: profile.name?.trim() || undefined,
       avatar: profile.picture?.trim() || undefined,
     }), {
@@ -63,6 +77,9 @@ export async function GET(request: Request) {
     // 로그인 성공 피드백(토스트)용 플래그
     const withWelcome = (path: string) => `${origin}${path}${path.includes("?") ? "&" : "?"}welcome=1`;
 
+    if (approvedCreator) {
+      return Response.redirect(withWelcome(dest || "/dashboard/creator"), 302);
+    }
     if (user.role === "admin") {
       return Response.redirect(withWelcome(dest || "/"), 302);
     }
