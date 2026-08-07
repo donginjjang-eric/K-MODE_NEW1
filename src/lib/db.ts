@@ -1,4 +1,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { Pool } from "pg";
 import type { QueryResultRow } from "pg";
 import { designer as phaseDesigner, modelTemplates as phaseTemplates, products as phaseProducts } from "./phase1-data";
@@ -1214,6 +1216,159 @@ export async function getCreatorAccountByEmail(email: string): Promise<CreatorAc
     if (!canUseDemoData()) throw error;
     return null;
   }
+}
+
+export type AdminCreatorAccount = CreatorAccount & {
+  is_linked: boolean;
+};
+
+type PublicCreatorSnapshot = {
+  creatorKey: string;
+  displayName: string;
+  platform: string;
+  market: string;
+  categories: string[];
+};
+
+function creatorAttribute(source: string, name: string) {
+  return source.match(new RegExp(`\\b${name}=["']([^"']*)["']`, "i"))?.[1]?.trim() || "";
+}
+
+function creatorText(source: string, selector: string) {
+  return source.match(new RegExp(`<${selector}\\b[^>]*>([\\s\\S]*?)<\\/${selector}>`, "i"))?.[1]
+    ?.replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || "";
+}
+
+function creatorKeyFromSnapshot(displayName: string, detail: string) {
+  const handle = detail.match(/@[\w.]+/)?.[0];
+  return (handle || displayName).toLowerCase().replace(/\s+/g, "-").slice(0, 120);
+}
+
+async function getPublicCreatorSnapshots(): Promise<PublicCreatorSnapshot[]> {
+  const filePath = path.join(/* turbopackIgnore: true */ process.cwd(), "creators.html");
+  const html = await readFile(filePath, "utf8");
+  const gridStart = html.indexOf('<div class="creator-grid" id="creatorGrid">');
+  const scriptStart = html.indexOf("<script>", gridStart);
+  const grid = html.slice(gridStart, scriptStart > gridStart ? scriptStart : undefined);
+  const cards = [...grid.matchAll(/<article\b([^>]*\bclass=["'][^"']*\bmarket-card\b[^"']*["'][^>]*)>([\s\S]*?)<\/article>/gi)];
+
+  return cards.map(([, attributes, body]) => {
+    const displayName = creatorText(body, "h3");
+    const detail = creatorText(body, "p");
+    const detailParts = detail.split("/").map((item) => item.trim()).filter(Boolean);
+    const categories = [...new Set([
+      ...creatorAttribute(attributes, "data-category").split(/\s+/).filter(Boolean),
+      detailParts[1],
+    ].filter(Boolean))];
+    return {
+      creatorKey: creatorKeyFromSnapshot(displayName, detail),
+      displayName,
+      platform: creatorAttribute(attributes, "data-platform"),
+      market: detailParts[0] || creatorAttribute(attributes, "data-market"),
+      categories,
+    };
+  }).filter((creator) => creator.creatorKey && creator.displayName);
+}
+
+export async function getPublicCreatorForAdmin(creatorKey: string): Promise<PublicCreatorSnapshot | null> {
+  const normalizedKey = creatorKey.trim().toLowerCase();
+  if (!normalizedKey) return null;
+  const creators = await getPublicCreatorSnapshots();
+  return creators.find((creator) => creator.creatorKey === normalizedKey) ?? null;
+}
+
+export async function getCreatorAccountsForAdmin(): Promise<AdminCreatorAccount[]> {
+  const creators = await getPublicCreatorSnapshots();
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    const now = new Date("2026-05-30T00:00:00Z").toISOString();
+    return creators.map((creator) => ({
+      id: `catalogue-${creator.creatorKey}`,
+      user_id: null,
+      creator_key: creator.creatorKey,
+      display_name: creator.displayName,
+      google_email: "",
+      approval_status: "pending",
+      platform: creator.platform,
+      market: creator.market,
+      categories: creator.categories,
+      created_at: now,
+      updated_at: now,
+      is_linked: false,
+    }));
+  }
+
+  const accounts = await query<CreatorAccount>("SELECT * FROM creator_accounts");
+  const byKey = new Map(accounts.map((account) => [account.creator_key, account]));
+  const now = new Date("2026-05-30T00:00:00Z").toISOString();
+  return creators.map((creator) => {
+    const account = byKey.get(creator.creatorKey);
+    return account ? { ...account, is_linked: true } : {
+      id: `catalogue-${creator.creatorKey}`,
+      user_id: null,
+      creator_key: creator.creatorKey,
+      display_name: creator.displayName,
+      google_email: "",
+      approval_status: "pending",
+      platform: creator.platform,
+      market: creator.market,
+      categories: creator.categories,
+      created_at: now,
+      updated_at: now,
+      is_linked: false,
+    };
+  });
+}
+
+export class CreatorAccountEmailConflictError extends Error {
+  constructor() {
+    super("Creator email is already linked.");
+    this.name = "CreatorAccountEmailConflictError";
+  }
+}
+
+export function isCreatorAccountEmailConflict(error: unknown) {
+  return error instanceof CreatorAccountEmailConflictError;
+}
+
+export async function upsertCreatorAccountLink(input: {
+  creatorKey: string;
+  displayName: string;
+  googleEmail: string;
+  platform: string;
+  market: string;
+  categories: string[];
+  approvalStatus: "approved" | "disabled";
+}): Promise<CreatorAccount> {
+  if (!hasDatabase()) throw new Error("DATABASE_URL is required for creator account linking.");
+
+  const creatorKey = input.creatorKey.trim().toLowerCase();
+  const googleEmail = input.googleEmail.trim().toLowerCase();
+  const conflict = await one<{ id: string }>(
+    "SELECT id FROM creator_accounts WHERE lower(google_email) = $1 AND creator_key <> $2 LIMIT 1",
+    [googleEmail, creatorKey],
+  );
+  if (conflict) throw new CreatorAccountEmailConflictError();
+
+  const account = await one<CreatorAccount>(
+    `INSERT INTO creator_accounts
+       (creator_key, display_name, google_email, platform, market, categories, approval_status)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)
+     ON CONFLICT (creator_key) DO UPDATE
+       SET display_name = creator_accounts.display_name,
+           google_email = EXCLUDED.google_email,
+           platform = creator_accounts.platform,
+           market = creator_accounts.market,
+           categories = creator_accounts.categories,
+           approval_status = EXCLUDED.approval_status,
+           updated_at = now()
+     RETURNING *`,
+    [creatorKey, input.displayName, googleEmail, input.platform, input.market, JSON.stringify(input.categories), input.approvalStatus],
+  );
+  if (!account) throw new Error("Creator account could not be saved.");
+  return account;
 }
 
 export async function linkCreatorAccountToUser(creatorId: string, userId: string): Promise<CreatorAccount | null> {

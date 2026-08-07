@@ -1,4 +1,5 @@
 import "../designer/studio.css";
+import "./admin.css";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getAdminPendingCounts } from "@/lib/db";

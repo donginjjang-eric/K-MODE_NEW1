@@ -1,0 +1,118 @@
+.admin-studio .admin-creator-account-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-studio .admin-creator-account-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.25fr) minmax(240px, .9fr);
+  gap: 18px;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid #e2ddd4;
+  background: #fff;
+}
+
+.admin-studio .admin-creator-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-studio .admin-creator-summary h2 {
+  margin: 0;
+  color: #171411;
+  font-size: 17px;
+}
+
+.admin-studio .admin-creator-summary p,
+.admin-studio .admin-creator-message {
+  margin: 6px 0 0;
+  color: #706a61;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-studio .admin-creator-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin: 0;
+}
+
+.admin-studio .admin-creator-meta div {
+  min-width: 0;
+}
+
+.admin-studio .admin-creator-meta dt {
+  color: #918a80;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-studio .admin-creator-meta dd {
+  overflow-wrap: anywhere;
+  margin: 4px 0 0;
+  color: #28231e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-studio .admin-creator-action {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-studio .admin-creator-action label {
+  display: grid;
+  gap: 5px;
+  color: #706a61;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-studio .admin-creator-action input {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  border: 1px solid #d8d1c7;
+  border-radius: 0;
+  padding: 0 10px;
+  background: #fff;
+  color: #171411;
+  font: inherit;
+}
+
+.admin-studio .admin-creator-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-studio .admin-creator-buttons .st-btn {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .admin-studio .admin-creator-account-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .admin-studio .admin-creator-meta {
+    gap: 12px;
+  }
+
+  .admin-studio .admin-creator-action {
+    width: 100%;
+  }
+
+  .admin-studio .admin-creator-buttons {
+    width: 100%;
+  }
+}
