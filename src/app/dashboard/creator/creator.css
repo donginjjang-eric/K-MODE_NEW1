@@ -1,0 +1,67 @@
+.creator-center {
+  --creator-cream: #f3eddf;
+  --creator-ivory: #fffdf8;
+  --creator-black: #16140f;
+  --creator-muted-gold: #b4945d;
+  --creator-teal: #177d76;
+  min-height: 100vh;
+  background: var(--creator-cream);
+  color: var(--creator-black);
+  font-family: Arial, sans-serif;
+}
+
+.creator-center *,
+.creator-center *::before,
+.creator-center *::after { box-sizing: border-box; }
+
+.creator-center a { color: inherit; text-decoration: none; }
+
+.creator-center .creator-shell { display: grid; grid-template-columns: 244px minmax(0, 1fr); min-height: 100vh; }
+
+.creator-center .creator-rail {
+  display: flex;
+  position: sticky;
+  top: 0;
+  flex-direction: column;
+  gap: 26px;
+  height: 100vh;
+  padding: 30px 18px;
+  background: var(--creator-black);
+  color: var(--creator-ivory);
+}
+
+.creator-center .creator-brand { display: inline-flex; align-items: baseline; gap: 8px; width: fit-content; }
+.creator-center .creator-brand b { font-size: 21px; font-weight: 900; letter-spacing: -.05em; }
+.creator-center .creator-brand span { color: var(--creator-muted-gold); font-size: 10px; font-weight: 800; letter-spacing: .18em; }
+
+.creator-center .creator-identity { display: flex; align-items: center; gap: 10px; padding: 13px 10px; border: 1px solid rgba(255, 253, 248, .16); border-radius: 14px; }
+.creator-center .creator-avatar { display: grid; flex: 0 0 auto; place-items: center; width: 35px; height: 35px; border-radius: 50%; background: var(--creator-muted-gold); color: var(--creator-black); font-size: 14px; font-weight: 900; }
+.creator-center .creator-identity-copy { display: grid; min-width: 0; gap: 2px; }
+.creator-center .creator-identity-copy strong,
+.creator-center .creator-identity-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.creator-center .creator-identity-copy strong { font-size: 13px; }
+.creator-center .creator-identity-copy small { color: rgba(255, 253, 248, .6); font-size: 11px; }
+
+.creator-center .creator-menu { display: grid; gap: 4px; }
+.creator-center .creator-menu a { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 12px; border-radius: 10px; color: rgba(255, 253, 248, .72); font-size: 14px; font-weight: 700; }
+.creator-center .creator-menu a:hover { background: rgba(255, 253, 248, .08); color: var(--creator-ivory); }
+.creator-center .creator-menu a.is-active { background: var(--creator-teal); color: #fff; }
+.creator-center .creator-menu .nav-svg { width: 19px; height: 19px; }
+
+.creator-center .creator-content { min-width: 0; padding: 44px clamp(24px, 5vw, 72px); background: var(--creator-ivory); }
+.creator-center .creator-mobile-top,
+.creator-center .creator-mobile-nav { display: none; }
+
+@media (max-width: 760px) {
+  .creator-center { padding-bottom: 75px; }
+  .creator-center .creator-shell { display: block; min-height: 0; }
+  .creator-center .creator-rail { display: none; }
+  .creator-center .creator-content { padding: 26px 18px; }
+  .creator-center .creator-mobile-top { display: flex; position: sticky; top: 0; z-index: 20; align-items: center; justify-content: space-between; min-height: 60px; padding: 0 18px; border-bottom: 1px solid rgba(22, 20, 15, .1); background: var(--creator-ivory); }
+  .creator-center .creator-mobile-top .creator-brand span { color: var(--creator-teal); }
+  .creator-center .creator-mobile-menu { padding: 7px 10px; border: 1px solid rgba(22, 20, 15, .15); border-radius: 999px; font-size: 12px; font-weight: 800; }
+  .creator-center .creator-mobile-nav { display: grid; position: fixed; right: 0; bottom: 0; left: 0; z-index: 30; grid-template-columns: repeat(5, minmax(0, 1fr)); min-height: 68px; border-top: 1px solid rgba(22, 20, 15, .12); background: rgba(255, 253, 248, .96); box-shadow: 0 -8px 24px rgba(22, 20, 15, .08); backdrop-filter: blur(12px); }
+  .creator-center .creator-mobile-nav a { display: grid; place-items: center; align-content: center; gap: 3px; min-width: 0; color: #7c7569; font-size: 10px; font-weight: 800; }
+  .creator-center .creator-mobile-nav a.is-active { color: var(--creator-teal); }
+  .creator-center .creator-mobile-nav .nav-svg { width: 19px; height: 19px; }
+}

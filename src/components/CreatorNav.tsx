@@ -1,0 +1,88 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import NavIcon from "@/components/NavIcons";
+import type { SessionUser } from "@/lib/auth";
+import type { CreatorAccount } from "@/lib/types";
+
+type NavItem = {
+  href: string;
+  icon: "home" | "sparkles" | "badge" | "file" | "check" | "user";
+  label: string;
+  short: string;
+};
+
+const CREATOR_NAV: NavItem[] = [
+  { href: "/dashboard/creator", icon: "home", label: "홈", short: "홈" },
+  { href: "/dashboard/creator/campaigns", icon: "sparkles", label: "추천 캠페인", short: "캠페인" },
+  { href: "/dashboard/creator/my-campaigns", icon: "badge", label: "내 미션", short: "미션" },
+  { href: "/dashboard/creator/settlement", icon: "check", label: "정산", short: "정산" },
+  { href: "/dashboard/creator/profile", icon: "user", label: "내 정보", short: "내 정보" },
+  { href: "/dashboard/creator/submissions", icon: "file", label: "제출 관리", short: "제출" },
+];
+
+type CreatorNavigationProps = {
+  creator: Pick<CreatorAccount, "display_name" | "platform">;
+  user: Pick<SessionUser, "email">;
+};
+
+function isActive(pathname: string, href: string) {
+  return href === "/dashboard/creator" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function CreatorIdentity({ creator, user }: CreatorNavigationProps) {
+  const initial = (creator.display_name || user.email || "C").trim().charAt(0).toUpperCase();
+
+  return (
+    <div className="creator-identity">
+      <span className="creator-avatar" aria-hidden="true">{initial}</span>
+      <span className="creator-identity-copy">
+        <strong>{creator.display_name}</strong>
+        <small>{creator.platform || user.email}</small>
+      </span>
+    </div>
+  );
+}
+
+export function CreatorSideNav({ creator, user }: CreatorNavigationProps) {
+  const pathname = usePathname();
+
+  return (
+    <aside className="creator-rail">
+      <Link className="creator-brand" href="/dashboard/creator" aria-label="K-MODU Creator Center 홈">
+        <b>K-MODU</b><span>CREATOR</span>
+      </Link>
+      <CreatorIdentity creator={creator} user={user} />
+      <nav className="creator-menu" aria-label="Creator Center 메뉴">
+        {CREATOR_NAV.map((item) => (
+          <Link key={item.href} href={item.href} className={isActive(pathname, item.href) ? "is-active" : ""}>
+            <NavIcon name={item.icon} />
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+export function CreatorTabBar({ creator, user }: CreatorNavigationProps) {
+  const pathname = usePathname();
+
+  return (
+    <>
+      <header className="creator-mobile-top">
+        <Link className="creator-brand" href="/dashboard/creator"><b>K-MODU</b><span>CREATOR</span></Link>
+        <Link className="creator-mobile-menu" href="/dashboard/creator/profile" aria-label={`${creator.display_name} 내 정보`}>메뉴</Link>
+      </header>
+      <nav className="creator-mobile-nav" aria-label="Creator Center 빠른 메뉴">
+        {CREATOR_NAV.slice(0, 5).map((item) => (
+          <Link key={item.href} href={item.href} className={isActive(pathname, item.href) ? "is-active" : ""}>
+            <NavIcon name={item.icon} />
+            <span>{item.short}</span>
+          </Link>
+        ))}
+      </nav>
+    </>
+  );
+}
