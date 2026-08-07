@@ -1,6 +1,6 @@
 import { hasDatabase, one, query, withDatabaseTransaction } from "./db";
 import type { DatabaseTransactionClient } from "./db";
-import type { AdminCampaignInput, AdminCampaignStatus, AdminParticipationAction, Campaign, CampaignParticipation, CreatorAccount, ParticipationStatus } from "./types";
+import type { AdminCampaignInput, AdminCampaignListItem, AdminCampaignStatus, AdminParticipationAction, Campaign, CampaignParticipation, CreatorAccount, ParticipationStatus } from "./types";
 
 export type CampaignFitCreator = Pick<CreatorAccount, "id" | "market" | "platform" | "categories">;
 export type CampaignFitCampaign = Pick<Campaign, "id" | "category" | "markets" | "platforms" | "application_deadline">;
@@ -170,23 +170,32 @@ function assertAdminCampaignStatus(status: string): asserts status is AdminCampa
   if (!ADMIN_CAMPAIGN_STATUSES.includes(status as AdminCampaignStatus)) throw new Error("Campaign status is invalid.");
 }
 
-export async function listAdminCampaigns(filters: { status?: AdminCampaignStatus; category?: string; search?: string } = {}): Promise<Campaign[]> {
+export async function listAdminCampaigns(filters: { status?: AdminCampaignStatus; category?: string; search?: string } = {}): Promise<AdminCampaignListItem[]> {
   if (!hasDatabase()) return [];
   const conditions: string[] = [];
   const params: string[] = [];
   if (filters.status) {
     params.push(filters.status);
-    conditions.push(`status = $${params.length}`);
+    conditions.push(`c.status = $${params.length}`);
   }
   if (filters.category?.trim()) {
     params.push(filters.category.trim());
-    conditions.push(`category = $${params.length}`);
+    conditions.push(`c.category = $${params.length}`);
   }
   if (filters.search?.trim()) {
     params.push(`%${filters.search.trim()}%`);
-    conditions.push(`(title ILIKE $${params.length} OR brief ILIKE $${params.length})`);
+    conditions.push(`(c.title ILIKE $${params.length} OR c.brief ILIKE $${params.length})`);
   }
-  return query<Campaign>(`SELECT * FROM campaigns${conditions.length ? ` WHERE ${conditions.join(" AND ")}` : ""} ORDER BY created_at DESC`, params);
+  return query<AdminCampaignListItem>(
+    `SELECT c.*, COUNT(p.id)::int AS application_count,
+            COUNT(p.id) FILTER (WHERE p.status = 'matched')::int AS matched_count
+       FROM campaigns c
+       LEFT JOIN campaign_participations p ON p.campaign_id = c.id
+       ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""}
+       GROUP BY c.id
+       ORDER BY c.created_at DESC`,
+    params,
+  );
 }
 
 export async function getAdminCampaign(id: string): Promise<Campaign | null> {

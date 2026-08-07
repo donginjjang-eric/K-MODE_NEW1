@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createAdminCampaign, listAdminCampaigns } from "@/lib/creator-campaigns";
-import type { AdminCampaignInput } from "@/lib/types";
+import { invalidCampaignInputResponse, parseAdminCampaignCreateInput } from "@/lib/admin-campaign-input";
 
 function campaignError(error: unknown) {
   const message = error instanceof Error ? error.message : "캠페인을 처리할 수 없습니다.";
@@ -29,12 +29,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const admin = await requireUser("admin");
   const body = await request.json().catch(() => null);
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return Response.json({ error: "캠페인 정보를 입력해 주세요." }, { status: 400 });
-  }
+  const input = parseAdminCampaignCreateInput(body);
+  if (!input) return invalidCampaignInputResponse();
 
   try {
-    const input = body as AdminCampaignInput;
     const campaign = await createAdminCampaign(admin.id, input);
     revalidatePath("/dashboard/admin/campaigns");
     revalidatePath(`/dashboard/admin/campaigns/${campaign.id}`);

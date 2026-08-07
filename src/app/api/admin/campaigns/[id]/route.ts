@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { updateAdminCampaign } from "@/lib/creator-campaigns";
-import type { AdminCampaignInput } from "@/lib/types";
+import { invalidCampaignInputResponse, parseAdminCampaignPatchInput } from "@/lib/admin-campaign-input";
 
 function campaignError(error: unknown) {
   const message = error instanceof Error ? error.message : "캠페인을 처리할 수 없습니다.";
@@ -16,12 +16,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id: campaignId } = await params;
   const body = await request.json().catch(() => null);
   if (!campaignId) return Response.json({ error: "캠페인을 찾을 수 없습니다." }, { status: 404 });
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return Response.json({ error: "수정할 캠페인 정보를 입력해 주세요." }, { status: 400 });
-  }
+  const input = parseAdminCampaignPatchInput(body);
+  if (!input) return invalidCampaignInputResponse();
 
   try {
-    const input = body as Partial<AdminCampaignInput>;
     const campaign = await updateAdminCampaign(admin.id, campaignId, input);
     revalidatePath("/dashboard/admin/campaigns");
     revalidatePath(`/dashboard/admin/campaigns/${campaignId}`);

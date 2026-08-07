@@ -42,7 +42,13 @@ Implemented and committed. Browser visual verification was blocked before the lo
 - Mobile CSS collapses form columns; the table is safely horizontally scrollable. All added selectors are scoped under `.admin-studio`.
 - No designer studio screen or API files were changed; there is no delete route.
 
+## Review fixes
+
+- `listAdminCampaigns` now returns `application_count` and `matched_count` from a grouped participation join; the list renders these values instead of hard-coded zeroes.
+- Added the minimal `/dashboard/admin/campaigns/[id]` page so the post-create redirect resolves now; Task 3 can add its operations without changing the redirect.
+- POST and PATCH now parse an allowlisted JSON shape before passing values to the domain layer. Malformed fields return a shared 400 response rather than reaching a 500 fallback.
+- Added RED/GREEN regression coverage: four focused tests pass, including the count rendering and malformed-input 400 behavior.
+
 ## Concerns
 
-- The Task 1 list interface exposes campaign records only, so application and matched columns render `0` until aggregate counts are added to that interface.
-- Local browser verification could not render `http://127.0.0.1:8010/dashboard/admin/campaigns`: both available browser surfaces returned `ERR_BLOCKED_BY_CLIENT` before loading. The production build emits existing Turbopack workspace-root/NFT tracing warnings.
+- Local browser verification could not render `http://127.0.0.1:8010/dashboard/admin/campaigns`: both available browser surfaces returned `ERR_BLOCKED_BY_CLIENT` before loading. The production build emits existing Turbopack workspace-root/NFT tracing warnings, but exited successfully.

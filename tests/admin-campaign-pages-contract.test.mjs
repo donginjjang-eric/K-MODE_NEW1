@@ -45,6 +45,9 @@ test("admin campaign list, navigation, and editor expose the required campaign w
   assert.match(nav, /href:\s*["']\/dashboard\/admin\/campaigns["']/);
   assert.match(listPage, /listAdminCampaigns/);
   assert.match(listPage, /AdminCampaignList/);
+  assert.match(list, /campaign\.application_count/);
+  assert.match(list, /campaign\.matched_count/);
+  assert.doesNotMatch(list, /<td>0<\/td><td>0<\/td>/);
   assert.match(list, /["']all["']/);
   for (const status of ["draft", "recruiting", "active", "closed"]) assert.match(list, new RegExp(`["']${status}["']`));
   for (const field of ["title", "category", "markets", "platforms", "application", "matched", "slots", "deadline", "status"]) {
@@ -59,6 +62,9 @@ test("admin campaign list, navigation, and editor expose the required campaign w
   assert.match(form, /[가-힣]/);
   assert.match(newPage, /INITIAL_STATUS\s*=\s*["']draft["']/);
   assert.match(newPage, /router\.push\(`\/dashboard\/admin\/campaigns\/\$\{campaign\.id\}`\)/);
+  const detailPage = await source("../src/app/dashboard/admin/campaigns/[id]/page.tsx");
+  assert.match(detailPage, /getAdminCampaign/);
+  assert.match(detailPage, /notFound\(\)/);
   assert.match(editPage, /getAdminCampaign/);
   assert.match(editPage, /AdminCampaignForm/);
   assert.match(css, /\.admin-studio\s+\.admin-campaign/);

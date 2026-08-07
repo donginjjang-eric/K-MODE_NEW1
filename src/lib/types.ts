@@ -66,6 +66,11 @@ export type Campaign = {
   updated_at: string;
 };
 
+export type AdminCampaignListItem = Campaign & {
+  application_count: number;
+  matched_count: number;
+};
+
 export type CampaignParticipation = {
   id: string;
   campaign_id: string;
