@@ -21,6 +21,11 @@ test("admin creator account linking keeps catalogue identity, normalizes email, 
   assert.match(db, /googleEmail\.trim\(\)\.toLowerCase\(\)/);
   assert.match(db, /ON CONFLICT \(creator_key\)/);
   assert.match(db, /DO UPDATE[\s\S]*display_name = creator_accounts\.display_name/);
+  assert.match(db, /BEGIN/);
+  assert.match(db, /pg_advisory_xact_lock\(hashtext\(\$1\)\)/);
+  assert.match(db, /COMMIT/);
+  assert.match(db, /ROLLBACK/);
+  assert.match(db, /client\.release\(\)/);
 
   assert.match(route, /await requireUser\("admin"\)/);
   assert.match(route, /creatorKey/);

@@ -1333,6 +1333,10 @@ export function isCreatorAccountEmailConflict(error: unknown) {
   return error instanceof CreatorAccountEmailConflictError;
 }
 
+function isUniqueViolation(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
+}
+
 export async function upsertCreatorAccountLink(input: {
   creatorKey: string;
   displayName: string;
@@ -1346,29 +1350,44 @@ export async function upsertCreatorAccountLink(input: {
 
   const creatorKey = input.creatorKey.trim().toLowerCase();
   const googleEmail = input.googleEmail.trim().toLowerCase();
-  const conflict = await one<{ id: string }>(
-    "SELECT id FROM creator_accounts WHERE lower(google_email) = $1 AND creator_key <> $2 LIMIT 1",
-    [googleEmail, creatorKey],
-  );
-  if (conflict) throw new CreatorAccountEmailConflictError();
+  const client = await getDb().connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [googleEmail]);
 
-  const account = await one<CreatorAccount>(
-    `INSERT INTO creator_accounts
-       (creator_key, display_name, google_email, platform, market, categories, approval_status)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)
-     ON CONFLICT (creator_key) DO UPDATE
-       SET display_name = creator_accounts.display_name,
-           google_email = EXCLUDED.google_email,
-           platform = creator_accounts.platform,
-           market = creator_accounts.market,
-           categories = creator_accounts.categories,
-           approval_status = EXCLUDED.approval_status,
-           updated_at = now()
-     RETURNING *`,
-    [creatorKey, input.displayName, googleEmail, input.platform, input.market, JSON.stringify(input.categories), input.approvalStatus],
-  );
-  if (!account) throw new Error("Creator account could not be saved.");
-  return account;
+    const conflict = await client.query<{ id: string }>(
+      "SELECT id FROM creator_accounts WHERE lower(google_email) = $1 AND creator_key <> $2 LIMIT 1",
+      [googleEmail, creatorKey],
+    );
+    if (conflict.rows[0]) throw new CreatorAccountEmailConflictError();
+
+    const saved = await client.query<CreatorAccount>(
+      `INSERT INTO creator_accounts
+         (creator_key, display_name, google_email, platform, market, categories, approval_status)
+       VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)
+       ON CONFLICT (creator_key) DO UPDATE
+         SET display_name = creator_accounts.display_name,
+             google_email = EXCLUDED.google_email,
+             platform = creator_accounts.platform,
+             market = creator_accounts.market,
+             categories = creator_accounts.categories,
+             approval_status = EXCLUDED.approval_status,
+             updated_at = now()
+       RETURNING *`,
+      [creatorKey, input.displayName, googleEmail, input.platform, input.market, JSON.stringify(input.categories), input.approvalStatus],
+    );
+    const account = saved.rows[0];
+    if (!account) throw new Error("Creator account could not be saved.");
+
+    await client.query("COMMIT");
+    return account;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    if (isUniqueViolation(error)) throw new CreatorAccountEmailConflictError();
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function linkCreatorAccountToUser(creatorId: string, userId: string): Promise<CreatorAccount | null> {
