@@ -64,3 +64,25 @@ node --test tests/admin-campaign-management-contract.test.mjs && npx.cmd tsx --e
 ```
 
 Result: exit 0; 3 contract tests and 10 domain tests passed. The new tests verify the public transition function checks the admin role, locks participation then campaign rows, inserts the event, commits on success, and rolls back when either authorization or event insertion fails.
+
+## Fix round 2: documented command compatibility
+
+### RED evidence
+
+The documented command's TypeScript leg failed without extra flags because `mock.module` is unavailable unless Node starts with `--experimental-test-module-mocks`:
+
+```text
+TypeError: mock.module is not a function
+```
+
+### GREEN evidence
+
+The transaction assertions now live in `tests/admin-campaign-transaction-runner.mjs`. The ordinary domain test launches that runner in a child process with its required Node flag, so callers need no extra flags.
+
+Command:
+
+```text
+node --test tests/admin-campaign-management-contract.test.mjs && npx.cmd tsx --test tests/admin-campaign-domain.test.ts
+```
+
+Result: exit 0; 3 contract tests and 8 domain tests passed. The domain suite's transaction-runner test completed the three mocked transaction cases: successful commit, non-admin rollback, and event-insert-failure rollback.

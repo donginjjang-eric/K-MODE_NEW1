@@ -1,67 +1,12 @@
-import { mock, test } from "node:test";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import test from "node:test";
 import assert from "node:assert/strict";
 
+import { createAdminCampaign } from "../src/lib/creator-campaigns";
 import type { AdminCampaignInput } from "../src/lib/types";
 
-type QueryResult = { rows: Array<Record<string, unknown>> };
-
-class TransactionClient {
-  calls: string[] = [];
-  eventParams: unknown[] | undefined;
-
-  constructor(private readonly role = "admin", private readonly failEvent = false) {}
-
-  async query(sql: string, params: unknown[] = []): Promise<QueryResult> {
-    if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") {
-      this.calls.push(sql);
-      return { rows: [] };
-    }
-    if (sql.includes("FROM users WHERE id")) {
-      this.calls.push("admin lock");
-      return { rows: [{ id: "admin-1", role: this.role }] };
-    }
-    if (sql.includes("FROM campaign_participations WHERE id")) {
-      this.calls.push("participation lock");
-      return { rows: [{ id: "participation-1", campaign_id: "campaign-1", status: "applied" }] };
-    }
-    if (sql.includes("FROM campaigns WHERE id")) {
-      this.calls.push("campaign lock");
-      return { rows: [{ id: "campaign-1" }] };
-    }
-    if (sql.includes("UPDATE campaign_participations")) {
-      this.calls.push("participation update");
-      return { rows: [{ id: "participation-1", campaign_id: "campaign-1", status: "matched" }] };
-    }
-    if (sql.includes("INSERT INTO campaign_events")) {
-      this.calls.push("event insert");
-      this.eventParams = params;
-      if (this.failEvent) throw new Error("event insert failed");
-      return { rows: [] };
-    }
-    throw new Error(`Unexpected query: ${sql}`);
-  }
-
-  release() {
-    this.calls.push("release");
-  }
-}
-
-let activeClient: TransactionClient | undefined;
-
-await mock.module("pg", {
-  namedExports: {
-    Pool: class {
-      async connect() {
-        if (!activeClient) throw new Error("Test transaction client was not configured.");
-        return activeClient;
-      }
-    },
-  },
-});
-
-process.env.DATABASE_URL = "postgres://test:test@localhost:5432/kmodu_test";
-
-const { createAdminCampaign, transitionParticipationAsAdmin } = await import("../src/lib/creator-campaigns");
+const execFileAsync = promisify(execFile);
 
 const validInput: AdminCampaignInput = {
   title: "Summer launch",
@@ -99,53 +44,19 @@ test("rejects an admin campaign with invalid capacity, targeting, image URLs, or
   }
 });
 
-test("transitions participation as an admin with locks, an event, and a committed transaction", async () => {
-  const client = new TransactionClient();
-  activeClient = client;
+test("runs transaction behavior checks without requiring flags on the documented command", async () => {
+  if (process.platform === "win32") {
+    await execFileAsync(
+      process.env.ComSpec ?? "cmd.exe",
+      ["/d", "/s", "/c", "npx.cmd tsx --experimental-test-module-mocks --test tests\\admin-campaign-transaction-runner.mjs"],
+      { cwd: process.cwd() },
+    );
+    return;
+  }
 
-  const participation = await transitionParticipationAsAdmin("admin-1", "participation-1", "matched", "Approved by operations");
-
-  assert.equal(participation.status, "matched");
-  assert.deepEqual(client.calls, [
-    "BEGIN",
-    "admin lock",
-    "participation lock",
-    "campaign lock",
-    "participation update",
-    "event insert",
-    "COMMIT",
-    "release",
-  ]);
-  assert.deepEqual(client.eventParams, ["participation-1", "admin-1", "admin_status_changed", "applied", "matched", "Approved by operations"]);
-});
-
-test("rejects participation transitions from a non-admin and rolls back", async () => {
-  const client = new TransactionClient("designer");
-  activeClient = client;
-
-  await assert.rejects(
-    transitionParticipationAsAdmin("designer-1", "participation-1", "matched"),
-    /Admin access is required/,
+  await execFileAsync(
+    "npx",
+    ["tsx", "--experimental-test-module-mocks", "--test", "tests/admin-campaign-transaction-runner.mjs"],
+    { cwd: process.cwd() },
   );
-  assert.deepEqual(client.calls, ["BEGIN", "admin lock", "ROLLBACK", "release"]);
-});
-
-test("rolls back a participation transition when event insertion fails", async () => {
-  const client = new TransactionClient("admin", true);
-  activeClient = client;
-
-  await assert.rejects(
-    transitionParticipationAsAdmin("admin-1", "participation-1", "matched"),
-    /event insert failed/,
-  );
-  assert.deepEqual(client.calls, [
-    "BEGIN",
-    "admin lock",
-    "participation lock",
-    "campaign lock",
-    "participation update",
-    "event insert",
-    "ROLLBACK",
-    "release",
-  ]);
 });
