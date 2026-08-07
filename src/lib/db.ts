@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
-import type { QueryResultRow } from "pg";
+import type { PoolClient, QueryResultRow } from "pg";
 import { designer as phaseDesigner, modelTemplates as phaseTemplates, products as phaseProducts } from "./phase1-data";
 import type { ApprovalStatus, CollabRequest, CollabRequestStatus, CollabRequestType, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User } from "./types";
 
@@ -36,6 +36,21 @@ export function getDb() {
   }
 
   return pool;
+}
+
+export async function withDatabaseTransaction<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
+  const client = await getDb().connect();
+  try {
+    await client.query("BEGIN");
+    const result = await operation(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function query<T extends QueryResultRow>(sql: string, params: unknown[] = []) {
