@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
 
-const capacityStatuses = ["matched", "shipping", "creating", "review", "published", "settlement"];
+const capacityStatuses = ["matched", "shipping", "creating", "review", "published", "settlement", "completed"];
 
 function campaign(status = "recruiting", slots = 2) {
   return {

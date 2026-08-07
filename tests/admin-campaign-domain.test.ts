@@ -75,9 +75,13 @@ test("only matched and active lifecycle statuses consume campaign capacity", () 
   for (const status of ["matched", "shipping", "creating", "review", "published", "settlement"]) {
     assert.equal(consumesCapacity?.(status), true, `${status} must consume a slot`);
   }
-  for (const status of ["applied", "invited", "completed", "cancelled"]) {
+  for (const status of ["applied", "invited", "cancelled"]) {
     assert.equal(consumesCapacity?.(status), false, `${status} must not consume a slot`);
   }
+});
+
+test("completed participations remain occupied after lifecycle completion", () => {
+  assert.equal(campaignDomain.participationConsumesCampaignCapacity("completed"), true);
 });
 
 test("runs transaction behavior checks without requiring flags on the documented command", async () => {

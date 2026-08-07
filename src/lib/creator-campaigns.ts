@@ -6,7 +6,7 @@ export type CampaignFitCreator = Pick<CreatorAccount, "id" | "market" | "platfor
 export type CampaignFitCampaign = Pick<Campaign, "id" | "category" | "markets" | "platforms" | "application_deadline">;
 export type RecommendedCampaign = Campaign & { fit: { score: number; reasons: string[] } };
 
-export const CAPACITY_OCCUPYING_PARTICIPATION_STATUSES: ParticipationStatus[] = ["matched", "shipping", "creating", "review", "published", "settlement"];
+export const CAPACITY_OCCUPYING_PARTICIPATION_STATUSES: ParticipationStatus[] = ["matched", "shipping", "creating", "review", "published", "settlement", "completed"];
 
 export function participationConsumesCampaignCapacity(status: string) {
   return CAPACITY_OCCUPYING_PARTICIPATION_STATUSES.includes(status as ParticipationStatus);

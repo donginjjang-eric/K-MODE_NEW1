@@ -36,3 +36,14 @@ Complete. All eight approved findings were implemented after `c94383e`, covered 
 - Transaction behavior is exercised with the repository's mocked PostgreSQL harness; no live database integration test was run.
 - Dependency installation reported 3 high-severity npm audit findings; dependency remediation was outside this fix wave.
 - Pre-existing local changes (`next-env.d.ts`, SDD progress/brief files, and `tsconfig.tsbuildinfo`) are intentionally excluded from the commit.
+
+## Residual re-review correction
+
+This correction supersedes Finding 1's earlier exclusion of `completed`: completed participants remain occupied and included in campaign matched counts. The canonical occupied status list now contains `matched`, `shipping`, `creating`, `review`, `published`, `settlement`, and `completed`; only `applied`, `invited`, and `cancelled` remain non-occupying.
+
+- TDD RED: `npx.cmd --no-install tsx --test tests/admin-campaign-domain.test.ts` reported 15 passed and 1 failed because `completed` returned `false` instead of `true`.
+- Focused GREEN: the same command reported 16 passed and 0 failed.
+- Full MJS suite: 58 passed and 0 failed.
+- Full TypeScript suite: 24 passed and 0 failed.
+- Production build: passed with Next.js 16.2.6; compiled in 4.2s, TypeScript completed in 5.2s, and 52/52 static pages generated in 301ms.
+- `git diff --check`: passed before this report append and was repeated before commit.
