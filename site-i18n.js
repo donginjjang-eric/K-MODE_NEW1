@@ -17,6 +17,7 @@
     // Shared navigation and actions
     '크리에이터 센터': ['Trung tâm nhà sáng tạo', '創作者中心', 'Creator Center'],
     '크리에이터 센터 바로가기': ['Đi đến Trung tâm nhà sáng tạo', '前往創作者中心', 'Go to Creator Center'],
+    '크리에이터 바로가기': ['Lối tắt nhà sáng tạo', '創作者捷徑', 'Creator shortcut'],
     '소개': ['Giới thiệu', '關於我們', 'About'],
     '뷰티': ['Làm đẹp', '美妝', 'Beauty'],
     '디자이너': ['Nhà thiết kế', '設計師', 'Designers'],

@@ -35,3 +35,17 @@ Complete. Added the main-page Creator Center fixed quick link at `/dashboard/cre
 
 - Not deployed. Local visual verification used `http://localhost:8011/`; publishing remains a separate task.
 - `index.html` is intentionally self-styled because it does not load `platform.css`; matching rules are retained in `platform.css` for the shared visual system.
+
+## Fix round 1
+
+- Consolidated the designer, Creator Center, and Kakao fixed links into the auth-nav injected `.quick-link-stack`; its desktop flex layout gives each sibling independent, non-overlapping geometry.
+- Removed the duplicate static Creator Center markup and the duplicate Creator Center CSS blocks from `index.html` and `platform.css`.
+- Kept the mobile safe-area bottom offset, modal/proposal/sheet hiding, and visible keyboard focus styling in the injected stack rules.
+- Replaced source-pattern assertions with behavior tests that boot the real auth navigation and i18n scripts, assert a single ordered link stack, and verify atomic Vietnamese, Traditional Chinese, and English creator title, supporting-copy, and aria-label translations.
+- RED: the replacement tests failed before the consolidation because no shared stack or injected creator link existed.
+- GREEN: `node --test tests/creator-quick-link-contract.test.mjs` passed (2/2).
+- GREEN: `npm.cmd run check:inline-scripts` passed for `index.html`, `creators.html`, and `designers.html`.
+
+### Fix round concerns
+
+- Browser verification is intentionally deferred to the controller. This fix is not deployed.

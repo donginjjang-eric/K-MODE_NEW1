@@ -7,8 +7,7 @@
 
   const ensureStudioQuickBanner = () => {
     if (window.location.pathname.startsWith(STUDIO_PATH)) {
-      document.querySelector('.studio-quick-banner')?.remove();
-      document.querySelector('.kakao-quick-banner')?.remove();
+      document.querySelector('.quick-link-stack')?.remove();
       return;
     }
 
@@ -16,12 +15,19 @@
       const style = document.createElement('style');
       style.id = 'studio-quick-banner-style';
       style.textContent = `
-        .studio-quick-banner {
+        .quick-link-stack {
           position: fixed;
           z-index: 9998;
           right: 24px;
           top: 50%;
           transform: translateY(-50%);
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 16px;
+        }
+        .quick-link-stack .studio-quick-banner {
+          position: relative;
           display: inline-flex;
           flex-direction: column;
           align-items: center;
@@ -39,19 +45,29 @@
           backdrop-filter: blur(12px);
           transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
         }
-        .kakao-quick-banner {
-          top: calc(50% + 132px);
+        .quick-link-stack .creator-quick-banner {
+          border-color: rgba(17, 24, 39, .16);
+          background: rgba(255, 255, 255, .96);
+          color: #111827;
+          box-shadow: 0 18px 44px rgba(17, 24, 39, .18);
+        }
+        .quick-link-stack .kakao-quick-banner {
+          top: auto;
           border-color: rgba(57, 40, 0, .14);
           background: #fee500;
           color: #191600;
           box-shadow: 0 18px 44px rgba(57, 40, 0, .18);
         }
-        .studio-quick-banner:hover {
-          transform: translateY(-50%) translateX(-2px);
+        .quick-link-stack .studio-quick-banner:hover {
+          transform: translateX(-2px);
           background: #050505;
           box-shadow: 0 22px 54px rgba(17, 24, 39, .3);
         }
-        .kakao-quick-banner:hover {
+        .quick-link-stack .creator-quick-banner:hover {
+          background: #fff;
+          box-shadow: 0 22px 54px rgba(17, 24, 39, .24);
+        }
+        .quick-link-stack .kakao-quick-banner:hover {
           background: #f7dc00;
           box-shadow: 0 22px 54px rgba(57, 40, 0, .25);
         }
@@ -72,6 +88,10 @@
           background: #191600;
           color: #fee500;
         }
+        .creator-quick-banner .studio-quick-banner-mark {
+          background: #111827;
+          color: #fff;
+        }
         .studio-quick-banner strong {
           display: block;
           color: #fff;
@@ -83,6 +103,9 @@
         }
         .kakao-quick-banner strong {
           color: #191600;
+        }
+        .creator-quick-banner strong {
+          color: #111827;
         }
         .studio-quick-banner span:not(.studio-quick-banner-mark) {
           display: block;
@@ -96,11 +119,28 @@
         .kakao-quick-banner span:not(.studio-quick-banner-mark) {
           color: rgba(25, 22, 0, .68);
         }
+        .creator-quick-banner span:not(.studio-quick-banner-mark) {
+          color: rgba(17, 24, 39, .62);
+        }
+        .quick-link-stack .studio-quick-banner:focus-visible {
+          outline: 3px solid currentColor;
+          outline-offset: 3px;
+        }
+        body:has(.modal.is-open) .quick-link-stack,
+        body.proposal-open .quick-link-stack,
+        body.sheet-open .quick-link-stack {
+          opacity: 0;
+          pointer-events: none;
+        }
         @media (max-width: 760px) {
-          .studio-quick-banner {
+          .quick-link-stack {
             right: 12px;
             top: auto;
-            bottom: 88px;
+            bottom: calc(24px + env(safe-area-inset-bottom));
+            transform: none;
+            gap: 10px;
+          }
+          .quick-link-stack .studio-quick-banner {
             width: auto;
             min-height: 54px;
             padding: 10px 12px;
@@ -109,10 +149,7 @@
             gap: 9px;
             transform: none;
           }
-          .kakao-quick-banner {
-            bottom: 24px;
-          }
-          .studio-quick-banner:hover {
+          .quick-link-stack .studio-quick-banner:hover {
             transform: translateY(-2px);
           }
           .studio-quick-banner-mark {
@@ -133,14 +170,25 @@
       document.head.appendChild(style);
     }
 
-    if (document.querySelector('.studio-quick-banner')) return;
+    if (document.querySelector('.quick-link-stack')) return;
+    document.querySelectorAll('.studio-quick-banner, .creator-quick-banner, .kakao-quick-banner').forEach((link) => link.remove());
+
+    const stack = document.createElement('aside');
+    stack.className = 'quick-link-stack';
 
     const banner = document.createElement('a');
     banner.className = 'studio-quick-banner';
     banner.href = STUDIO_PATH;
     banner.setAttribute('aria-label', '디자이너 스튜디오 바로가기');
     banner.innerHTML = '<span class="studio-quick-banner-mark">K</span><strong>디자이너<br>스튜디오</strong><span>Studio</span>';
-    document.body.appendChild(banner);
+    stack.appendChild(banner);
+
+    const creatorBanner = document.createElement('a');
+    creatorBanner.className = 'studio-quick-banner creator-quick-banner';
+    creatorBanner.href = '/dashboard/creator';
+    creatorBanner.setAttribute('aria-label', '크리에이터 센터 바로가기');
+    creatorBanner.innerHTML = '<span class="studio-quick-banner-mark" aria-hidden="true">K</span><strong>크리에이터 센터</strong><span class="creator-quick-banner-copy">크리에이터 바로가기</span>';
+    stack.appendChild(creatorBanner);
 
     const kakaoBanner = document.createElement('a');
     kakaoBanner.className = 'studio-quick-banner kakao-quick-banner';
@@ -151,7 +199,8 @@
       kakaoBanner.target = '_blank';
       kakaoBanner.rel = 'noopener';
     }
-    document.body.appendChild(kakaoBanner);
+    stack.appendChild(kakaoBanner);
+    document.body.appendChild(stack);
   };
 
   const computeTarget = (user, designer) => {
