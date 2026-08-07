@@ -48,3 +48,19 @@ Result: exit 0; 3 contract tests and 7 domain tests passed. `npx.cmd tsc --noEmi
 ## Concerns
 
 - Focused tests use contract checks plus input validation. They do not execute against a live PostgreSQL instance; database-side locking and rollback behavior should be covered by integration tests when database test infrastructure is available.
+
+## Fix round: transaction behavior coverage
+
+### RED evidence
+
+The domain test uses Node's `pg` module mock to run `transitionParticipationAsAdmin` through the real transaction wrapper with a controlled transaction client. With the `COMMIT` call temporarily omitted, the success-transition test failed as expected: its observed query order omitted `COMMIT` before `release`.
+
+### GREEN evidence
+
+Command:
+
+```text
+node --test tests/admin-campaign-management-contract.test.mjs && npx.cmd tsx --experimental-test-module-mocks --test tests/admin-campaign-domain.test.ts
+```
+
+Result: exit 0; 3 contract tests and 10 domain tests passed. The new tests verify the public transition function checks the admin role, locks participation then campaign rows, inserts the event, commits on success, and rolls back when either authorization or event insertion fails.
