@@ -7,6 +7,7 @@ export type CampaignFitCampaign = Pick<Campaign, "id" | "category" | "markets" |
 export type RecommendedCampaign = Campaign & { fit: { score: number; reasons: string[] } };
 
 const ACTIVE_PARTICIPATION_STATUSES: ParticipationStatus[] = ["matched", "shipping", "creating", "review", "published", "settlement"];
+const MATCHED_PARTICIPATION_STATUSES: ParticipationStatus[] = ["matched", "shipping", "creating", "review", "published", "settlement", "completed"];
 
 function normalize(value: string) {
   return value.trim().toLocaleLowerCase();
@@ -173,7 +174,7 @@ function assertAdminCampaignStatus(status: string): asserts status is AdminCampa
 export async function listAdminCampaigns(filters: { status?: AdminCampaignStatus; category?: string; search?: string } = {}): Promise<AdminCampaignListItem[]> {
   if (!hasDatabase()) return [];
   const conditions: string[] = [];
-  const params: string[] = [];
+  const params: unknown[] = [];
   if (filters.status) {
     params.push(filters.status);
     conditions.push(`c.status = $${params.length}`);
@@ -186,9 +187,11 @@ export async function listAdminCampaigns(filters: { status?: AdminCampaignStatus
     params.push(`%${filters.search.trim()}%`);
     conditions.push(`(c.title ILIKE $${params.length} OR c.brief ILIKE $${params.length})`);
   }
+  params.push(MATCHED_PARTICIPATION_STATUSES);
+  const matchedStatusParameter = params.length;
   return query<AdminCampaignListItem>(
-    `SELECT c.*, COUNT(p.id)::int AS application_count,
-            COUNT(p.id) FILTER (WHERE p.status = 'matched')::int AS matched_count
+    `SELECT c.*, COUNT(p.id) FILTER (WHERE p.source = 'application')::int AS application_count,
+            COUNT(p.id) FILTER (WHERE p.status = ANY($${matchedStatusParameter}::text[]))::int AS matched_count
        FROM campaigns c
        LEFT JOIN campaign_participations p ON p.campaign_id = c.id
        ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""}

@@ -1,31 +1,11 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { updateAdminCampaign } from "@/lib/creator-campaigns";
-import { invalidCampaignInputResponse, parseAdminCampaignPatchInput } from "@/lib/admin-campaign-input";
-
-function campaignError(error: unknown) {
-  const message = error instanceof Error ? error.message : "캠페인을 처리할 수 없습니다.";
-  if (/not found/i.test(message)) return Response.json({ error: "캠페인을 찾을 수 없습니다." }, { status: 404 });
-  if (/closed|conflict|cannot be reopened/i.test(message)) return Response.json({ error: "현재 상태에서는 캠페인을 변경할 수 없습니다." }, { status: 409 });
-  if (/required|invalid|positive|at least|before|https/i.test(message)) return Response.json({ error: "입력한 캠페인 정보를 확인해 주세요." }, { status: 400 });
-  return Response.json({ error: "캠페인을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 500 });
-}
+import { handleAdminCampaignUpdate } from "@/lib/admin-campaign-route-handlers";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const admin = await requireUser("admin");
   const { id: campaignId } = await params;
-  const body = await request.json().catch(() => null);
   if (!campaignId) return Response.json({ error: "캠페인을 찾을 수 없습니다." }, { status: 404 });
-  const input = parseAdminCampaignPatchInput(body);
-  if (!input) return invalidCampaignInputResponse();
-
-  try {
-    const campaign = await updateAdminCampaign(admin.id, campaignId, input);
-    revalidatePath("/dashboard/admin/campaigns");
-    revalidatePath(`/dashboard/admin/campaigns/${campaignId}`);
-    revalidatePath(`/dashboard/admin/campaigns/${campaignId}/edit`);
-    return Response.json({ campaign });
-  } catch (error) {
-    return campaignError(error);
-  }
+  return handleAdminCampaignUpdate(request, campaignId, { adminId: admin.id, updateAdminCampaign, revalidatePath });
 }

@@ -52,3 +52,10 @@ Implemented and committed. Browser visual verification was blocked before the lo
 ## Concerns
 
 - Local browser verification could not render `http://127.0.0.1:8010/dashboard/admin/campaigns`: both available browser surfaces returned `ERR_BLOCKED_BY_CLIENT` before loading. The production build emits existing Turbopack workspace-root/NFT tracing warnings, but exited successfully.
+
+## Review fixes — round 2
+
+- Application totals now count only participations with `source = 'application'`.
+- Matched totals include the designed post-match lifecycle statuses: `matched`, `shipping`, `creating`, `review`, `published`, `settlement`, and `completed`.
+- POST and PATCH both execute the shared injected route handlers. Handler-level tests pass malformed JSON directly to those production helpers, assert an HTTP 400 response, and assert their mutation dependency was not called.
+- RED evidence: the new handler module was absent; the prior SQL had no application-source filter and only counted the exact `matched` status. GREEN evidence: all six focused tests pass and `npm.cmd run build` exits successfully.

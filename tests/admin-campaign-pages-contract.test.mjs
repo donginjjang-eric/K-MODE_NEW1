@@ -11,19 +11,21 @@ const routeFiles = [
 ];
 
 test("admin campaign APIs guard mutations, validate input, and revalidate campaign screens", async () => {
-  const [collectionRoute, campaignRoute, statusRoute] = await Promise.all(routeFiles.map(source));
+  const [collectionRoute, campaignRoute, statusRoute, handlers] = await Promise.all([
+    ...routeFiles.map(source),
+    source("../src/lib/admin-campaign-route-handlers.js"),
+  ]);
 
   for (const route of [collectionRoute, campaignRoute, statusRoute]) {
     assert.match(route, /requireUser\(["']admin["']\)/);
-    assert.match(route, /Response\.json\([\s\S]*status:\s*400/);
-    assert.match(route, /Response\.json\([\s\S]*status:\s*404/);
-    assert.match(route, /Response\.json\([\s\S]*status:\s*409/);
-    assert.match(route, /revalidatePath\(["']\/dashboard\/admin\/campaigns["']\)/);
-    assert.match(route, /[가-힣]/);
   }
 
-  assert.match(collectionRoute, /createAdminCampaign\(admin\.id, input\)/);
-  assert.match(campaignRoute, /updateAdminCampaign\(admin\.id, campaignId, input\)/);
+  for (const status of [400, 404, 409]) assert.match(handlers, new RegExp(`status:\\s*${status}`));
+  assert.match(handlers, /revalidatePath\(["']\/dashboard\/admin\/campaigns["']\)/);
+  assert.match(handlers, /[가-힣]/);
+
+  assert.match(collectionRoute, /handleAdminCampaignCreate/);
+  assert.match(campaignRoute, /handleAdminCampaignUpdate/);
   assert.match(statusRoute, /setAdminCampaignStatus\(admin\.id, campaignId, status\)/);
   assert.match(statusRoute, /["']recruiting["']/);
   assert.match(statusRoute, /["']active["']/);
