@@ -5,14 +5,16 @@ import { readFile } from "node:fs/promises";
 const source = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("campaign operation routes remain admin guarded and delegate to tested handlers", async () => {
-  const [route, statusRoute] = await Promise.all([
+  const [route, statusRoute, campaignHandlers] = await Promise.all([
     source("../src/app/api/admin/participations/[id]/route.ts"),
     source("../src/app/api/admin/campaigns/[id]/status/route.ts"),
+    source("../src/lib/admin-campaign-route-handlers.js"),
   ]);
 
   assert.match(route, /requireUser\(["']admin["']\)/);
   assert.match(route, /handleAdminParticipationMutation/);
-  assert.match(statusRoute, /cannot transition/i);
+  assert.match(statusRoute, /campaignMutationError/);
+  assert.match(campaignHandlers, /cannot transition/i);
   assert.match(statusRoute, /revalidatePath\(["']\/dashboard\/creator["']\)/);
   assert.match(statusRoute, /revalidatePath\(["']\/dashboard\/creator\/campaigns["']\)/);
 });

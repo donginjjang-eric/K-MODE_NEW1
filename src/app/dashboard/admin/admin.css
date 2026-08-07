@@ -32,13 +32,16 @@
 
 .admin-studio .admin-campaign-table-wrap { overflow-x: auto; border: 1px solid #e2ddd4; background: #fff; }
 
-.admin-studio .admin-campaign-table-wrap table { width: 100%; min-width: 920px; border-collapse: collapse; }
+.admin-studio .admin-campaign-table-wrap table { width: 100%; min-width: 1060px; border-collapse: collapse; }
 
 .admin-studio .admin-campaign-table-wrap th,
 .admin-studio .admin-campaign-table-wrap td { border-bottom: 1px solid #eee9e1; padding: 13px 12px; text-align: left; vertical-align: top; font-size: 12px; }
 
 .admin-studio .admin-campaign-table-wrap th { color: #706a61; font-size: 11px; text-transform: uppercase; }
 .admin-studio .admin-campaign-table-wrap td:first-child a { color: #171411; font-weight: 800; }
+.admin-studio .admin-campaign-list-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 132px; }
+.admin-studio .admin-campaign-list-actions .st-btn { min-height: 34px; padding: 7px 10px; }
+.admin-studio .admin-campaign-list-actions .admin-campaign-error { flex-basis: 100%; margin: 0; font-size: 12px; }
 
 .admin-studio .admin-campaign-status { display: inline-block; padding: 4px 7px; border: 1px solid #d8d1c7; color: #706a61; font-size: 11px; font-weight: 800; }
 .admin-studio .admin-campaign-status.is-recruiting { border-color: #83b898; color: #287747; }
@@ -75,6 +78,8 @@
 .admin-studio .admin-campaign-operation-data { display: grid; gap: 8px; margin: 0; }
 .admin-studio .admin-campaign-operation-data div { display: grid; gap: 4px; }
 .admin-studio .admin-campaign-operation-data dd { display: grid; gap: 3px; margin: 0; color: #514a43; font-size: 12px; overflow-wrap: anywhere; }
+.admin-studio .admin-campaign-submission-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.admin-studio .admin-campaign-submission-links a { color: #28645a; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .admin-studio .admin-campaign-invite { margin-top: 4px; }
 .admin-studio .admin-campaign-invite label { display: grid; gap: 7px; color: #514a43; font-size: 12px; font-weight: 800; }
 .admin-studio .admin-campaign-invite-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #eee9e1; padding-top: 12px; }

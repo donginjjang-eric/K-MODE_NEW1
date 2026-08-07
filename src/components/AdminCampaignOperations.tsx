@@ -4,20 +4,30 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminCreatorAccount } from "@/lib/db";
 import type { AdminCampaignParticipant } from "@/lib/creator-campaigns";
-import type { CampaignStatus, ParticipationStatus } from "@/lib/types";
+import { adminCampaignOperationMessage, safeHttpsUrl } from "@/lib/admin-campaign-ui";
+import type { AdminParticipationAction, CampaignStatus, ContentSubmission, ParticipationStatus } from "@/lib/types";
 
-const ACTIONS: Record<ParticipationStatus, Array<{ action: string; label: string }>> = {
-  applied: [{ action: "matched", label: "Approve" }, { action: "cancelled", label: "Reject" }],
-  invited: [{ action: "matched", label: "Mark accepted" }, { action: "cancelled", label: "Cancel invitation" }],
-  matched: [{ action: "shipping", label: "Start shipping" }, { action: "cancelled", label: "Cancel" }],
-  shipping: [{ action: "creating", label: "Start creating" }, { action: "cancelled", label: "Cancel" }],
-  creating: [{ action: "review", label: "Request review" }, { action: "cancelled", label: "Cancel" }],
-  review: [{ action: "creating", label: "Request revision" }, { action: "published", label: "Approve publication" }, { action: "cancelled", label: "Cancel" }],
-  published: [{ action: "settlement", label: "Start settlement" }, { action: "cancelled", label: "Cancel" }],
-  settlement: [{ action: "completed", label: "Complete" }, { action: "cancelled", label: "Cancel" }],
+const ACTIONS: Record<ParticipationStatus, Array<{ action: AdminParticipationAction; label: string }>> = {
+  applied: [{ action: "approve", label: "신청 승인" }, { action: "reject", label: "신청 거절" }],
+  invited: [{ action: "cancel", label: "초대 취소" }],
+  matched: [{ action: "shipping", label: "배송 시작" }, { action: "cancel", label: "참여 취소" }],
+  shipping: [{ action: "creating", label: "제작 시작" }, { action: "cancel", label: "참여 취소" }],
+  creating: [{ action: "review", label: "검수 요청" }, { action: "cancel", label: "참여 취소" }],
+  review: [{ action: "creating", label: "수정 요청" }, { action: "published", label: "게시 승인" }, { action: "cancel", label: "참여 취소" }],
+  published: [{ action: "settlement", label: "정산 시작" }, { action: "cancel", label: "참여 취소" }],
+  settlement: [{ action: "completed", label: "완료 처리" }, { action: "cancel", label: "참여 취소" }],
   completed: [],
   cancelled: [],
 };
+
+function SubmissionLinks({ submission }: { submission: ContentSubmission }) {
+  const contentUrl = safeHttpsUrl(submission.content_url);
+  const publishedUrl = safeHttpsUrl(submission.published_url);
+  return <span className="admin-campaign-submission-links">
+    {contentUrl ? <a href={contentUrl} rel="noopener noreferrer" target="_blank">제출 콘텐츠</a> : <span>제출 링크를 확인할 수 없습니다.</span>}
+    {submission.published_url ? publishedUrl ? <a href={publishedUrl} rel="noopener noreferrer" target="_blank">게시 콘텐츠</a> : <span>게시 링크를 확인할 수 없습니다.</span> : null}
+  </span>;
+}
 
 export default function AdminCampaignOperations({ campaignId, campaignStatus, participants, creators }: {
   campaignId: string;
@@ -41,7 +51,8 @@ export default function AdminCampaignOperations({ campaignId, campaignStatus, pa
     const result = response ? await response.json().catch(() => ({})) : {};
     setBusyId("");
     if (!response?.ok) {
-      setMessage(typeof result.error === "string" ? result.error : "The operation could not be completed. Refresh and try again.");
+      const code = typeof result.code === "string" ? result.code : response ? "" : "network_error";
+      setMessage(adminCampaignOperationMessage({ status: response?.status ?? 0, code }));
       return;
     }
     setNote("");
@@ -55,7 +66,8 @@ export default function AdminCampaignOperations({ campaignId, campaignStatus, pa
     const result = response ? await response.json().catch(() => ({})) : {};
     setBusyId("");
     if (!response?.ok) {
-      setMessage(typeof result.error === "string" ? result.error : "The invitation could not be sent. Refresh and try again.");
+      const code = typeof result.code === "string" ? result.code : response ? "" : "network_error";
+      setMessage(adminCampaignOperationMessage({ status: response?.status ?? 0, code }));
       return;
     }
     router.refresh();
@@ -69,7 +81,7 @@ export default function AdminCampaignOperations({ campaignId, campaignStatus, pa
       {participants.map((participant) => <article className="admin-campaign-participant" key={participant.id}>
         <header><div><h3>{participant.creator_display_name}</h3><p>{participant.creator_platform} · {participant.creator_market} · {participant.source}</p></div><span className={`admin-campaign-status is-${participant.status}`}>{participant.status}</span></header>
         <p>Next action: {participant.next_action || "-"} · Settlement: {participant.settlement_status}</p>
-        <dl className="admin-campaign-operation-data"><div><dt>Submissions</dt><dd>{participant.submissions.length ? participant.submissions.map((submission) => <span key={submission.id}>v{submission.version} {submission.status}: {submission.review_note || "No review note"}</span>) : "None"}</dd></div><div><dt>Performance</dt><dd>{participant.performance ? `${participant.performance.views} views · ${participant.performance.orders} orders · ${participant.performance.revenue} ${participant.performance.currency}` : "Not reported"}</dd></div><div><dt>Timeline</dt><dd>{participant.events.length ? participant.events.map((event) => <span key={event.id}>{event.message}</span>) : "No activity"}</dd></div></dl>
+        <dl className="admin-campaign-operation-data"><div><dt>Submissions</dt><dd>{participant.submissions.length ? participant.submissions.map((submission) => <span key={submission.id}>v{submission.version} {submission.status}: {submission.review_note || "No review note"}<SubmissionLinks submission={submission} /></span>) : "None"}</dd></div><div><dt>Performance</dt><dd>{participant.performance ? `${participant.performance.views} views · ${participant.performance.orders} orders · ${participant.performance.revenue} ${participant.performance.currency}` : "Not reported"}</dd></div><div><dt>Timeline</dt><dd>{participant.events.length ? participant.events.map((event) => <span key={event.id}>{event.message}</span>) : "No activity"}</dd></div></dl>
         <div className="admin-campaign-form-actions">{ACTIONS[participant.status].map(({ action, label }) => <button className="st-btn" disabled={Boolean(busyId)} key={action} onClick={() => request(`/api/admin/participations/${participant.id}`, { action, note }, participant.id)} type="button">{busyId === participant.id ? "Saving…" : label}</button>)}</div>
       </article>)}
       {!participants.length ? <p>No applications or invitations yet.</p> : null}

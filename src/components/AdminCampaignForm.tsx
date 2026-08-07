@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { adminCampaignOperationMessage } from "@/lib/admin-campaign-ui";
 import type { Campaign } from "@/lib/types";
 
 const MARKET_OPTIONS = ["한국", "일본", "미국", "글로벌"];
@@ -14,11 +15,6 @@ type AdminCampaignFormProps = {
   redirectTo?: string;
   onSuccess?: (campaign: Campaign) => void;
 };
-
-function koreanError(message: string) {
-  if (/required|invalid|positive|at least|before|https/i.test(message)) return "입력한 내용을 확인해 주세요. 필수 항목과 마감일, HTTPS 이미지 주소를 다시 확인해 주세요.";
-  return message || "저장하지 못했습니다. 잠시 후 다시 시도해 주세요.";
-}
 
 export default function AdminCampaignForm({ campaign, endpoint, method, redirectTo, onSuccess }: AdminCampaignFormProps) {
   const router = useRouter();
@@ -47,8 +43,14 @@ export default function AdminCampaignForm({ campaign, endpoint, method, redirect
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
     setError("");
+    const applicationDeadline = new Date(values.application_deadline).getTime();
+    const contentDeadline = new Date(values.content_deadline).getTime();
+    if (!Number.isFinite(applicationDeadline) || !Number.isFinite(contentDeadline) || applicationDeadline >= contentDeadline) {
+      setError("신청 마감은 콘텐츠 마감보다 빠른 날짜와 시간으로 입력해 주세요.");
+      return;
+    }
+    setBusy(true);
     const imageUrl = values.image_url.trim();
     const response = await fetch(endpoint, {
       method,
@@ -61,15 +63,16 @@ export default function AdminCampaignForm({ campaign, endpoint, method, redirect
         brief: values.brief,
         reward_text: values.reward_text,
         slots: Number(values.slots),
-        application_deadline: values.application_deadline || null,
-        content_deadline: values.content_deadline || null,
+        application_deadline: values.application_deadline,
+        content_deadline: values.content_deadline,
         image_urls: imageUrl ? [imageUrl] : [],
       }),
     }).catch(() => null);
     const result = response ? await response.json().catch(() => ({})) : {};
     setBusy(false);
     if (!response?.ok) {
-      setError(koreanError(typeof result.error === "string" ? result.error : ""));
+      const code = typeof result.code === "string" ? result.code : response ? "" : "network_error";
+      setError(adminCampaignOperationMessage({ status: response?.status ?? 0, code }));
       return;
     }
     const saved = result.campaign as Campaign;
@@ -90,8 +93,8 @@ export default function AdminCampaignForm({ campaign, endpoint, method, redirect
       <div className="admin-campaign-form-grid">
         <label>리워드<input name="reward" value={values.reward_text} onChange={(event) => setValues({ ...values, reward_text: event.target.value })} required /></label>
         <label>모집 인원<input name="slots" type="number" min="1" value={values.slots} onChange={(event) => setValues({ ...values, slots: event.target.value })} required /></label>
-        <label>신청 마감<input name="application_deadline" type="datetime-local" value={values.application_deadline} onChange={(event) => setValues({ ...values, application_deadline: event.target.value })} /></label>
-        <label>콘텐츠 마감<input name="content_deadline" type="datetime-local" value={values.content_deadline} onChange={(event) => setValues({ ...values, content_deadline: event.target.value })} /></label>
+        <label>신청 마감<input name="application_deadline" type="datetime-local" max={values.content_deadline || undefined} value={values.application_deadline} onChange={(event) => setValues({ ...values, application_deadline: event.target.value })} required /></label>
+        <label>콘텐츠 마감<input name="content_deadline" type="datetime-local" min={values.application_deadline || undefined} value={values.content_deadline} onChange={(event) => setValues({ ...values, content_deadline: event.target.value })} required /></label>
       </div>
       <label>대표 이미지 URL (선택, HTTPS)<input name="image" type="url" inputMode="url" placeholder="https://" value={values.image_url} onChange={(event) => setValues({ ...values, image_url: event.target.value })} /></label>
       {error ? <p className="admin-campaign-error" role="alert" aria-live="polite">{error}</p> : null}

@@ -15,7 +15,7 @@ test("campaign list renders domain-provided application and matched counts inste
   assert.match(list, /campaign\.matched_count/);
   assert.doesNotMatch(list, /<td>0<\/td><td>0<\/td>/);
   assert.match(domain, /p\.source = 'application'/);
-  assert.match(domain, /MATCHED_PARTICIPATION_STATUSES/);
+  assert.match(domain, /CAPACITY_OCCUPYING_PARTICIPATION_STATUSES/);
   assert.match(domain, /p\.status = ANY\(\$\d+::text\[\]\)/);
 });
 
@@ -27,6 +27,8 @@ test("malformed campaign JSON is rejected with 400 before a domain mutation", as
     platforms: ["Instagram"],
     brief: "Brief",
     reward_text: "Reward",
+    application_deadline: "2026-09-01T00:00:00.000Z",
+    content_deadline: "2026-09-15T00:00:00.000Z",
     slots: 5,
   };
 

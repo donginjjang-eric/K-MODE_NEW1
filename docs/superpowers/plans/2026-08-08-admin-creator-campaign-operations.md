@@ -251,4 +251,3 @@ git commit -m "test: verify admin creator campaign operations"
 - [ ] **Step 5: Push and deploy exact source to Railway production**
 
 Push `codex/creator-action-center`, deploy the exact committed source to project `overflowing-quietude`, environment `production`, service `k-modu`, then verify deployment status, startup logs, schema application, live PC/mobile pages, and console output.
-

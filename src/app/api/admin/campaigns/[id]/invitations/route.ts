@@ -5,13 +5,13 @@ import { createCampaignInvitation } from "@/lib/creator-campaigns";
 function invitationCreationError(error: unknown) {
   const message = error instanceof Error ? error.message : "Campaign invitation could not be created.";
   if (/campaign was not found|creator account was not found|creator account is not approved/i.test(message)) {
-    return Response.json({ code: "not_found", error: "Campaign or creator was not found." }, { status: 404 });
+    return Response.json({ code: "not_found", error: "캠페인 또는 승인된 크리에이터를 찾을 수 없습니다." }, { status: 404 });
   }
-  if (/not recruiting|deadline|capacity|already participates/i.test(message)) {
-    return Response.json({ code: "invalid_state", error: message }, { status: 409 });
-  }
+  if (/capacity/i.test(message)) return Response.json({ code: "capacity_full", error: "모집 인원이 모두 확정되어 초대할 수 없습니다." }, { status: 409 });
+  if (/already participates/i.test(message)) return Response.json({ code: "already_participating", error: "이미 이 캠페인에 참여 중인 크리에이터입니다." }, { status: 409 });
+  if (/not recruiting|deadline/i.test(message)) return Response.json({ code: "invalid_state", error: "모집 중이고 신청 마감 전인 캠페인에서만 초대할 수 있습니다." }, { status: 409 });
   console.error("[admin-campaign-invitation] create failed:", error);
-  return Response.json({ code: "server_error", error: "Campaign invitation could not be created." }, { status: 500 });
+  return Response.json({ code: "server_error", error: "초대를 보내지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 500 });
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     : "";
 
   if (!campaignId || !creatorId) {
-    return Response.json({ code: "invalid_request", error: "Campaign and creator are required." }, { status: 400 });
+    return Response.json({ code: "invalid_request", error: "캠페인과 크리에이터를 선택해 주세요." }, { status: 400 });
   }
 
   try {

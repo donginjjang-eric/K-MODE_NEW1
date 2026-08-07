@@ -6,8 +6,11 @@ export type CampaignFitCreator = Pick<CreatorAccount, "id" | "market" | "platfor
 export type CampaignFitCampaign = Pick<Campaign, "id" | "category" | "markets" | "platforms" | "application_deadline">;
 export type RecommendedCampaign = Campaign & { fit: { score: number; reasons: string[] } };
 
-const ACTIVE_PARTICIPATION_STATUSES: ParticipationStatus[] = ["matched", "shipping", "creating", "review", "published", "settlement"];
-const MATCHED_PARTICIPATION_STATUSES: ParticipationStatus[] = ["matched", "shipping", "creating", "review", "published", "settlement", "completed"];
+export const CAPACITY_OCCUPYING_PARTICIPATION_STATUSES: ParticipationStatus[] = ["matched", "shipping", "creating", "review", "published", "settlement"];
+
+export function participationConsumesCampaignCapacity(status: string) {
+  return CAPACITY_OCCUPYING_PARTICIPATION_STATUSES.includes(status as ParticipationStatus);
+}
 
 function normalize(value: string) {
   return value.trim().toLocaleLowerCase();
@@ -125,6 +128,31 @@ async function getCreatorForUpdate(client: DatabaseTransactionClient, creatorId:
   return result.rows[0];
 }
 
+function resolveAdminParticipationAction(fromStatus: ParticipationStatus, action: AdminParticipationAction): ParticipationStatus {
+  if (action === "approve") {
+    if (fromStatus === "invited") throw new Error("Creator must accept invitations themselves.");
+    if (fromStatus !== "applied") throw new Error(`Cannot transition participation from ${fromStatus} with approve.`);
+    return "matched";
+  }
+  if (action === "reject") {
+    if (fromStatus !== "applied") throw new Error(`Cannot transition participation from ${fromStatus} with reject.`);
+    return "cancelled";
+  }
+  return action === "cancel" ? "cancelled" : action;
+}
+
+async function getCampaignOccupiedSlots(client: DatabaseTransactionClient, campaignId: string) {
+  const result = await client.query<{ count: string }>(
+    "SELECT COUNT(*)::text AS count FROM campaign_participations WHERE campaign_id = $1 AND status = ANY($2::text[])",
+    [campaignId, CAPACITY_OCCUPYING_PARTICIPATION_STATUSES],
+  );
+  return Number(result.rows[0]?.count || 0);
+}
+
+function assertCampaignHasCapacity(campaign: Pick<Campaign, "slots">, occupiedSlots: number) {
+  if (occupiedSlots >= campaign.slots) throw new Error("Campaign is at capacity.");
+}
+
 const ADMIN_CAMPAIGN_STATUSES: AdminCampaignStatus[] = ["draft", "recruiting", "active", "closed"];
 
 function assertNonEmpty(value: string, field: string) {
@@ -141,7 +169,10 @@ function assertHttpsImageUrls(imageUrls: string[]) {
   }
 }
 
-function assertValidAdminCampaignInput(input: AdminCampaignInput) {
+function assertValidAdminCampaignInput(input: Omit<AdminCampaignInput, "application_deadline" | "content_deadline"> & {
+  application_deadline: string | null | undefined;
+  content_deadline: string | null | undefined;
+}) {
   assertNonEmpty(input.title, "Campaign title");
   assertNonEmpty(input.category, "Campaign category");
   assertNonEmpty(input.brief, "Campaign brief");
@@ -151,11 +182,13 @@ function assertValidAdminCampaignInput(input: AdminCampaignInput) {
   if (!input.platforms.some((platform) => platform.trim())) throw new Error("At least one platform is required.");
   assertHttpsImageUrls(input.image_urls ?? []);
 
-  const applicationDeadline = input.application_deadline ? new Date(input.application_deadline) : null;
-  const contentDeadline = input.content_deadline ? new Date(input.content_deadline) : null;
-  if (applicationDeadline && Number.isNaN(applicationDeadline.getTime())) throw new Error("Application deadline is invalid.");
-  if (contentDeadline && Number.isNaN(contentDeadline.getTime())) throw new Error("Content deadline is invalid.");
-  if (applicationDeadline && contentDeadline && applicationDeadline >= contentDeadline) {
+  if (!input.application_deadline?.trim()) throw new Error("Application deadline is required.");
+  if (!input.content_deadline?.trim()) throw new Error("Content deadline is required.");
+  const applicationDeadline = new Date(input.application_deadline);
+  const contentDeadline = new Date(input.content_deadline);
+  if (Number.isNaN(applicationDeadline.getTime())) throw new Error("Application deadline is invalid.");
+  if (Number.isNaN(contentDeadline.getTime())) throw new Error("Content deadline is invalid.");
+  if (applicationDeadline >= contentDeadline) {
     throw new Error("Application deadline must be before content deadline.");
   }
 }
@@ -187,7 +220,7 @@ export async function listAdminCampaigns(filters: { status?: AdminCampaignStatus
     params.push(`%${filters.search.trim()}%`);
     conditions.push(`(c.title ILIKE $${params.length} OR c.brief ILIKE $${params.length})`);
   }
-  params.push(MATCHED_PARTICIPATION_STATUSES);
+  params.push(CAPACITY_OCCUPYING_PARTICIPATION_STATUSES);
   const matchedStatusParameter = params.length;
   return query<AdminCampaignListItem>(
     `SELECT c.*, COUNT(p.id) FILTER (WHERE p.source = 'application')::int AS application_count,
@@ -256,7 +289,7 @@ export async function getAdminCampaign(id: string): Promise<AdminCampaignDetail 
       events: eventsByParticipation.get(participant.id) ?? [],
     })),
     application_count: participants.filter((participant) => participant.source === "application").length,
-    occupied_count: participants.filter((participant) => participant.status !== "cancelled").length,
+    occupied_count: participants.filter((participant) => participationConsumesCampaignCapacity(participant.status)).length,
   };
 }
 
@@ -282,8 +315,15 @@ export async function updateAdminCampaign(adminId: string, id: string, input: Pa
     const current = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [id]);
     const campaign = current.rows[0];
     if (!campaign) throw new Error("Campaign was not found.");
+    if (campaign.status !== "draft" && campaign.status !== "recruiting") {
+      throw new Error("Only draft or recruiting campaigns can be edited.");
+    }
     const next = { ...campaign, ...input, image_urls: input.image_urls ?? campaign.image_urls };
     assertValidAdminCampaignInput(next);
+    if (next.slots < campaign.slots) {
+      const occupiedSlots = await getCampaignOccupiedSlots(client, id);
+      if (next.slots < occupiedSlots) throw new Error("Campaign slots cannot be reduced below occupied capacity.");
+    }
     const result = await client.query<Campaign>(
       `UPDATE campaigns
           SET title = $2, category = $3, markets = $4::jsonb, platforms = $5::jsonb, brief = $6, reward_text = $7,
@@ -327,15 +367,20 @@ export async function transitionParticipationAsAdmin(adminId: string, participat
     const participation = current.rows[0];
     if (!participation) throw new Error("Campaign participation was not found.");
     const campaignResult = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [participation.campaign_id]);
-    if (!campaignResult.rows[0]) throw new Error("Campaign was not found.");
-    assertTransition(participation.status, action);
+    const campaign = campaignResult.rows[0];
+    if (!campaign) throw new Error("Campaign was not found.");
+    const nextStatus = resolveAdminParticipationAction(participation.status, action);
+    assertTransition(participation.status, nextStatus);
+    if (!participationConsumesCampaignCapacity(participation.status) && participationConsumesCampaignCapacity(nextStatus)) {
+      assertCampaignHasCapacity(campaign, await getCampaignOccupiedSlots(client, participation.campaign_id));
+    }
     const result = await client.query<CampaignParticipation>(
       "UPDATE campaign_participations SET status = $2, updated_at = now() WHERE id = $1 RETURNING *",
-      [participationId, action],
+      [participationId, nextStatus],
     );
     const updated = result.rows[0];
     if (!updated) throw new Error("Campaign participation could not be updated.");
-    await insertCampaignEvent(client, updated, adminId, participation.status, "admin_status_changed", note?.trim() || `Status changed to ${action}.`);
+    await insertCampaignEvent(client, updated, adminId, participation.status, "admin_status_changed", note?.trim() || `Status changed to ${nextStatus}.`);
     return updated;
   });
 }
@@ -376,7 +421,7 @@ export async function getCreatorActionSummary(creatorId: string): Promise<Creato
         COUNT(*) FILTER (WHERE status = 'completed')::text AS completed
        FROM campaign_participations
        WHERE creator_account_id = $1`,
-      [creatorId, ACTIVE_PARTICIPATION_STATUSES],
+      [creatorId, CAPACITY_OCCUPYING_PARTICIPATION_STATUSES],
     ),
   ]);
   return {
@@ -405,7 +450,7 @@ export async function getCreatorCampaignActivity(creatorId: string): Promise<Cre
         AND p.status = ANY($2::text[])
       ORDER BY p.updated_at DESC
       LIMIT 4`,
-    [creatorId, ACTIVE_PARTICIPATION_STATUSES],
+    [creatorId, CAPACITY_OCCUPYING_PARTICIPATION_STATUSES],
   );
 }
 
@@ -444,6 +489,9 @@ export async function applyToCampaign(creatorId: string, campaignId: string): Pr
     const existing = existingResult.rows[0] ?? null;
     assertCampaignCanAcceptApplication(campaign, existing?.status ?? null);
     const nextStatus = resolveApplicationStatus(existing?.status ?? null);
+    if (!participationConsumesCampaignCapacity(existing?.status ?? "") && participationConsumesCampaignCapacity(nextStatus)) {
+      assertCampaignHasCapacity(campaign, await getCampaignOccupiedSlots(client, campaignId));
+    }
     const participationResult = existing
       ? await client.query<CampaignParticipation>(
         `UPDATE campaign_participations SET status = $3, next_action = 'Campaign matched', updated_at = now()
@@ -477,11 +525,8 @@ export async function createCampaignInvitation(actorUserId: string, campaignId: 
       [campaignId, creatorId],
     );
     const existing = existingResult.rows[0] ?? null;
-    const occupiedResult = await client.query<{ count: string }>(
-      "SELECT COUNT(*)::text AS count FROM campaign_participations WHERE campaign_id = $1 AND status <> 'cancelled'",
-      [campaignId],
-    );
-    assertCampaignCanCreateInvitation(campaign, Number(occupiedResult.rows[0]?.count || 0), existing?.status ?? null);
+    const occupiedSlots = await getCampaignOccupiedSlots(client, campaignId);
+    assertCampaignCanCreateInvitation(campaign, occupiedSlots, existing?.status ?? null);
 
     const saved = await client.query<CampaignParticipation>(
       `INSERT INTO campaign_participations (campaign_id, creator_account_id, source, status, next_action, expected_reward)
@@ -506,6 +551,12 @@ export async function respondToInvitation(creatorId: string, participationId: st
     const participation = current.rows[0];
     if (!participation) throw new Error("Invitation was not found.");
     const nextStatus = resolveInvitationResponseStatus(participation.status, accept);
+    if (accept) {
+      const campaignResult = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [participation.campaign_id]);
+      const campaign = campaignResult.rows[0];
+      if (!campaign) throw new Error("Campaign was not found.");
+      assertCampaignHasCapacity(campaign, await getCampaignOccupiedSlots(client, participation.campaign_id));
+    }
     const saved = await client.query<CampaignParticipation>(
       `UPDATE campaign_participations SET status = $3, next_action = $4, updated_at = now()
         WHERE id = $1 AND creator_account_id = $2 RETURNING *`,

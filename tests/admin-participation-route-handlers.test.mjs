@@ -32,26 +32,48 @@ test("invalid participation payload returns 400 without mutating or revalidating
   assert.equal(revalidations, 0);
 });
 
-test("not-found and illegal-state mutations map to 404 and 409 without revalidation", async () => {
-  for (const [message, expectedStatus] of [["Campaign participation was not found.", 404], ["Cannot transition participation from completed to matched.", 409]]) {
+test("raw target statuses are rejected in favor of semantic admin actions", async () => {
+  for (const action of ["matched", "cancelled"]) {
+    let mutations = 0;
+    const response = await handleAdminParticipationMutation(request({ action }), "participation-1", dependencies({
+      transitionParticipationAsAdmin: async () => { mutations += 1; throw new Error("must not run"); },
+    }));
+
+    assert.equal(response.status, 400);
+    assert.equal(mutations, 0);
+  }
+});
+
+test("not-found and illegal-state mutations map to safe Korean errors without revalidation", async () => {
+  for (const [message, expectedStatus, expectedCode] of [["Campaign participation was not found.", 404, "not_found"], ["Cannot transition participation from completed to matched.", 409, "invalid_state"]]) {
     let revalidations = 0;
-    const response = await handleAdminParticipationMutation(request({ action: "matched" }), "participation-1", dependencies({
+    const response = await handleAdminParticipationMutation(request({ action: "approve" }), "participation-1", dependencies({
       transitionParticipationAsAdmin: async () => { throw new Error(message); },
       revalidatePath: () => { revalidations += 1; },
     }));
+    const body = await response.json();
 
     assert.equal(response.status, expectedStatus);
+    assert.equal(body.code, expectedCode);
+    assert.match(body.error, /[가-힣]/u);
+    assert.notEqual(body.error, message);
     assert.equal(revalidations, 0);
   }
 });
 
 test("successful participation mutation revalidates admin and all affected creator routes", async () => {
   const paths = [];
-  const response = await handleAdminParticipationMutation(request({ action: "matched", note: "Approved" }), "participation-1", dependencies({
+  let receivedAction;
+  const response = await handleAdminParticipationMutation(request({ action: "approve", note: "Approved" }), "participation-1", dependencies({
+    transitionParticipationAsAdmin: async (_adminId, _participationId, action) => {
+      receivedAction = action;
+      return { id: "participation-1", campaign_id: "campaign-1", status: "matched" };
+    },
     revalidatePath: (path) => paths.push(path),
   }));
 
   assert.equal(response.status, 200);
+  assert.equal(receivedAction, "approve");
   assert.deepEqual(paths, [
     "/dashboard/admin/campaigns",
     "/dashboard/admin/campaigns/campaign-1",

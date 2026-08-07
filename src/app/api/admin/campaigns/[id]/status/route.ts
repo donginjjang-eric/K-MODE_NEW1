@@ -1,26 +1,19 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { setAdminCampaignStatus } from "@/lib/creator-campaigns";
+import { campaignMutationError } from "@/lib/admin-campaign-route-handlers";
 import type { AdminCampaignStatus } from "@/lib/types";
 
 const VALID_STATUSES = new Set<AdminCampaignStatus>(["recruiting", "active", "closed"]);
-
-function campaignError(error: unknown) {
-  const message = error instanceof Error ? error.message : "캠페인을 처리할 수 없습니다.";
-  if (/not found/i.test(message)) return Response.json({ error: "캠페인을 찾을 수 없습니다." }, { status: 404 });
-  if (/closed|conflict|cannot transition|cannot be reopened/i.test(message)) return Response.json({ error: "현재 상태에서는 해당 캠페인 상태로 변경할 수 없습니다." }, { status: 409 });
-  if (/required|invalid|positive|at least|before|https/i.test(message)) return Response.json({ error: "변경할 상태를 확인해 주세요." }, { status: 400 });
-  return Response.json({ error: "캠페인 상태를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 500 });
-}
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const admin = await requireUser("admin");
   const { id: campaignId } = await params;
   const body = await request.json().catch(() => null);
   const status = body && typeof body === "object" && !Array.isArray(body) ? (body as { status?: AdminCampaignStatus }).status : undefined;
-  if (!campaignId) return Response.json({ error: "캠페인을 찾을 수 없습니다." }, { status: 404 });
+  if (!campaignId) return Response.json({ code: "not_found", error: "캠페인을 찾을 수 없습니다." }, { status: 404 });
   if (!status || !VALID_STATUSES.has(status as AdminCampaignStatus)) {
-    return Response.json({ error: "모집, 진행, 마감 중 하나의 상태를 선택해 주세요." }, { status: 400 });
+    return Response.json({ code: "invalid_request", error: "모집, 진행, 마감 중 하나의 상태를 선택해 주세요." }, { status: 400 });
   }
 
   try {
@@ -33,6 +26,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     revalidatePath("/dashboard/creator/settlement");
     return Response.json({ campaign });
   } catch (error) {
-    return campaignError(error);
+    return campaignMutationError(error);
   }
 }

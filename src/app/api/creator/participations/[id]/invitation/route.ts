@@ -6,6 +6,7 @@ import { respondToInvitation } from "@/lib/creator-campaigns";
 function invitationError(error: unknown) {
   const message = error instanceof Error ? error.message : "Invitation could not be updated.";
   if (/not found/i.test(message)) return NextResponse.json({ code: "not_found", error: "Invitation was not found." }, { status: 404 });
+  if (/capacity/i.test(message)) return NextResponse.json({ code: "capacity_full", error: "This campaign has reached capacity." }, { status: 409 });
   if (/only invitations/i.test(message)) return NextResponse.json({ code: "invalid_state", error: "This invitation has already been answered." }, { status: 409 });
   return NextResponse.json({ code: "error", error: "Invitation could not be updated." }, { status: 500 });
 }

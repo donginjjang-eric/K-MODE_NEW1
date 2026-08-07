@@ -1,11 +1,17 @@
 import { invalidCampaignInputResponse, parseAdminCampaignCreateInput, parseAdminCampaignPatchInput } from "./admin-campaign-input.js";
 
 export function campaignMutationError(error) {
-  const message = error instanceof Error ? error.message : "캠페인을 처리할 수 없습니다.";
-  if (/not found/i.test(message)) return Response.json({ error: "캠페인을 찾을 수 없습니다." }, { status: 404 });
-  if (/closed|conflict|cannot be reopened/i.test(message)) return Response.json({ error: "현재 상태에서는 캠페인을 변경할 수 없습니다." }, { status: 409 });
-  if (/required|invalid|positive|at least|before|https/i.test(message)) return Response.json({ error: "입력한 캠페인 정보를 확인해 주세요." }, { status: 400 });
-  return Response.json({ error: "캠페인을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 500 });
+  const message = error instanceof Error ? error.message : "Campaign operation failed.";
+  if (/not found/i.test(message)) return Response.json({ code: "not_found", error: "캠페인을 찾을 수 없습니다. 목록을 새로고침해 주세요." }, { status: 404 });
+  if (/capacity/i.test(message)) return Response.json({ code: "capacity_full", error: "현재 확정 인원보다 모집 인원을 적게 설정할 수 없습니다." }, { status: 409 });
+  if (/only draft or recruiting|closed|conflict|cannot transition|cannot be reopened/i.test(message)) {
+    return Response.json({ code: "invalid_state", error: "현재 캠페인 상태에서는 이 작업을 할 수 없습니다. 목록을 새로고침해 주세요." }, { status: 409 });
+  }
+  if (/required|invalid|positive|at least|before|https/i.test(message)) {
+    return Response.json({ code: "invalid_request", error: "필수 항목, 모집 인원, 마감일 순서와 HTTPS 주소를 확인해 주세요." }, { status: 400 });
+  }
+  console.error("[admin-campaign] mutation failed:", error);
+  return Response.json({ code: "server_error", error: "캠페인을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 500 });
 }
 
 export async function handleAdminCampaignCreate(request, { adminId, createAdminCampaign, revalidatePath }) {

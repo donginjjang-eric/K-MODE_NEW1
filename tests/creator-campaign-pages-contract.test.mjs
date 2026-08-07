@@ -61,5 +61,5 @@ test("creator activity query only returns active participation statuses", async 
 
   assert.ok(activityFunction, "creator activity query must exist");
   assert.match(activityFunction[0], /p\.status = ANY\(\$2::text\[\]\)/);
-  assert.match(activityFunction[0], /\[creatorId, ACTIVE_PARTICIPATION_STATUSES\]/);
+  assert.match(activityFunction[0], /\[creatorId, CAPACITY_OCCUPYING_PARTICIPATION_STATUSES\]/);
 });

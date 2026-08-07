@@ -1,5 +1,5 @@
-const REQUIRED_CREATE_FIELDS = ["title", "category", "markets", "platforms", "brief", "reward_text", "slots"];
-const OPTIONAL_FIELDS = ["application_deadline", "content_deadline", "image_urls"];
+const REQUIRED_CREATE_FIELDS = ["title", "category", "markets", "platforms", "brief", "reward_text", "application_deadline", "content_deadline", "slots"];
+const OPTIONAL_FIELDS = ["image_urls"];
 const ALL_FIELDS = [...REQUIRED_CREATE_FIELDS, ...OPTIONAL_FIELDS];
 
 function isRecord(value) {
@@ -10,8 +10,13 @@ function isStringArray(value) {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
-function isNullableString(value) {
-  return value === null || typeof value === "string";
+function isDeadline(value) {
+  return typeof value === "string" && Boolean(value.trim()) && Number.isFinite(new Date(value).getTime());
+}
+
+function hasOrderedDeadlinePair(value) {
+  if (!("application_deadline" in value) || !("content_deadline" in value)) return true;
+  return new Date(value.application_deadline).getTime() < new Date(value.content_deadline).getTime();
 }
 
 function hasValidCampaignFieldTypes(value) {
@@ -25,9 +30,9 @@ function hasValidCampaignFieldTypes(value) {
   if ("platforms" in value && !isStringArray(value.platforms)) return false;
   if ("image_urls" in value && !isStringArray(value.image_urls)) return false;
   if ("slots" in value && (typeof value.slots !== "number" || !Number.isFinite(value.slots))) return false;
-  if ("application_deadline" in value && !isNullableString(value.application_deadline)) return false;
-  if ("content_deadline" in value && !isNullableString(value.content_deadline)) return false;
-  return true;
+  if ("application_deadline" in value && !isDeadline(value.application_deadline)) return false;
+  if ("content_deadline" in value && !isDeadline(value.content_deadline)) return false;
+  return hasOrderedDeadlinePair(value);
 }
 
 export function parseAdminCampaignCreateInput(value) {
@@ -41,5 +46,5 @@ export function parseAdminCampaignPatchInput(value) {
 }
 
 export function invalidCampaignInputResponse() {
-  return Response.json({ error: "입력한 캠페인 정보를 확인해 주세요." }, { status: 400 });
+  return Response.json({ code: "invalid_request", error: "필수 항목과 마감일 순서를 확인해 주세요. 신청 마감은 콘텐츠 마감보다 빨라야 합니다." }, { status: 400 });
 }

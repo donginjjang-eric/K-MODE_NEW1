@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   await requireUser("admin");
   const status = new URL(request.url).searchParams.get("status");
   if (status && !["draft", "recruiting", "active", "closed"].includes(status)) {
-    return Response.json({ error: "캠페인 상태 필터가 올바르지 않습니다." }, { status: 400 });
+    return Response.json({ code: "invalid_request", error: "캠페인 상태 필터가 올바르지 않습니다." }, { status: 400 });
   }
 
   try {

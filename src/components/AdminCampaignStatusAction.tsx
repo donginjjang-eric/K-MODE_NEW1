@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { adminCampaignOperationMessage } from "@/lib/admin-campaign-ui";
 import type { AdminCampaignStatus } from "@/lib/types";
 
 const NEXT_STATUSES: Record<AdminCampaignStatus, Exclude<AdminCampaignStatus, "draft">[]> = {
@@ -27,7 +28,8 @@ export default function AdminCampaignStatusAction({ campaignId, status }: { camp
     const result = response ? await response.json().catch(() => ({})) : {};
     setBusy(false);
     if (!response?.ok) {
-      setMessage(typeof result.error === "string" ? result.error : "Unable to update campaign status. Refresh and try again.");
+      const code = typeof result.code === "string" ? result.code : response ? "" : "network_error";
+      setMessage(adminCampaignOperationMessage({ status: response?.status ?? 0, code }));
       return;
     }
     router.refresh();

@@ -1,12 +1,19 @@
 import { execFile } from "node:child_process";
+import { resolve } from "node:path";
 import { promisify } from "node:util";
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import * as campaignDomain from "../src/lib/creator-campaigns";
 import { createAdminCampaign } from "../src/lib/creator-campaigns";
 import type { AdminCampaignInput } from "../src/lib/types";
 
 const execFileAsync = promisify(execFile);
+const tsxCli = resolve("node_modules/tsx/dist/cli.mjs");
+
+async function runMockedRunner(path: string) {
+  await execFileAsync(process.execPath, ["--experimental-test-module-mocks", tsxCli, "--test", path], { cwd: process.cwd() });
+}
 
 const validInput: AdminCampaignInput = {
   title: "Summer launch",
@@ -44,19 +51,39 @@ test("rejects an admin campaign with invalid capacity, targeting, image URLs, or
   }
 });
 
-test("runs transaction behavior checks without requiring flags on the documented command", async () => {
-  if (process.platform === "win32") {
-    await execFileAsync(
-      process.env.ComSpec ?? "cmd.exe",
-      ["/d", "/s", "/c", "npx.cmd tsx --experimental-test-module-mocks --test tests\\admin-campaign-transaction-runner.mjs"],
-      { cwd: process.cwd() },
-    );
-    return;
-  }
+test("requires both campaign deadlines", async (t) => {
+  const invalidInputs: Array<[string, AdminCampaignInput]> = [
+    ["application deadline", { ...validInput, application_deadline: "" }],
+    ["content deadline", { ...validInput, content_deadline: "" }],
+    ["null application deadline", { ...validInput, application_deadline: null } as unknown as AdminCampaignInput],
+    ["null content deadline", { ...validInput, content_deadline: null } as unknown as AdminCampaignInput],
+  ];
 
-  await execFileAsync(
-    "npx",
-    ["tsx", "--experimental-test-module-mocks", "--test", "tests/admin-campaign-transaction-runner.mjs"],
-    { cwd: process.cwd() },
-  );
+  for (const [name, input] of invalidInputs) {
+    await t.test(name, async () => {
+      await assert.rejects(createAdminCampaign("admin-1", input), /deadline is required/i);
+    });
+  }
+});
+
+test("only matched and active lifecycle statuses consume campaign capacity", () => {
+  const consumesCapacity = (campaignDomain as typeof campaignDomain & {
+    participationConsumesCampaignCapacity?: (status: string) => boolean;
+  }).participationConsumesCampaignCapacity;
+
+  assert.equal(typeof consumesCapacity, "function");
+  for (const status of ["matched", "shipping", "creating", "review", "published", "settlement"]) {
+    assert.equal(consumesCapacity?.(status), true, `${status} must consume a slot`);
+  }
+  for (const status of ["applied", "invited", "completed", "cancelled"]) {
+    assert.equal(consumesCapacity?.(status), false, `${status} must not consume a slot`);
+  }
+});
+
+test("runs transaction behavior checks without requiring flags on the documented command", async () => {
+  await runMockedRunner("tests/admin-campaign-transaction-runner.mjs");
+});
+
+test("runs final locked-capacity and editability transaction checks", async () => {
+  await runMockedRunner("tests/admin-campaign-final-fix-transaction-runner.mjs");
 });

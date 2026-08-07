@@ -26,6 +26,7 @@ test("invitation and submission APIs guard ownership, state, and HTTPS content",
 
   assert.match(invitationRoute, /getApprovedCreatorForApi\(\)/);
   assert.match(invitationRoute, /respondToInvitation\(auth\.creator\.id, participationId, accept\)/);
+  assert.match(invitationRoute, /capacity/i);
   assert.match(invitationRoute, /status: 404/);
   assert.match(invitationRoute, /status: 409/);
   assert.match(submissionRoute, /getApprovedCreatorForApi\(\)/);

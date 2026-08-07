@@ -11,6 +11,9 @@ function applicationError(error: unknown) {
   if (/not recruiting|deadline has passed/i.test(message)) {
     return NextResponse.json({ code: "closed", error: "This campaign is no longer accepting applications." }, { status: 409 });
   }
+  if (/capacity/i.test(message)) {
+    return NextResponse.json({ code: "closed", error: "This campaign has reached capacity." }, { status: 409 });
+  }
   if (/not found/i.test(message)) {
     return NextResponse.json({ code: "closed", error: "This campaign is no longer available." }, { status: 404 });
   }

@@ -25,7 +25,11 @@ class TransactionClient {
     }
     if (sql.includes("FROM campaigns WHERE id")) {
       this.calls.push("campaign lock");
-      return { rows: [{ id: "campaign-1" }] };
+      return { rows: [{ id: "campaign-1", slots: 2 }] };
+    }
+    if (sql.includes("COUNT(*)") && sql.includes("campaign_participations")) {
+      this.calls.push("capacity count");
+      return { rows: [{ count: "0" }] };
     }
     if (sql.includes("UPDATE campaign_participations")) {
       this.calls.push("participation update");
@@ -66,10 +70,10 @@ test("commits a locked admin participation transition with an event", async () =
   const client = new TransactionClient();
   activeClient = client;
 
-  const participation = await transitionParticipationAsAdmin("admin-1", "participation-1", "matched", "Approved by operations");
+  const participation = await transitionParticipationAsAdmin("admin-1", "participation-1", "approve", "Approved by operations");
 
   assert.equal(participation.status, "matched");
-  assert.deepEqual(client.calls, ["BEGIN", "admin lock", "participation lock", "campaign lock", "participation update", "event insert", "COMMIT", "release"]);
+  assert.deepEqual(client.calls, ["BEGIN", "admin lock", "participation lock", "campaign lock", "capacity count", "participation update", "event insert", "COMMIT", "release"]);
   assert.deepEqual(client.eventParams, ["participation-1", "admin-1", "admin_status_changed", "applied", "matched", "Approved by operations"]);
 });
 
@@ -77,7 +81,7 @@ test("rolls back when the acting user is not an admin", async () => {
   const client = new TransactionClient("designer");
   activeClient = client;
 
-  await assert.rejects(transitionParticipationAsAdmin("designer-1", "participation-1", "matched"), /Admin access is required/);
+  await assert.rejects(transitionParticipationAsAdmin("designer-1", "participation-1", "approve"), /Admin access is required/);
   assert.deepEqual(client.calls, ["BEGIN", "admin lock", "ROLLBACK", "release"]);
 });
 
@@ -85,6 +89,6 @@ test("rolls back when campaign event insertion fails", async () => {
   const client = new TransactionClient("admin", true);
   activeClient = client;
 
-  await assert.rejects(transitionParticipationAsAdmin("admin-1", "participation-1", "matched"), /event insert failed/);
-  assert.deepEqual(client.calls, ["BEGIN", "admin lock", "participation lock", "campaign lock", "participation update", "event insert", "ROLLBACK", "release"]);
+  await assert.rejects(transitionParticipationAsAdmin("admin-1", "participation-1", "approve"), /event insert failed/);
+  assert.deepEqual(client.calls, ["BEGIN", "admin lock", "participation lock", "campaign lock", "capacity count", "participation update", "event insert", "ROLLBACK", "release"]);
 });
