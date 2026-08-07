@@ -3,6 +3,20 @@ export type ApprovalStatus = "pending" | "approved" | "rejected" | "disabled";
 export type CreatorApprovalStatus = "pending" | "approved" | "disabled";
 export type CampaignStatus = "draft" | "recruiting" | "active" | "closed";
 export type ParticipationStatus = "applied" | "invited" | "matched" | "shipping" | "creating" | "review" | "published" | "settlement" | "completed" | "cancelled";
+export type AdminCampaignStatus = CampaignStatus;
+export type AdminParticipationAction = Exclude<ParticipationStatus, "applied" | "invited">;
+export type AdminCampaignInput = {
+  title: string;
+  category: string;
+  markets: string[];
+  platforms: string[];
+  brief: string;
+  reward_text: string;
+  application_deadline?: string | null;
+  content_deadline?: string | null;
+  slots: number;
+  image_urls?: string[];
+};
 export type SettlementStatus = "none" | "pending" | "confirmed" | "paid";
 export type SubmissionStatus = "submitted" | "revision_requested" | "approved" | "published";
 export type ProductStatus = "draft" | "active" | "hidden";
@@ -46,6 +60,7 @@ export type Campaign = {
   application_deadline: string | null;
   content_deadline: string | null;
   slots: number;
+  image_urls: string[];
   status: CampaignStatus;
   created_at: string;
   updated_at: string;

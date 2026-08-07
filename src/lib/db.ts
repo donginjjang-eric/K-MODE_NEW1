@@ -8,6 +8,8 @@ import type { ApprovalStatus, CampaignEvent, CampaignParticipation, CampaignPerf
 
 let pool: Pool | null = null;
 
+export type DatabaseTransactionClient = PoolClient;
+
 export function hasDatabase() {
   return Boolean(process.env.DATABASE_URL);
 }
@@ -38,7 +40,7 @@ export function getDb() {
   return pool;
 }
 
-export async function withDatabaseTransaction<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
+export async function withDatabaseTransaction<T>(operation: (client: DatabaseTransactionClient) => Promise<T>): Promise<T> {
   const client = await getDb().connect();
   try {
     await client.query("BEGIN");

@@ -246,10 +246,13 @@ CREATE TABLE IF NOT EXISTS campaigns (
   application_deadline timestamptz,
   content_deadline timestamptz,
   slots integer NOT NULL DEFAULT 1 CHECK (slots > 0),
+  image_urls jsonb NOT NULL DEFAULT '[]'::jsonb,
   status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'recruiting', 'active', 'closed')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_urls jsonb NOT NULL DEFAULT '[]'::jsonb;
 
 CREATE TABLE IF NOT EXISTS campaign_participations (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,

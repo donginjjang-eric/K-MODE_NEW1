@@ -1,6 +1,6 @@
-import type { PoolClient } from "pg";
 import { hasDatabase, one, query, withDatabaseTransaction } from "./db";
-import type { Campaign, CampaignParticipation, CreatorAccount, ParticipationStatus } from "./types";
+import type { DatabaseTransactionClient } from "./db";
+import type { AdminCampaignInput, AdminCampaignStatus, AdminParticipationAction, Campaign, CampaignParticipation, CreatorAccount, ParticipationStatus } from "./types";
 
 export type CampaignFitCreator = Pick<CreatorAccount, "id" | "market" | "platform" | "categories">;
 export type CampaignFitCampaign = Pick<Campaign, "id" | "category" | "markets" | "platforms" | "application_deadline">;
@@ -110,7 +110,7 @@ function assertTransition(fromStatus: ParticipationStatus, toStatus: Participati
   }
 }
 
-async function insertCampaignEvent(client: PoolClient, participation: CampaignParticipation, actorUserId: string | null, fromStatus: ParticipationStatus | null, eventType: string, message: string) {
+async function insertCampaignEvent(client: DatabaseTransactionClient, participation: CampaignParticipation, actorUserId: string | null, fromStatus: ParticipationStatus | null, eventType: string, message: string) {
   await client.query(
     `INSERT INTO campaign_events (participation_id, actor_user_id, event_type, from_status, to_status, message)
      VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -118,10 +118,152 @@ async function insertCampaignEvent(client: PoolClient, participation: CampaignPa
   );
 }
 
-async function getCreatorForUpdate(client: PoolClient, creatorId: string) {
+async function getCreatorForUpdate(client: DatabaseTransactionClient, creatorId: string) {
   const result = await client.query<CreatorAccount>("SELECT * FROM creator_accounts WHERE id = $1 FOR UPDATE", [creatorId]);
   if (!result.rows[0]) throw new Error("Creator account was not found.");
   return result.rows[0];
+}
+
+const ADMIN_CAMPAIGN_STATUSES: AdminCampaignStatus[] = ["draft", "recruiting", "active", "closed"];
+
+function assertNonEmpty(value: string, field: string) {
+  if (!value.trim()) throw new Error(`${field} is required.`);
+}
+
+function assertHttpsImageUrls(imageUrls: string[]) {
+  for (const imageUrl of imageUrls) {
+    try {
+      if (new URL(imageUrl).protocol !== "https:") throw new Error();
+    } catch {
+      throw new Error("Image URLs must use HTTPS.");
+    }
+  }
+}
+
+function assertValidAdminCampaignInput(input: AdminCampaignInput) {
+  assertNonEmpty(input.title, "Campaign title");
+  assertNonEmpty(input.category, "Campaign category");
+  assertNonEmpty(input.brief, "Campaign brief");
+  assertNonEmpty(input.reward_text, "Campaign reward");
+  if (!Number.isInteger(input.slots) || input.slots <= 0) throw new Error("Campaign slots must be positive.");
+  if (!input.markets.some((market) => market.trim())) throw new Error("At least one market is required.");
+  if (!input.platforms.some((platform) => platform.trim())) throw new Error("At least one platform is required.");
+  assertHttpsImageUrls(input.image_urls ?? []);
+
+  const applicationDeadline = input.application_deadline ? new Date(input.application_deadline) : null;
+  const contentDeadline = input.content_deadline ? new Date(input.content_deadline) : null;
+  if (applicationDeadline && Number.isNaN(applicationDeadline.getTime())) throw new Error("Application deadline is invalid.");
+  if (contentDeadline && Number.isNaN(contentDeadline.getTime())) throw new Error("Content deadline is invalid.");
+  if (applicationDeadline && contentDeadline && applicationDeadline >= contentDeadline) {
+    throw new Error("Application deadline must be before content deadline.");
+  }
+}
+
+async function getAdminForUpdate(client: DatabaseTransactionClient, adminId: string) {
+  const result = await client.query<{ id: string; role: string }>("SELECT id, role FROM users WHERE id = $1 FOR UPDATE", [adminId]);
+  const user = result.rows[0];
+  if (!user || user.role !== "admin") throw new Error("Admin access is required.");
+  return user;
+}
+
+function assertAdminCampaignStatus(status: string): asserts status is AdminCampaignStatus {
+  if (!ADMIN_CAMPAIGN_STATUSES.includes(status as AdminCampaignStatus)) throw new Error("Campaign status is invalid.");
+}
+
+export async function listAdminCampaigns(filters: { status?: AdminCampaignStatus; category?: string; search?: string } = {}): Promise<Campaign[]> {
+  if (!hasDatabase()) return [];
+  const conditions: string[] = [];
+  const params: string[] = [];
+  if (filters.status) {
+    params.push(filters.status);
+    conditions.push(`status = $${params.length}`);
+  }
+  if (filters.category?.trim()) {
+    params.push(filters.category.trim());
+    conditions.push(`category = $${params.length}`);
+  }
+  if (filters.search?.trim()) {
+    params.push(`%${filters.search.trim()}%`);
+    conditions.push(`(title ILIKE $${params.length} OR brief ILIKE $${params.length})`);
+  }
+  return query<Campaign>(`SELECT * FROM campaigns${conditions.length ? ` WHERE ${conditions.join(" AND ")}` : ""} ORDER BY created_at DESC`, params);
+}
+
+export async function getAdminCampaign(id: string): Promise<Campaign | null> {
+  if (!hasDatabase()) return null;
+  return one<Campaign>("SELECT * FROM campaigns WHERE id = $1", [id]);
+}
+
+export async function createAdminCampaign(adminId: string, input: AdminCampaignInput): Promise<Campaign> {
+  assertValidAdminCampaignInput(input);
+  return withDatabaseTransaction(async (client) => {
+    await getAdminForUpdate(client, adminId);
+    const result = await client.query<Campaign>(
+      `INSERT INTO campaigns (owner_id, title, category, markets, platforms, brief, reward_text, application_deadline, content_deadline, slots, image_urls)
+       VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6, $7, $8, $9, $10, $11::jsonb)
+       RETURNING *`,
+      [adminId, input.title.trim(), input.category.trim(), JSON.stringify(input.markets), JSON.stringify(input.platforms), input.brief.trim(), input.reward_text.trim(), input.application_deadline ?? null, input.content_deadline ?? null, input.slots, JSON.stringify(input.image_urls ?? [])],
+    );
+    const campaign = result.rows[0];
+    if (!campaign) throw new Error("Campaign could not be created.");
+    return campaign;
+  });
+}
+
+export async function updateAdminCampaign(adminId: string, id: string, input: Partial<AdminCampaignInput>): Promise<Campaign> {
+  return withDatabaseTransaction(async (client) => {
+    await getAdminForUpdate(client, adminId);
+    const current = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [id]);
+    const campaign = current.rows[0];
+    if (!campaign) throw new Error("Campaign was not found.");
+    const next = { ...campaign, ...input, image_urls: input.image_urls ?? campaign.image_urls };
+    assertValidAdminCampaignInput(next);
+    const result = await client.query<Campaign>(
+      `UPDATE campaigns
+          SET title = $2, category = $3, markets = $4::jsonb, platforms = $5::jsonb, brief = $6, reward_text = $7,
+              application_deadline = $8, content_deadline = $9, slots = $10, image_urls = $11::jsonb, updated_at = now()
+        WHERE id = $1 RETURNING *`,
+      [id, next.title.trim(), next.category.trim(), JSON.stringify(next.markets), JSON.stringify(next.platforms), next.brief.trim(), next.reward_text.trim(), next.application_deadline ?? null, next.content_deadline ?? null, next.slots, JSON.stringify(next.image_urls ?? [])],
+    );
+    const updated = result.rows[0];
+    if (!updated) throw new Error("Campaign could not be updated.");
+    return updated;
+  });
+}
+
+export async function setAdminCampaignStatus(adminId: string, id: string, status: AdminCampaignStatus): Promise<Campaign> {
+  assertAdminCampaignStatus(status);
+  return withDatabaseTransaction(async (client) => {
+    await getAdminForUpdate(client, adminId);
+    const current = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [id]);
+    const campaign = current.rows[0];
+    if (!campaign) throw new Error("Campaign was not found.");
+    if (campaign.status === "closed" && status !== "closed") throw new Error("Closed campaigns cannot be reopened.");
+    const result = await client.query<Campaign>("UPDATE campaigns SET status = $2, updated_at = now() WHERE id = $1 RETURNING *", [id, status]);
+    const updated = result.rows[0];
+    if (!updated) throw new Error("Campaign status could not be updated.");
+    return updated;
+  });
+}
+
+export async function transitionParticipationAsAdmin(adminId: string, participationId: string, action: AdminParticipationAction, note?: string): Promise<CampaignParticipation> {
+  return withDatabaseTransaction(async (client) => {
+    await getAdminForUpdate(client, adminId);
+    const current = await client.query<CampaignParticipation>("SELECT * FROM campaign_participations WHERE id = $1 FOR UPDATE", [participationId]);
+    const participation = current.rows[0];
+    if (!participation) throw new Error("Campaign participation was not found.");
+    const campaignResult = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [participation.campaign_id]);
+    if (!campaignResult.rows[0]) throw new Error("Campaign was not found.");
+    assertTransition(participation.status, action);
+    const result = await client.query<CampaignParticipation>(
+      "UPDATE campaign_participations SET status = $2, updated_at = now() WHERE id = $1 RETURNING *",
+      [participationId, action],
+    );
+    const updated = result.rows[0];
+    if (!updated) throw new Error("Campaign participation could not be updated.");
+    await insertCampaignEvent(client, updated, adminId, participation.status, "admin_status_changed", note?.trim() || `Status changed to ${action}.`);
+    return updated;
+  });
 }
 
 export async function getRecommendedCampaigns(creatorId: string): Promise<RecommendedCampaign[]> {
