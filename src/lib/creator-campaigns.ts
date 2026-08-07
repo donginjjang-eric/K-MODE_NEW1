@@ -172,9 +172,10 @@ export async function getCreatorCampaignActivity(creatorId: string): Promise<Cre
        FROM campaign_participations p
        JOIN campaigns c ON c.id = p.campaign_id
       WHERE p.creator_account_id = $1
+        AND p.status = ANY($2::text[])
       ORDER BY p.updated_at DESC
       LIMIT 4`,
-    [creatorId],
+    [creatorId, ACTIVE_PARTICIPATION_STATUSES],
   );
 }
 
