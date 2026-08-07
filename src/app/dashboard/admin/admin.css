@@ -3,6 +3,70 @@
   gap: 12px;
 }
 
+.admin-studio .admin-campaign-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.admin-studio .admin-campaign-page-head .st-sub { margin-bottom: 0; }
+
+.admin-studio .admin-campaign-list,
+.admin-studio .admin-campaign-form { display: grid; gap: 18px; }
+
+.admin-studio .admin-campaign-filters,
+.admin-studio .admin-campaign-form-actions,
+.admin-studio .admin-campaign-checks { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.admin-studio .admin-campaign-filters a {
+  border: 1px solid #d8d1c7;
+  padding: 8px 10px;
+  color: #706a61;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-studio .admin-campaign-filters a.is-active { border-color: #171411; background: #171411; color: #fff; }
+
+.admin-studio .admin-campaign-table-wrap { overflow-x: auto; border: 1px solid #e2ddd4; background: #fff; }
+
+.admin-studio .admin-campaign-table-wrap table { width: 100%; min-width: 920px; border-collapse: collapse; }
+
+.admin-studio .admin-campaign-table-wrap th,
+.admin-studio .admin-campaign-table-wrap td { border-bottom: 1px solid #eee9e1; padding: 13px 12px; text-align: left; vertical-align: top; font-size: 12px; }
+
+.admin-studio .admin-campaign-table-wrap th { color: #706a61; font-size: 11px; text-transform: uppercase; }
+.admin-studio .admin-campaign-table-wrap td:first-child a { color: #171411; font-weight: 800; }
+
+.admin-studio .admin-campaign-status { display: inline-block; padding: 4px 7px; border: 1px solid #d8d1c7; color: #706a61; font-size: 11px; font-weight: 800; }
+.admin-studio .admin-campaign-status.is-recruiting { border-color: #83b898; color: #287747; }
+.admin-studio .admin-campaign-status.is-active { border-color: #80a9d9; color: #275e9e; }
+.admin-studio .admin-campaign-status.is-closed { border-color: #d6a5a1; color: #9e3932; }
+
+.admin-studio .admin-campaign-form { max-width: 760px; }
+
+.admin-studio .admin-campaign-form label,
+.admin-studio .admin-campaign-form fieldset { display: grid; gap: 7px; min-width: 0; margin: 0; border: 0; padding: 0; color: #514a43; font-size: 12px; font-weight: 800; }
+.admin-studio .admin-campaign-form legend { margin-bottom: 7px; }
+
+.admin-studio .admin-campaign-form input,
+.admin-studio .admin-campaign-form textarea { box-sizing: border-box; width: 100%; border: 1px solid #d8d1c7; border-radius: 0; padding: 10px; background: #fff; color: #171411; font: inherit; }
+.admin-studio .admin-campaign-form textarea { min-height: 132px; resize: vertical; }
+
+.admin-studio .admin-campaign-checks label { display: flex; align-items: center; gap: 5px; border: 1px solid #d8d1c7; padding: 8px; }
+.admin-studio .admin-campaign-checks input { width: auto; padding: 0; }
+
+.admin-studio .admin-campaign-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.admin-studio .admin-campaign-error { margin: 0; color: #a5352e; font-size: 13px; line-height: 1.5; }
+
+@media (max-width: 760px) {
+  .admin-studio .admin-campaign-page-head { display: grid; }
+  .admin-studio .admin-campaign-page-head .st-btn { width: 100%; text-align: center; }
+  .admin-studio .admin-campaign-form-grid { grid-template-columns: 1fr; }
+}
+
 .admin-studio .admin-creator-account-row {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.25fr) minmax(240px, .9fr);
