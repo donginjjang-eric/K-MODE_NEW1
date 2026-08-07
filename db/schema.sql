@@ -4,10 +4,28 @@ CREATE TABLE IF NOT EXISTS users (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
   email text UNIQUE NOT NULL,
   password_hash text NOT NULL,
-  role text NOT NULL CHECK (role IN ('admin', 'designer')),
+  role text NOT NULL CHECK (role IN ('admin', 'designer', 'creator')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Existing installations created the original two-role constraint. Replace it in
+-- place so creator accounts can be added without recreating the users table.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'users_role_check'
+      AND conrelid = 'users'::regclass
+  ) THEN
+    ALTER TABLE users DROP CONSTRAINT users_role_check;
+  END IF;
+
+  ALTER TABLE users
+    ADD CONSTRAINT users_role_check
+    CHECK (role IN ('admin', 'designer', 'creator'));
+END $$;
 
 CREATE TABLE IF NOT EXISTS designers (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -199,3 +217,104 @@ ALTER TABLE lookbooks ADD COLUMN IF NOT EXISTS intro text NOT NULL DEFAULT '';
 
 -- 룩북 페이지 레이아웃: 룩 페이지별 배치(full/duo/hero/grid) 시퀀스. 빈 배열이면 자동 배치.
 ALTER TABLE lookbooks ADD COLUMN IF NOT EXISTS layouts jsonb NOT NULL DEFAULT '[]';
+
+-- Creator Action Center: creator catalogue links, campaign workflow, and metrics.
+CREATE TABLE IF NOT EXISTS creator_accounts (
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  user_id text UNIQUE REFERENCES users(id) ON DELETE SET NULL,
+  creator_key text NOT NULL UNIQUE,
+  display_name text NOT NULL,
+  google_email text NOT NULL DEFAULT '',
+  approval_status text NOT NULL DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'disabled')),
+  platform text NOT NULL DEFAULT '',
+  market text NOT NULL DEFAULT '',
+  categories jsonb NOT NULL DEFAULT '[]'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS campaigns (
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  owner_type text NOT NULL DEFAULT 'admin' CHECK (owner_type IN ('admin')),
+  owner_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  title text NOT NULL,
+  category text NOT NULL,
+  markets jsonb NOT NULL DEFAULT '[]'::jsonb,
+  platforms jsonb NOT NULL DEFAULT '[]'::jsonb,
+  brief text NOT NULL DEFAULT '',
+  reward_text text NOT NULL DEFAULT '',
+  application_deadline timestamptz,
+  content_deadline timestamptz,
+  slots integer NOT NULL DEFAULT 1 CHECK (slots > 0),
+  status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'recruiting', 'active', 'closed')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS campaign_participations (
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  campaign_id text NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  creator_account_id text NOT NULL REFERENCES creator_accounts(id) ON DELETE CASCADE,
+  source text NOT NULL CHECK (source IN ('application', 'invitation')),
+  status text NOT NULL CHECK (status IN ('applied', 'invited', 'matched', 'shipping', 'creating', 'review', 'published', 'settlement', 'completed', 'cancelled')),
+  next_action text NOT NULL DEFAULT '',
+  shipping_note text NOT NULL DEFAULT '',
+  expected_reward text NOT NULL DEFAULT '',
+  settlement_status text NOT NULL DEFAULT 'none' CHECK (settlement_status IN ('none', 'pending', 'confirmed', 'paid')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (campaign_id, creator_account_id)
+);
+
+CREATE TABLE IF NOT EXISTS content_submissions (
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  participation_id text NOT NULL REFERENCES campaign_participations(id) ON DELETE CASCADE,
+  version integer NOT NULL CHECK (version > 0),
+  content_url text NOT NULL,
+  caption_text text NOT NULL DEFAULT '',
+  status text NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'revision_requested', 'approved', 'published')),
+  review_note text NOT NULL DEFAULT '',
+  published_url text,
+  submitted_at timestamptz NOT NULL DEFAULT now(),
+  reviewed_at timestamptz,
+  published_at timestamptz,
+  UNIQUE (participation_id, version)
+);
+
+CREATE TABLE IF NOT EXISTS campaign_events (
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  participation_id text NOT NULL REFERENCES campaign_participations(id) ON DELETE CASCADE,
+  actor_user_id text REFERENCES users(id) ON DELETE SET NULL,
+  event_type text NOT NULL,
+  from_status text,
+  to_status text,
+  message text NOT NULL DEFAULT '',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS campaign_performance (
+  participation_id text PRIMARY KEY REFERENCES campaign_participations(id) ON DELETE CASCADE,
+  views integer NOT NULL DEFAULT 0 CHECK (views >= 0),
+  likes integer NOT NULL DEFAULT 0 CHECK (likes >= 0),
+  comments integer NOT NULL DEFAULT 0 CHECK (comments >= 0),
+  orders integer NOT NULL DEFAULT 0 CHECK (orders >= 0),
+  revenue numeric(12, 2) NOT NULL DEFAULT 0 CHECK (revenue >= 0),
+  currency text NOT NULL DEFAULT 'KRW',
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS creator_accounts_user_id_idx
+  ON creator_accounts(user_id);
+
+CREATE INDEX IF NOT EXISTS campaigns_recruiting_filters_idx
+  ON campaigns(status, application_deadline, category)
+  WHERE status = 'recruiting';
+
+CREATE INDEX IF NOT EXISTS campaign_participations_creator_status_idx
+  ON campaign_participations(creator_account_id, status, updated_at DESC);
+
+CREATE INDEX IF NOT EXISTS content_submissions_participation_version_idx
+  ON content_submissions(participation_id, version DESC);
+
+CREATE INDEX IF NOT EXISTS campaign_events_participation_date_idx
+  ON campaign_events(participation_id, created_at DESC);

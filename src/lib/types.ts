@@ -1,5 +1,10 @@
-export type Role = "admin" | "designer";
+export type Role = "admin" | "designer" | "creator";
 export type ApprovalStatus = "pending" | "approved" | "rejected" | "disabled";
+export type CreatorApprovalStatus = "pending" | "approved" | "disabled";
+export type CampaignStatus = "draft" | "recruiting" | "active" | "closed";
+export type ParticipationStatus = "applied" | "invited" | "matched" | "shipping" | "creating" | "review" | "published" | "settlement" | "completed" | "cancelled";
+export type SettlementStatus = "none" | "pending" | "confirmed" | "paid";
+export type SubmissionStatus = "submitted" | "revision_requested" | "approved" | "published";
 export type ProductStatus = "draft" | "active" | "hidden";
 export type GeneratedLookStatus = "generated" | "approved" | "rejected" | "hidden";
 export type GeneratedLookVideoStatus = "none" | "queued" | "processing" | "completed" | "failed";
@@ -11,6 +16,88 @@ export type User = {
   email: string;
   role: Role;
   created_at: string;
+  updated_at: string;
+};
+
+export type CreatorAccount = {
+  id: string;
+  user_id: string | null;
+  creator_key: string;
+  display_name: string;
+  google_email: string;
+  approval_status: CreatorApprovalStatus;
+  platform: string;
+  market: string;
+  categories: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type Campaign = {
+  id: string;
+  owner_type: "admin";
+  owner_id: string;
+  title: string;
+  category: string;
+  markets: string[];
+  platforms: string[];
+  brief: string;
+  reward_text: string;
+  application_deadline: string | null;
+  content_deadline: string | null;
+  slots: number;
+  status: CampaignStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CampaignParticipation = {
+  id: string;
+  campaign_id: string;
+  creator_account_id: string;
+  source: "application" | "invitation";
+  status: ParticipationStatus;
+  next_action: string;
+  shipping_note: string;
+  expected_reward: string;
+  settlement_status: SettlementStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ContentSubmission = {
+  id: string;
+  participation_id: string;
+  version: number;
+  content_url: string;
+  caption_text: string;
+  status: SubmissionStatus;
+  review_note: string;
+  published_url: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+  published_at: string | null;
+};
+
+export type CampaignEvent = {
+  id: string;
+  participation_id: string;
+  actor_user_id: string | null;
+  event_type: string;
+  from_status: ParticipationStatus | null;
+  to_status: ParticipationStatus | null;
+  message: string;
+  created_at: string;
+};
+
+export type CampaignPerformance = {
+  participation_id: string;
+  views: number;
+  likes: number;
+  comments: number;
+  orders: number;
+  revenue: number;
+  currency: string;
   updated_at: string;
 };
 
