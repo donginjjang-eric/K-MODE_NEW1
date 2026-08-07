@@ -4,7 +4,7 @@ import path from "node:path";
 import { Pool } from "pg";
 import type { PoolClient, QueryResultRow } from "pg";
 import { designer as phaseDesigner, modelTemplates as phaseTemplates, products as phaseProducts } from "./phase1-data";
-import type { ApprovalStatus, CollabRequest, CollabRequestStatus, CollabRequestType, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User } from "./types";
+import type { ApprovalStatus, CampaignEvent, CampaignParticipation, CollabRequest, CollabRequestStatus, CollabRequestType, ContentSubmission, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User } from "./types";
 
 let pool: Pool | null = null;
 
@@ -1215,6 +1215,105 @@ export async function getCreatorAccountForUser(userId: string): Promise<CreatorA
     if (!canUseDemoData()) throw error;
     return null;
   }
+}
+
+export type CreatorMissionParticipation = CampaignParticipation & {
+  campaign_title: string;
+  campaign_brief: string;
+  campaign_category: string;
+  content_deadline: string | null;
+};
+
+export async function getCreatorMissionParticipations(creatorId: string): Promise<CreatorMissionParticipation[]> {
+  if (!hasDatabase()) return [];
+  return query<CreatorMissionParticipation>(
+    `SELECT p.*, c.title AS campaign_title, c.brief AS campaign_brief,
+            c.category AS campaign_category, c.content_deadline
+       FROM campaign_participations p
+       JOIN campaigns c ON c.id = p.campaign_id
+      WHERE p.creator_account_id = $1
+      ORDER BY p.updated_at DESC`,
+    [creatorId],
+  );
+}
+
+export async function getParticipationForCreator(creatorId: string, participationId: string): Promise<CreatorMissionParticipation | null> {
+  if (!hasDatabase()) return null;
+  return one<CreatorMissionParticipation>(
+    `SELECT p.*, c.title AS campaign_title, c.brief AS campaign_brief,
+            c.category AS campaign_category, c.content_deadline
+       FROM campaign_participations p
+       JOIN campaigns c ON c.id = p.campaign_id
+      WHERE p.id = $2 AND p.creator_account_id = $1`,
+    [creatorId, participationId],
+  );
+}
+
+export async function getContentSubmissionsForParticipation(participationId: string): Promise<ContentSubmission[]> {
+  if (!hasDatabase()) return [];
+  return query<ContentSubmission>(
+    "SELECT * FROM content_submissions WHERE participation_id = $1 ORDER BY version DESC",
+    [participationId],
+  );
+}
+
+export async function getCampaignEventsForParticipation(participationId: string): Promise<CampaignEvent[]> {
+  if (!hasDatabase()) return [];
+  return query<CampaignEvent>(
+    "SELECT * FROM campaign_events WHERE participation_id = $1 ORDER BY created_at DESC",
+    [participationId],
+  );
+}
+
+export async function createContentSubmission(creatorId: string, participationId: string, input: {
+  contentUrl: string;
+  captionText: string;
+}): Promise<ContentSubmission> {
+  return withDatabaseTransaction(async (client) => {
+    const participationResult = await client.query<CampaignParticipation>(
+      "SELECT * FROM campaign_participations WHERE id = $1 AND creator_account_id = $2 FOR UPDATE",
+      [participationId, creatorId],
+    );
+    const participation = participationResult.rows[0];
+    if (!participation) throw new Error("Campaign participation was not found.");
+    if (participation.status !== "creating" && participation.status !== "review") {
+      throw new Error("Submission is not available for this mission.");
+    }
+
+    const creatorResult = await client.query<Pick<CreatorAccount, "user_id">>(
+      "SELECT user_id FROM creator_accounts WHERE id = $1",
+      [creatorId],
+    );
+    const versionResult = await client.query<{ version: number }>(
+      "SELECT COALESCE(MAX(version), 0) + 1 AS version FROM content_submissions WHERE participation_id = $1",
+      [participationId],
+    );
+    const version = Number(versionResult.rows[0]?.version || 1);
+    const submissionResult = await client.query<ContentSubmission>(
+      `INSERT INTO content_submissions (participation_id, version, content_url, caption_text, status)
+       VALUES ($1, $2, $3, $4, 'submitted')
+       RETURNING *`,
+      [participationId, version, input.contentUrl, input.captionText],
+    );
+    const submission = submissionResult.rows[0];
+    if (!submission) throw new Error("Content submission could not be saved.");
+
+    const participationUpdate = await client.query<CampaignParticipation>(
+      `UPDATE campaign_participations
+          SET status = 'review', next_action = 'Await review', updated_at = now()
+        WHERE id = $1 AND creator_account_id = $2
+        RETURNING *`,
+      [participationId, creatorId],
+    );
+    const updated = participationUpdate.rows[0];
+    if (!updated) throw new Error("Campaign participation could not be updated.");
+    await client.query(
+      `INSERT INTO campaign_events (participation_id, actor_user_id, event_type, from_status, to_status, message)
+       VALUES ($1, $2, 'content_submitted', $3, $4, $5)`,
+      [participationId, creatorResult.rows[0]?.user_id ?? null, participation.status, updated.status, `Content version ${version} submitted.`],
+    );
+    return submission;
+  });
 }
 
 export async function getCreatorAccountByEmail(email: string): Promise<CreatorAccount | null> {
