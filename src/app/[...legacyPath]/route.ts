@@ -16,6 +16,7 @@ const legacyFiles = new Set([
   "auth-nav.js",
   "brand-detail.html",
   "beauty.html",
+  "beauty-products.js",
   "consumer-products-live-after-zero-filter.json",
   "creator-detail.html",
   "creators.html",
