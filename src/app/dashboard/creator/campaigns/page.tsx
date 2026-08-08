@@ -20,8 +20,10 @@ function reasonLabel(reason: string) {
   return ({ market: "Market match", platform: "Platform match", category: "Category match", deadline: "Open now" } as Record<string, string>)[reason] || reason;
 }
 
-function deadlineLabel(deadline: string | null) {
-  return deadline?.slice(0, 10) || "No application deadline";
+function deadlineLabel(deadline: string | Date | null) {
+  if (!deadline) return "No application deadline";
+  if (deadline instanceof Date) return deadline.toISOString().slice(0, 10);
+  return String(deadline).slice(0, 10);
 }
 
 export default async function CreatorCampaignsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {

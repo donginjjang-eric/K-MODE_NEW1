@@ -12,7 +12,7 @@ import {
 
 const MISSION_STAGES = ["제품 수령", "콘텐츠 제작", "검수", "게시", "정산"];
 
-function isToday(value: string | null) {
+function isToday(value: string | Date | null) {
   if (!value) return false;
   const today = new Date();
   const target = new Date(value);
@@ -21,9 +21,10 @@ function isToday(value: string | null) {
     && today.getDate() === target.getDate();
 }
 
-function deadlineLabel(value: string | null) {
+function deadlineLabel(value: string | Date | null) {
   if (!value) return "상시 모집";
-  return value.slice(0, 10);
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).slice(0, 10);
 }
 
 export default async function CreatorActionHomePage() {
@@ -74,7 +75,7 @@ export default async function CreatorActionHomePage() {
               {recommended.slice(0, 3).map((campaign) => (
                 <li key={campaign.id}>
                   <div><strong>{campaign.title}</strong><span><span>한국 공급자</span> · <span>{campaign.markets.join(" · ") || creator.market}</span></span></div>
-                  <p><b>{campaign.reward_text || "보상 협의"}</b><small>{campaign.application_deadline ? <time dateTime={campaign.application_deadline} data-i18n-date="short">{deadlineLabel(campaign.application_deadline)}</time> : <span>상시 모집</span>} <span>마감</span></small></p>
+                  <p><b>{campaign.reward_text || "보상 협의"}</b><small>{campaign.application_deadline ? <time dateTime={new Date(campaign.application_deadline).toISOString()} data-i18n-date="short">{deadlineLabel(campaign.application_deadline)}</time> : <span>상시 모집</span>} <span>마감</span></small></p>
                 </li>
               ))}
             </ul>
