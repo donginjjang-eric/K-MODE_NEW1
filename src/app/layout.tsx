@@ -72,7 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
         <Script src="/site-i18n.js?v=20260808-ms2" strategy="afterInteractive" />
-        <Script src="/auth-nav.js" strategy="afterInteractive" />
+        <Script src="/auth-nav.js?v=20260809-mobile-creator" strategy="afterInteractive" />
       </body>
     </html>
   );
