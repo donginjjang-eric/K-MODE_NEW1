@@ -16,6 +16,7 @@ The selector order is `한국어 → Bahasa Melayu → Tiếng Việt → 繁體
 - Preserve brand names, creator names, handles, product names, and user-entered catalogue data.
 - Preserve Korean as the fallback whenever a Malay translation is unavailable.
 - Persist the selected locale with the existing `kmodu.locale` storage key.
+- On the first visit only, detect `ms`, `vi`, `zh-TW`, and English browser languages; a saved manual choice always wins.
 
 ## Compatibility
 
@@ -26,3 +27,9 @@ No routes, authentication logic, APIs, or existing Korean/Vietnamese/Traditional
 - Contract test verifies `ms-MY`, selector ordering, and representative Malay translations.
 - Existing translation tests and production build must pass.
 - Visually verify the deployed homepage and at least one listing page at desktop and mobile widths.
+
+## Administrator dual access
+
+- Administrators use a dedicated approved `K-MODU 운영자` creator account linked to their own user id.
+- The administrator can use creator mutations through that operational identity; activity is never attributed to a real public creator.
+- Existing designer profile access and administrator-console permissions remain unchanged.

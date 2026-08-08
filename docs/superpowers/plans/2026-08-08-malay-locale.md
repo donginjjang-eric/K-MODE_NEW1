@@ -47,3 +47,21 @@ Run the focused contract, all JavaScript tests, TypeScript tests, and production
 - [ ] **Step 5: Visually verify and publish**
 
 Check desktop and mobile language menus and translated pages, commit, push, deploy to Railway, and verify production.
+
+### Task 2: Administrator dual-role access
+
+**Files:**
+- Modify: `src/lib/db.ts`
+- Modify: `src/lib/auth.ts`
+- Modify: `src/app/dashboard/creator/layout.tsx`
+- Test: `tests/admin-creator-preview-contract.test.mjs`
+
+**Interfaces:**
+- Produces: `getOrCreateAdminCreatorAccount(userId, email)` returning a dedicated approved creator account.
+- Consumes: existing creator page and API guards.
+
+- [ ] **Step 1:** Change the contract test to require a dedicated administrator creator identity and API access.
+- [ ] **Step 2:** Run the focused test and verify it fails because the identity helper is absent.
+- [ ] **Step 3:** Implement the idempotent account upsert and use it in page and API guards.
+- [ ] **Step 4:** Update the creator banner to clearly label administrator operation mode.
+- [ ] **Step 5:** Run all tests, build, and verify administrator access in production.

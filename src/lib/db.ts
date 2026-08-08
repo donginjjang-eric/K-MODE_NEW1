@@ -1219,6 +1219,29 @@ export async function getCreatorAccountForUser(userId: string): Promise<CreatorA
   }
 }
 
+export async function getOrCreateAdminCreatorAccount(userId: string, email: string): Promise<CreatorAccount | null> {
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    return null;
+  }
+  try {
+    return await one<CreatorAccount>(
+      `INSERT INTO creator_accounts
+         (user_id, creator_key, display_name, google_email, approval_status, platform, market, categories)
+       VALUES ($1, $2, 'K-MODU 운영자', $3, 'approved', 'K-MODU', 'South Korea', $4::jsonb)
+       ON CONFLICT (user_id) DO UPDATE
+         SET google_email = EXCLUDED.google_email,
+             approval_status = 'approved',
+             updated_at = now()
+       RETURNING *`,
+      [userId, `admin-operator-${userId}`, email.trim().toLowerCase(), JSON.stringify(["fashion", "beauty", "operations"])],
+    );
+  } catch (error) {
+    if (!canUseDemoData()) throw error;
+    return null;
+  }
+}
+
 export async function getApprovedCreatorAccountForAdminPreview(): Promise<CreatorAccount | null> {
   if (!hasDatabase()) {
     requireDatabaseForProduction();

@@ -1,7 +1,7 @@
 import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getApprovedCreatorAccountForAdminPreview, getCreatorAccountForUser, getDesignerForUser, getUserByEmail } from "./db";
+import { getCreatorAccountForUser, getDesignerForUser, getOrCreateAdminCreatorAccount, getUserByEmail } from "./db";
 import type { CreatorAccount, Role, User } from "./types";
 
 export const sessionCookieName = "kmodu_session";
@@ -128,9 +128,9 @@ export async function requireApprovedCreator(): Promise<{ user: SessionUser; cre
   if (!user || (user.role !== "creator" && user.role !== "admin")) redirect("/login?error=creator_required");
 
   if (user.role === "admin") {
-    const previewCreator = await getApprovedCreatorAccountForAdminPreview();
-    if (!previewCreator) redirect("/login?notice=creator_preview_unavailable");
-    return { user, creator: previewCreator };
+    const adminCreator = await getOrCreateAdminCreatorAccount(user.id, user.email);
+    if (!adminCreator) redirect("/login?notice=creator_preview_unavailable");
+    return { user, creator: adminCreator };
   }
 
   const creator = await getCreatorAccountForUser(user.id);
@@ -141,11 +141,13 @@ export async function requireApprovedCreator(): Promise<{ user: SessionUser; cre
 
 export async function getApprovedCreatorForApi() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "creator") {
+  if (!user || (user.role !== "creator" && user.role !== "admin")) {
     return { ok: false as const, status: 401, error: "Creator authentication is required." };
   }
 
-  const creator = await getCreatorAccountForUser(user.id);
+  const creator = user.role === "admin"
+    ? await getOrCreateAdminCreatorAccount(user.id, user.email)
+    : await getCreatorAccountForUser(user.id);
   if (!creator) {
     return { ok: false as const, status: 403, error: "Creator account is required." };
   }
