@@ -1307,13 +1307,14 @@ export type CreatorMissionParticipation = CampaignParticipation & {
   campaign_brief: string;
   campaign_category: string;
   content_deadline: string | null;
+  campaign_markets: string[];
 };
 
 export async function getCreatorMissionParticipations(creatorId: string): Promise<CreatorMissionParticipation[]> {
   if (!hasDatabase()) return [];
   return query<CreatorMissionParticipation>(
     `SELECT p.*, c.title AS campaign_title, c.brief AS campaign_brief,
-            c.category AS campaign_category, c.content_deadline
+            c.category AS campaign_category, c.content_deadline, c.markets AS campaign_markets
        FROM campaign_participations p
        JOIN campaigns c ON c.id = p.campaign_id
       WHERE p.creator_account_id = $1
@@ -1326,7 +1327,7 @@ export async function getParticipationForCreator(creatorId: string, participatio
   if (!hasDatabase()) return null;
   return one<CreatorMissionParticipation>(
     `SELECT p.*, c.title AS campaign_title, c.brief AS campaign_brief,
-            c.category AS campaign_category, c.content_deadline
+            c.category AS campaign_category, c.content_deadline, c.markets AS campaign_markets
        FROM campaign_participations p
        JOIN campaigns c ON c.id = p.campaign_id
       WHERE p.id = $2 AND p.creator_account_id = $1`,

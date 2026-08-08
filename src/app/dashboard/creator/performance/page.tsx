@@ -1,5 +1,6 @@
 import { requireApprovedCreator } from "@/lib/auth";
 import { getCreatorPerformanceRows } from "@/lib/creator-center";
+import { creatorPersona, currencyMatchesPersona } from "@/lib/creator-persona";
 
 function number(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
@@ -10,9 +11,11 @@ function money(value: number, currency: string) {
   return `${currency} ${number(value)}`;
 }
 
-export default async function CreatorPerformancePage() {
-  const { creator } = await requireApprovedCreator();
-  const rows = await getCreatorPerformanceRows(creator.id);
+export default async function CreatorPerformancePage({ searchParams }: { searchParams: Promise<{ persona?: string }> }) {
+  const { user, creator } = await requireApprovedCreator();
+  const persona = creatorPersona((await searchParams).persona);
+  const allRows = await getCreatorPerformanceRows(creator.id);
+  const rows = user.role === "admin" ? allRows.filter((row) => currencyMatchesPersona(row.currency, persona)) : allRows;
   const totals = rows.reduce((sum, row) => ({
     views: sum.views + Number(row.views),
     likes: sum.likes + Number(row.likes),

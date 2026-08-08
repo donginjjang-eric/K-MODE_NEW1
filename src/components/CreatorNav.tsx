@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import NavIcon from "@/components/NavIcons";
 import type { SessionUser } from "@/lib/auth";
 import type { CreatorAccount } from "@/lib/types";
@@ -25,8 +25,13 @@ const CREATOR_NAV: NavItem[] = [
 
 type CreatorNavigationProps = {
   creator: Pick<CreatorAccount, "display_name" | "platform">;
-  user: Pick<SessionUser, "email">;
+  user: Pick<SessionUser, "email" | "role">;
 };
+
+function useCreatorHref() {
+  const persona = useSearchParams().get("persona");
+  return (href: string) => persona ? `${href}?persona=${persona}` : href;
+}
 
 function isActive(pathname: string, href: string) {
   return href === "/dashboard/creator" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
@@ -48,6 +53,7 @@ function CreatorIdentity({ creator, user }: CreatorNavigationProps) {
 
 export function CreatorSideNav({ creator, user }: CreatorNavigationProps) {
   const pathname = usePathname();
+  const withPersona = useCreatorHref();
 
   return (
     <aside className="creator-rail">
@@ -57,7 +63,7 @@ export function CreatorSideNav({ creator, user }: CreatorNavigationProps) {
       <CreatorIdentity creator={creator} user={user} />
       <nav className="creator-menu" aria-label="Creator Center 메뉴">
         {CREATOR_NAV.map((item) => (
-          <Link key={item.href} href={item.href} className={isActive(pathname, item.href) ? "is-active" : ""}>
+          <Link key={item.href} href={withPersona(item.href)} className={isActive(pathname, item.href) ? "is-active" : ""}>
             <NavIcon name={item.icon} />
             {item.label}
           </Link>
@@ -69,6 +75,7 @@ export function CreatorSideNav({ creator, user }: CreatorNavigationProps) {
 
 export function CreatorTabBar({ creator, user }: CreatorNavigationProps) {
   const pathname = usePathname();
+  const withPersona = useCreatorHref();
 
   return (
     <>
@@ -78,7 +85,7 @@ export function CreatorTabBar({ creator, user }: CreatorNavigationProps) {
       </header>
       <nav className="creator-mobile-nav" aria-label="Creator Center 빠른 메뉴">
         {CREATOR_NAV.map((item) => (
-          <Link key={item.href} href={item.href} className={isActive(pathname, item.href) ? "is-active" : ""}>
+          <Link key={item.href} href={withPersona(item.href)} className={isActive(pathname, item.href) ? "is-active" : ""}>
             <NavIcon name={item.icon} />
             <span>{item.short}</span>
           </Link>

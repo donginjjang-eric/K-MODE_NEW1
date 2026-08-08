@@ -126,6 +126,7 @@
           outline: 3px solid currentColor;
           outline-offset: 3px;
         }
+        body:has(.creator-center) .quick-link-stack,
         body:has(.modal.is-open) .quick-link-stack,
         body.proposal-open .quick-link-stack,
         body.sheet-open .quick-link-stack {

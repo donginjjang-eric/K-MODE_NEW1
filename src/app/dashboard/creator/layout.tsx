@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireApprovedCreator } from "@/lib/auth";
 import { CreatorSideNav, CreatorTabBar } from "@/components/CreatorNav";
 import { CreatorDemoControls } from "@/components/CreatorDemoControls";
+import { CreatorPersonaSwitch } from "@/components/CreatorPersonaSwitch";
 
 export default async function CreatorCenterLayout({ children }: { children: React.ReactNode }) {
   const { user, creator } = await requireApprovedCreator();
@@ -12,10 +13,11 @@ export default async function CreatorCenterLayout({ children }: { children: Reac
       {user.role === "admin" ? (
         <div className="creator-admin-preview">
           <div className="creator-admin-preview-copy" role="status">
-            <strong>관리자 운영 모드</strong>
-            <span>{creator.display_name} 프로필로 크리에이터 센터 전체 기능을 사용하고 있습니다.</span>
-            <Link href="/dashboard/admin/campaigns">캠페인 관리로 돌아가기</Link>
+            <strong>관리자 미리보기</strong>
+            <span>해외 크리에이터가 실제로 보는 화면입니다.</span>
+            <Link href="/dashboard/admin/campaigns">캠페인 관리</Link>
           </div>
+          <CreatorPersonaSwitch />
           <CreatorDemoControls />
         </div>
       ) : null}

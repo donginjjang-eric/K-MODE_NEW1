@@ -137,6 +137,17 @@
   white-space: nowrap;
 }
 .creator-demo-controls button.is-reset { background: transparent; color: #18140d; }
+.creator-persona-switch { display: flex; align-items: center; gap: 6px; }
+.creator-persona-switch > span { margin-right: 3px; color: #75664b; font-size: 11px; font-weight: 800; }
+.creator-persona-switch a { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 9px; border: 1px solid #d7c9ad; border-radius: 999px; background: #fff; text-decoration: none; }
+.creator-persona-switch a b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #eee7d8; font-size: 9px; }
+.creator-persona-switch a small { color: #857b69; font-size: 9px; }
+.creator-persona-switch a.is-active { border-color: var(--creator-teal); background: var(--creator-teal); color: #fff; }
+.creator-persona-switch a.is-active b { background: rgba(255,255,255,.18); }
+.creator-persona-switch a.is-active small { color: rgba(255,255,255,.75); }
+.creator-persona-context { width: fit-content; margin-top: 5px; padding: 7px 10px; border-radius: 999px; background: #e1f5f1; color: var(--creator-teal); font-size: 11px; }
+.creator-center .creator-mission-stages li.is-next { color: #6b6458; }
+.creator-center .creator-mission-stages li.is-next span { border-style: dashed; border-color: var(--creator-teal); color: var(--creator-teal); font-weight: 900; }
 
 @media (max-width: 760px) {
   .creator-admin-preview {
@@ -147,6 +158,10 @@
     padding: 10px 14px;
   }
   .creator-admin-preview-copy { flex-wrap: wrap; }
+  .creator-admin-preview-copy > span { display: none; }
+  .creator-persona-switch { order: 3; width: 100%; overflow-x: auto; }
+  .creator-persona-switch > span { white-space: nowrap; }
+  .creator-persona-switch a { flex: 0 0 auto; }
   .creator-demo-controls { width: 100%; }
 }
 

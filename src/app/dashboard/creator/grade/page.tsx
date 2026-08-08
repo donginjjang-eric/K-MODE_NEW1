@@ -1,6 +1,7 @@
 import { requireApprovedCreator } from "@/lib/auth";
 import { creatorGrade } from "@/lib/creator-center";
 import { getCreatorMissionParticipations } from "@/lib/db";
+import { creatorPersona, missionMatchesPersona } from "@/lib/creator-persona";
 
 const GRADES = [
   { name: "STARTER", condition: "첫 캠페인을 준비하는 단계", minimum: 0 },
@@ -8,9 +9,11 @@ const GRADES = [
   { name: "PRO", condition: "완료 캠페인 3건 이상", minimum: 3 },
 ];
 
-export default async function CreatorGradePage() {
-  const { creator } = await requireApprovedCreator();
-  const missions = await getCreatorMissionParticipations(creator.id);
+export default async function CreatorGradePage({ searchParams }: { searchParams: Promise<{ persona?: string }> }) {
+  const { user, creator } = await requireApprovedCreator();
+  const persona = creatorPersona((await searchParams).persona);
+  const allMissions = await getCreatorMissionParticipations(creator.id);
+  const missions = user.role === "admin" ? allMissions.filter((item) => missionMatchesPersona(item, persona)) : allMissions;
   const completed = missions.filter((mission) => mission.status === "completed").length;
   const current = creatorGrade(completed);
   const nextTarget = current === "STARTER" ? 1 : current === "RISING" ? 3 : completed;

@@ -9,6 +9,7 @@ import {
   missionStageIndex,
   selectActiveMission,
 } from "@/lib/creator-center";
+import { campaignMatchesPersona, creatorNextActionLabel, creatorPersona, currencyMatchesPersona, missionMatchesPersona, CREATOR_PERSONAS } from "@/lib/creator-persona";
 
 const MISSION_STAGES = ["제품 수령", "콘텐츠 제작", "검수", "게시", "정산"];
 
@@ -27,15 +28,19 @@ function deadlineLabel(value: string | Date | null) {
   return String(value).slice(0, 10);
 }
 
-export default async function CreatorActionHomePage() {
+export default async function CreatorActionHomePage({ searchParams }: { searchParams: Promise<{ persona?: string }> }) {
   const { user, creator } = await requireApprovedCreator();
-  const [recommended, missions, performanceRows] = await Promise.all([
+  const persona = creatorPersona((await searchParams).persona);
+  const [allRecommended, allMissions, allPerformanceRows] = await Promise.all([
     getRecommendedCampaigns(creator.id),
     getCreatorMissionParticipations(creator.id),
     getCreatorPerformanceRows(creator.id),
   ]);
+  const recommended = user.role === "admin" ? allRecommended.filter((item) => campaignMatchesPersona(item.markets, persona)) : allRecommended;
+  const missions = user.role === "admin" ? allMissions.filter((item) => missionMatchesPersona(item, persona)) : allMissions;
+  const performanceRows = user.role === "admin" ? allPerformanceRows.filter((item) => currencyMatchesPersona(item.currency, persona)) : allPerformanceRows;
   const metrics = buildCreatorCenterMetrics({
-    market: creator.market,
+    market: user.role === "admin" ? CREATOR_PERSONAS[persona].market : creator.market,
     recommendedCount: recommended.length,
     deadlineCount: recommended.filter((campaign) => isToday(campaign.application_deadline)).length,
     workItems: missions.map((mission) => ({
@@ -44,7 +49,7 @@ export default async function CreatorActionHomePage() {
       settlementStatus: mission.settlement_status,
     })),
     performanceRows,
-    administratorPreview: user.role === "admin",
+    administratorPreview: false,
   });
   const activeMission = selectActiveMission(missions);
   const activeStage = activeMission ? missionStageIndex(activeMission.status) : -1;
@@ -55,12 +60,13 @@ export default async function CreatorActionHomePage() {
         <p>CREATOR ACTIVITY · REVENUE CENTER</p>
         <h1>오늘의 활동</h1>
         <span>한국 공급자의 K-뷰티·패션 제품을 해외 크리에이터의 콘텐츠와 판매로 연결합니다.</span>
+        {user.role === "admin" ? <b className="creator-persona-context">{CREATOR_PERSONAS[persona].label} 크리에이터 화면 · {CREATOR_PERSONAS[persona].currency}</b> : null}
       </header>
 
       <section className="creator-kpi-grid" aria-label="오늘의 활동 지표">
         <article className="is-blue"><span>추천 캠페인</span><strong>{metrics.recommendedCount}</strong><small>내 국가와 채널에 맞는 제안</small></article>
         <article className="is-yellow"><span>오늘 마감</span><strong>{metrics.deadlineCount}</strong><small>오늘 신청이 끝나는 캠페인</small></article>
-        <article className="is-mint"><span>{user.role === "admin" ? "데모 보상 구성" : "예상 수익"}</span><strong>{metrics.expectedEarnings}</strong><small>{user.role === "admin" ? "관리자 미리보기 · 통화별 보상" : "크리에이터 현지 통화 기준"}</small></article>
+        <article className="is-mint"><span>예상 수익</span><strong>{metrics.expectedEarnings}</strong><small>크리에이터 현지 통화 기준</small></article>
         <article className="is-gray"><span>누적 주문</span><strong>{metrics.totalOrders}</strong><small>게시 콘텐츠에서 발생한 누적 주문</small></article>
       </section>
 
@@ -68,7 +74,7 @@ export default async function CreatorActionHomePage() {
         <section className="creator-recommend-summary" aria-labelledby="recommend-summary-heading">
           <div className="creator-section-heading">
             <div><p className="creator-eyebrow">KOREA → GLOBAL</p><h2 id="recommend-summary-heading">추천 캠페인</h2></div>
-            <Link href="/dashboard/creator/campaigns">전체 보기</Link>
+            <Link href={`/dashboard/creator/campaigns?persona=${persona}`}>전체 보기</Link>
           </div>
           {recommended.length ? (
             <ul>
@@ -85,16 +91,16 @@ export default async function CreatorActionHomePage() {
         <section className="creator-mission-board" aria-labelledby="mission-board-heading">
           <div className="creator-section-heading">
             <div><p className="creator-eyebrow">MY MISSION</p><h2 id="mission-board-heading">내 미션 보드</h2></div>
-            <Link href="/dashboard/creator/my-campaigns">상세 보기</Link>
+            <Link href={`/dashboard/creator/my-campaigns?persona=${persona}`}>상세 보기</Link>
           </div>
           {activeMission ? (
             <>
               <h3>{activeMission.campaign_title}</h3>
               {activeStage < 0 ? <b className="creator-mission-prestage">{missionPreStageLabel(activeMission.status)}</b> : null}
-              <p>{activeMission.next_action || "다음 단계 안내를 확인하세요."}</p>
+              <p>{creatorNextActionLabel(activeMission.status)}</p>
               <ol className="creator-mission-stages">
                 {MISSION_STAGES.map((stage, index) => (
-                  <li key={stage} className={index < activeStage ? "is-done" : index === activeStage ? "is-current" : ""}>
+                  <li key={stage} className={index < activeStage ? "is-done" : index === activeStage ? "is-current" : activeStage < 0 && index === 0 ? "is-next" : ""}>
                     <span>{index < activeStage ? "✓" : index + 1}</span><b>{stage}</b>
                   </li>
                 ))}

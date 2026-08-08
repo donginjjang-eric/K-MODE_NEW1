@@ -1,13 +1,16 @@
 import { requireApprovedCreator } from "@/lib/auth";
 import { getCreatorSettlementSummary } from "@/lib/db";
+import { creatorPersona, currencyMatchesPersona } from "@/lib/creator-persona";
 
 function amount(value: number, currency: string) {
   return new Intl.NumberFormat("en", { style: "currency", currency, maximumFractionDigits: 2 }).format(value);
 }
 
-export default async function CreatorSettlementPage() {
-  const { creator } = await requireApprovedCreator();
-  const summary = await getCreatorSettlementSummary(creator.id);
+export default async function CreatorSettlementPage({ searchParams }: { searchParams: Promise<{ persona?: string }> }) {
+  const { user, creator } = await requireApprovedCreator();
+  const persona = creatorPersona((await searchParams).persona);
+  const allSummary = await getCreatorSettlementSummary(creator.id);
+  const summary = user.role === "admin" ? allSummary.filter((item) => currencyMatchesPersona(item.currency, persona)) : allSummary;
 
   return <div className="creator-campaigns-page">
     <header className="creator-page-heading creator-page-heading-wide"><p>EARNINGS · SETTLEMENT</p><h1>수익·정산</h1><span>해외 크리에이터가 익숙한 현지 통화 기준으로 예상 수익부터 지급 완료까지 확인합니다. 환율 변환은 적용하지 않습니다.</span></header>
