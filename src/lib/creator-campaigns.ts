@@ -2,8 +2,8 @@ import { hasDatabase, one, query, withDatabaseTransaction } from "./db";
 import type { DatabaseTransactionClient } from "./db";
 import type { AdminCampaignInput, AdminCampaignListItem, AdminCampaignStatus, AdminParticipationAction, Campaign, CampaignEvent, CampaignParticipation, CampaignPerformance, ContentSubmission, CreatorAccount, ParticipationStatus } from "./types";
 
-export type CampaignFitCreator = Pick<CreatorAccount, "id" | "market" | "platform" | "categories">;
-export type CampaignFitCampaign = Pick<Campaign, "id" | "category" | "markets" | "platforms" | "application_deadline">;
+export type CampaignFitCreator = Pick<CreatorAccount, "id" | "market" | "platform" | "categories"> & { owner_role?: string };
+export type CampaignFitCampaign = Pick<Campaign, "id" | "category" | "markets" | "platforms" | "application_deadline"> & { title?: string };
 export type RecommendedCampaign = Campaign & { fit: { score: number; reasons: string[] } };
 
 export const CAPACITY_OCCUPYING_PARTICIPATION_STATUSES: ParticipationStatus[] = ["matched", "shipping", "creating", "review", "published", "settlement", "completed"];
@@ -46,12 +46,24 @@ function platformTargetsCreator(platforms: string[], creatorPlatform: string) {
     || platforms.some((platform) => isWildcard(platform) || normalize(platform) === normalize(creatorPlatform));
 }
 
-function isAdministratorPreviewCreator(creator: CampaignFitCreator) {
-  return normalize(creator.platform).replace(/[\s._-]+/g, "") === "kmodu"
+export function isAdministratorPreviewCreator(creator: CampaignFitCreator) {
+  return creator.owner_role === "admin"
+    && normalize(creator.platform).replace(/[\s._-]+/g, "") === "kmodu"
     && normalizeCampaignMarket(creator.market) === "south-korea";
 }
 
+export function isDemoCampaign(campaign: Pick<CampaignFitCampaign, "id" | "title">) {
+  return campaign.id.startsWith("demo-beauty-") || campaign.title?.trim().startsWith("[DEMO]") === true;
+}
+
+export function assertCreatorCanAccessCampaign(creator: CampaignFitCreator, campaign: Pick<CampaignFitCampaign, "id" | "title">) {
+  if (isDemoCampaign(campaign) && !isAdministratorPreviewCreator(creator)) {
+    throw new Error("Demo campaigns are available only to the administrator preview.");
+  }
+}
+
 export function campaignTargetsCreator(creator: CampaignFitCreator, campaign: CampaignFitCampaign) {
+  if (isDemoCampaign(campaign) && !isAdministratorPreviewCreator(creator)) return false;
   if (isAdministratorPreviewCreator(creator)) return true;
   return marketTargetsCreator(campaign.markets, creator.market)
     && platformTargetsCreator(campaign.platforms, creator.platform);
@@ -427,13 +439,14 @@ export async function getRecommendedCampaigns(creatorId: string): Promise<Recomm
   if (!hasDatabase()) return [];
   const creator = await one<CreatorAccount>("SELECT * FROM creator_accounts WHERE id = $1", [creatorId]);
   if (!creator) return [];
+  const owner = await one<{ role: string }>("SELECT role FROM users WHERE id = $1", [creator.user_id]);
   const campaigns = await query<Campaign>(
     `SELECT * FROM campaigns
       WHERE status = 'recruiting'
         AND (application_deadline IS NULL OR application_deadline > now())
       ORDER BY application_deadline ASC NULLS LAST, created_at ASC`,
   );
-  return rankCampaignRecommendations(creator, campaigns);
+  return rankCampaignRecommendations({ ...creator, owner_role: owner?.role }, campaigns);
 }
 
 export type CreatorActionSummary = {
@@ -519,6 +532,10 @@ export async function applyToCampaign(creatorId: string, campaignId: string): Pr
     const campaignResult = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [campaignId]);
     const campaign = campaignResult.rows[0];
     if (!campaign) throw new Error("Campaign was not found.");
+    if (isDemoCampaign(campaign)) {
+      const ownerResult = await client.query<{ role: string }>("SELECT role FROM users WHERE id = $1 FOR UPDATE", [creator.user_id]);
+      assertCreatorCanAccessCampaign({ ...creator, owner_role: ownerResult.rows[0]?.role }, campaign);
+    }
 
     const existingResult = await client.query<CampaignParticipation>(
       "SELECT * FROM campaign_participations WHERE campaign_id = $1 AND creator_account_id = $2 FOR UPDATE",

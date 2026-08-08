@@ -4,6 +4,8 @@ import path from "node:path";
 import { Pool } from "pg";
 import type { PoolClient, QueryResultRow } from "pg";
 import { designer as phaseDesigner, modelTemplates as phaseTemplates, products as phaseProducts } from "./phase1-data";
+import { summarizeCreatorSettlementRewards } from "./creator-rewards";
+import type { CreatorRewardSummary } from "./creator-rewards";
 import type { ApprovalStatus, CampaignEvent, CampaignParticipation, CampaignPerformance, CollabRequest, CollabRequestStatus, CollabRequestType, ContentSubmission, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User } from "./types";
 
 let pool: Pool | null = null;
@@ -1382,35 +1384,18 @@ export async function upsertCampaignPerformance(creatorId: string, participation
   });
 }
 
-export type CreatorSettlementSummary = Array<{
-  currency: CreatorPerformanceCurrency;
-  expected: number;
-  pending: number;
-  confirmed: number;
-  paid: number;
-}>;
+export type CreatorSettlementSummary = CreatorRewardSummary[];
 
 export async function getCreatorSettlementSummary(creatorId: string): Promise<CreatorSettlementSummary> {
   if (!hasDatabase()) return [];
-  const rows = await query<{ settlement_status: CampaignParticipation["settlement_status"]; currency: CreatorPerformanceCurrency; total: string }>(
-    `SELECT p.settlement_status, performance.currency, COALESCE(SUM(performance.revenue), 0)::text AS total
+  const rows = await query<Pick<CampaignParticipation, "status" | "expected_reward" | "settlement_status">>(
+    `SELECT p.status, p.expected_reward, p.settlement_status
        FROM campaign_participations p
-       JOIN campaign_performance performance ON performance.participation_id = p.id
       WHERE p.creator_account_id = $1
-      GROUP BY p.settlement_status, performance.currency`,
+      ORDER BY p.updated_at DESC`,
     [creatorId],
   );
-  const grouped = new Map<CreatorPerformanceCurrency, CreatorSettlementSummary[number]>();
-  for (const row of rows) {
-    const summary = grouped.get(row.currency) ?? { currency: row.currency, expected: 0, pending: 0, confirmed: 0, paid: 0 };
-    const total = Number(row.total);
-    summary.expected += total;
-    if (row.settlement_status === "pending" || row.settlement_status === "confirmed" || row.settlement_status === "paid") {
-      summary[row.settlement_status] += total;
-    }
-    grouped.set(row.currency, summary);
-  }
-  return [...grouped.values()];
+  return summarizeCreatorSettlementRewards(rows);
 }
 
 export async function getContentSubmissionsForParticipation(participationId: string): Promise<ContentSubmission[]> {

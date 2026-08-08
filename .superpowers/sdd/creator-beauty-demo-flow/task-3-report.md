@@ -43,6 +43,14 @@ All six Important findings were reproduced with failing tests before the fixes:
 - Added complete Malay, Vietnamese, Traditional Chinese, and English runtime dictionary entries for the creator-home description, view/detail actions, reward and deadline fallbacks, all three pre-shipping states, and recommendation/mission empty states.
 - The pre-shipping helper outputs (`초대 확인 전`, `지원 검토 중`, `배송 준비 중`) are asserted against the exact runtime dictionary keys so dynamically rendered badges are translated.
 
+## Final whole-branch review fixes
+
+1. Demo campaign access is now provenance-gated. `[DEMO]` and `demo-beauty-*` campaigns are excluded from recommendations and application for normal creators, including identities that spoof the preview market/platform. Only the administrator-owned preview creator can access them.
+2. Demo reset now validates ownership of the campaign and every related participation instead of requiring an exact seed payload. Legitimate runtime changes to statuses, submissions, events, and performance remain resettable, while foreign creator/campaign graph collisions are rejected before deletion. Reset deletes only the administrator-owned demo campaign graph.
+3. Settlement totals now come from creator participation `expected_reward` values. Product gross sales in `campaign_performance.revenue` remain available only to the performance view and are never substituted for creator compensation. The completed demo reward settles as `RM 420`.
+4. Administrator preview earnings are explicitly presented as a currency-by-currency demo reward breakdown, for example `RM 420 · VND 2,500,000`, without pretending to convert into a South Korean local currency.
+5. Supplier/market, date/deadline, completed campaign count, and campaigns-remaining strings are rendered as composable translatable nodes. Their Korean, Malay, Vietnamese, Traditional Chinese, and English labels are present in the runtime dictionary.
+
 ## Verification
 
 - Focused and regression tests:
@@ -51,9 +59,13 @@ All six Important findings were reproduced with failing tests before the fixes:
 - Final focused rerun: 17/17 passed.
 - Follow-up focused suite: 21/21 passed, including campaign behavior, creator-home translations, campaign page contract, and administrator preview contract.
 - TypeScript: `cmd /c npx.cmd tsc --noEmit --incremental false` passed.
+- Final whole-branch creator suite: 57/57 passed across authentication, demo provenance/reset, recommendation/apply eligibility, activity/revenue calculations, mission flow, performance, settlement, translations, navigation, schema, and designer-studio isolation.
+- Final targeted review suite: 33/33 passed.
 - Production build: `cmd /c npm.cmd run build` passed and compiled the new `/dashboard/creator/performance` and `/dashboard/creator/grade` routes.
 - Build emitted only the existing multi-lockfile/workspace-root tracing warnings.
 - The production build was not rerun for this review-fix commit because disk space was near zero and the previous Task 3 build had already passed. Focused behavior tests, the broader regression suite, and a fresh non-incremental TypeScript check were used instead.
+- Per controller request, no full build was run for the final review commit; the controller will run it separately.
+- No deployment or production mutation was performed.
 - Local server started at `http://localhost:8012`, but visual dashboard inspection was redirected to `/login?error=creator_required` because the in-app browser did not have a localhost creator session. No production mutation or deployment was performed in this task.
 
 ## Files changed

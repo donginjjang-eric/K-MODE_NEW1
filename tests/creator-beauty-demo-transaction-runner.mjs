@@ -196,8 +196,27 @@ test("seed rejects a fixed child ID collision without changing the existing reco
   assert.equal(client.calls.includes("ROLLBACK"), true);
 });
 
-test("reset rejects a fixed child ID collision and does not cascade into real data", async () => {
-  const realParticipation = { id: "demo-beauty-liptint-completed-participation", campaign_id: "demo-beauty-liptint-completed", creator_account_id: "creator-1", source: "application", status: "completed", next_action: "Real data", expected_reward: "Real", settlement_status: "paid" };
+test("reset accepts legitimate mutations inside the admin-owned demo graph", async () => {
+  const state = createState();
+  clients.push(new TransactionClient(state));
+  await seedCreatorBeautyDemo("admin-1", "creator-1");
+  const participation = state.participations.get("demo-beauty-suncushion-review-participation");
+  participation.status = "published";
+  participation.next_action = "Legitimate workflow mutation";
+  state.events.set("runtime-event-1", { id: "runtime-event-1", participation_id: participation.id, actor_user_id: "admin-1", event_type: "status_changed", from_status: "review", to_status: "published", message: "Published" });
+  state.submissions.set("runtime-submission-1", { id: "runtime-submission-1", participation_id: participation.id, version: 3, content_url: "https://example.com/runtime", caption_text: "Updated", status: "published" });
+
+  clients.push(new TransactionClient(state));
+  assert.deepEqual(await resetCreatorBeautyDemo("admin-1", "creator-1"), { removedCampaigns: 4 });
+  assert.equal(state.campaigns.size, 0);
+  assert.equal(state.participations.size, 0);
+  assert.equal(state.events.size, 0);
+  assert.equal(state.submissions.size, 0);
+  assert.equal(state.performance.size, 0);
+});
+
+test("reset rejects a fixed child ID collision owned by a foreign creator", async () => {
+  const realParticipation = { id: "demo-beauty-liptint-completed-participation", campaign_id: "demo-beauty-liptint-completed", creator_account_id: "creator-foreign", source: "application", status: "completed", next_action: "Foreign data", expected_reward: "Real", settlement_status: "paid" };
   const state = createState({
     campaigns: new Map([["demo-beauty-liptint-completed", { id: "demo-beauty-liptint-completed", owner_id: "admin-1", title: "[DEMO] Campaign with real child" }]]),
     participations: new Map([[realParticipation.id, realParticipation]]),

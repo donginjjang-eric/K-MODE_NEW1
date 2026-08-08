@@ -235,11 +235,6 @@ const DEMO_PERFORMANCE: DemoPerformance[] = [
   },
 ];
 
-const DEMO_PARTICIPATION_BY_ID = new Map(DEMO_PARTICIPATIONS.map((participation) => [participation.id, participation]));
-const DEMO_EVENT_BY_ID = new Map(DEMO_EVENTS.map((event) => [event.id, event]));
-const DEMO_SUBMISSION_BY_ID = new Map(DEMO_SUBMISSIONS.map((submission) => [submission.id, submission]));
-const DEMO_PERFORMANCE_BY_PARTICIPATION = new Map(DEMO_PERFORMANCE.map((performance) => [performance.participationId, performance]));
-
 async function assertAdminOwnedCreator(client: DatabaseTransactionClient, adminUserId: string, creatorAccountId: string): Promise<CreatorAccount> {
   if (!adminUserId.trim() || !creatorAccountId.trim()) throw new Error("Admin and creator IDs are required.");
 
@@ -269,15 +264,12 @@ async function assertDemoCampaignSlots(client: DatabaseTransactionClient, adminU
   }
 }
 
-function isDemoId(value: unknown): value is string {
-  return typeof value === "string" && value.startsWith("demo-beauty-");
-}
-
-async function assertDemoChildGraph(client: DatabaseTransactionClient, adminUserId: string, creatorAccountId: string) {
+async function assertDemoChildGraph(client: DatabaseTransactionClient, creatorAccountId: string) {
   const campaignIds = [...DEMO_CAMPAIGN_IDS];
-  const participationIds = [...DEMO_PARTICIPATION_BY_ID.keys()];
-  const eventIds = [...DEMO_EVENT_BY_ID.keys()];
-  const submissionIds = [...DEMO_SUBMISSION_BY_ID.keys()];
+  const campaignIdSet = new Set(campaignIds);
+  const participationIds = DEMO_PARTICIPATIONS.map((participation) => participation.id);
+  const eventIds = DEMO_EVENTS.map((event) => event.id);
+  const submissionIds = DEMO_SUBMISSIONS.map((submission) => submission.id);
 
   const [relatedParticipations, fixedParticipations] = await Promise.all([
     client.query<{ id: string; campaign_id: string; creator_account_id: string; source: string; status: string; next_action: string; expected_reward: string; settlement_status: string }>(
@@ -291,8 +283,7 @@ async function assertDemoChildGraph(client: DatabaseTransactionClient, adminUser
   ]);
   const participations = new Map([...relatedParticipations.rows, ...fixedParticipations.rows].map((row) => [row.id, row]));
   for (const row of participations.values()) {
-    const expected = DEMO_PARTICIPATION_BY_ID.get(row.id);
-    if (!expected || !isDemoId(row.id) || row.campaign_id !== expected.campaignId || row.creator_account_id !== creatorAccountId || row.source !== expected.source || row.status !== expected.status || row.next_action !== expected.nextAction || row.expected_reward !== expected.expectedReward || row.settlement_status !== expected.settlementStatus) {
+    if (!campaignIdSet.has(row.campaign_id) || row.creator_account_id !== creatorAccountId) {
       throw new Error(`Demo participation ID collision: ${row.id}`);
     }
   }
@@ -323,23 +314,20 @@ async function assertDemoChildGraph(client: DatabaseTransactionClient, adminUser
 
   const events = new Map([...relatedEvents.rows, ...fixedEvents.rows].map((row) => [row.id, row]));
   for (const row of events.values()) {
-    const expected = DEMO_EVENT_BY_ID.get(row.id);
-    if (!expected || !isDemoId(row.id) || row.participation_id !== expected.participationId || row.actor_user_id !== adminUserId || row.event_type !== expected.eventType || row.from_status !== expected.fromStatus || row.to_status !== expected.toStatus || row.message !== expected.message) {
+    if (!participations.has(row.participation_id)) {
       throw new Error(`Demo event ID collision: ${row.id}`);
     }
   }
 
   const submissions = new Map([...relatedSubmissions.rows, ...fixedSubmissions.rows].map((row) => [row.id, row]));
   for (const row of submissions.values()) {
-    const expected = DEMO_SUBMISSION_BY_ID.get(row.id);
-    if (!expected || !isDemoId(row.id) || row.participation_id !== expected.participationId || row.version !== expected.version || row.content_url !== expected.contentUrl || row.caption_text !== expected.captionText || row.status !== expected.status || row.review_note !== expected.reviewNote || row.published_url !== expected.publishedUrl || row.submitted_at !== expected.submittedAt || row.reviewed_at !== expected.reviewedAt || row.published_at !== expected.publishedAt) {
+    if (!participations.has(row.participation_id)) {
       throw new Error(`Demo submission ID collision: ${row.id}`);
     }
   }
 
   for (const row of performanceRows.rows) {
-    const expected = DEMO_PERFORMANCE_BY_PARTICIPATION.get(row.participation_id);
-    if (!expected || row.views !== expected.views || row.likes !== expected.likes || row.comments !== expected.comments || row.orders !== expected.orders || Number(row.revenue) !== expected.revenue || row.currency !== expected.currency) {
+    if (!participations.has(row.participation_id)) {
       throw new Error(`Demo performance provenance violation: ${row.participation_id}`);
     }
   }
@@ -458,7 +446,7 @@ export async function seedCreatorBeautyDemo(adminUserId: string, creatorAccountI
   return withDatabaseTransaction(async (client) => {
     await assertAdminOwnedCreator(client, adminUserId, creatorAccountId);
     await assertDemoCampaignSlots(client, adminUserId);
-    await assertDemoChildGraph(client, adminUserId, creatorAccountId);
+    await assertDemoChildGraph(client, creatorAccountId);
     for (const campaign of DEMO_CAMPAIGNS) await upsertDemoCampaign(client, adminUserId, campaign);
     for (const participation of DEMO_PARTICIPATIONS) await upsertDemoParticipation(client, creatorAccountId, participation);
     for (const event of DEMO_EVENTS) await upsertDemoEvent(client, adminUserId, event);
@@ -479,7 +467,7 @@ export async function resetCreatorBeautyDemo(adminUserId: string, creatorAccount
   return withDatabaseTransaction(async (client) => {
     await assertAdminOwnedCreator(client, adminUserId, creatorAccountId);
     await assertDemoCampaignSlots(client, adminUserId);
-    await assertDemoChildGraph(client, adminUserId, creatorAccountId);
+    await assertDemoChildGraph(client, creatorAccountId);
     const deleted = await client.query<{ id: string }>(
       "DELETE FROM campaigns WHERE id = ANY($2::text[]) AND owner_id = $1 AND title LIKE '[DEMO]%' RETURNING id",
       [adminUserId, [...DEMO_CAMPAIGN_IDS]],

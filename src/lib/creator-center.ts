@@ -1,4 +1,5 @@
 import { hasDatabase, query } from "./db";
+import { formatCreatorReward, formatCreatorRewardBreakdown, parseCreatorReward } from "./creator-rewards";
 import type { ParticipationStatus, SettlementStatus } from "./types";
 
 export type CreatorCenterMetrics = {
@@ -26,8 +27,6 @@ export type CreatorPerformanceRow = {
   updated_at: string;
 };
 
-const REWARD_PATTERN = /\b(RM|MYR|VND|USD|TWD|KRW)\s*([\d,.]+)/i;
-
 function localCurrencyForMarket(market: string) {
   const normalized = market.toLowerCase();
   if (normalized.includes("malaysia")) return "MYR";
@@ -37,20 +36,9 @@ function localCurrencyForMarket(market: string) {
   return "USD";
 }
 
-function parseReward(value: string) {
-  const match = value.match(REWARD_PATTERN);
-  if (!match) return null;
-  const currency = match[1].toUpperCase() === "RM" ? "MYR" : match[1].toUpperCase();
-  return { currency, amount: Number(match[2].replaceAll(",", "")) || 0 };
-}
-
-function formatLocalReward(currency: string, amount: number) {
-  if (currency === "MYR") return `RM ${new Intl.NumberFormat("en-MY", { maximumFractionDigits: 0 }).format(amount)}`;
-  return `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount)}`;
-}
-
 export function buildCreatorCenterMetrics(input: {
   market: string;
+  administratorPreview?: boolean;
   recommendedCount: number;
   deadlineCount: number;
   workItems: CreatorCenterWorkItem[];
@@ -59,14 +47,23 @@ export function buildCreatorCenterMetrics(input: {
   const currency = localCurrencyForMarket(input.market);
   const localRewards = input.workItems
     .filter((item) => isAcceptedActiveWork(item.status) && item.settlementStatus !== "paid")
-    .map((item) => parseReward(item.expectedReward))
+    .map((item) => parseCreatorReward(item.expectedReward))
     .filter((item): item is NonNullable<typeof item> => item !== null && item.currency === currency);
   const total = localRewards.reduce((sum, item) => sum + item.amount, 0);
+  const previewBreakdown = input.administratorPreview
+    ? formatCreatorRewardBreakdown(input.workItems.map((item) => ({
+      status: item.status,
+      expected_reward: item.expectedReward,
+      settlement_status: item.settlementStatus,
+    })))
+    : "";
 
   return {
     recommendedCount: input.recommendedCount,
     deadlineCount: input.deadlineCount,
-    expectedEarnings: localRewards.length ? formatLocalReward(currency, total) : "—",
+    expectedEarnings: input.administratorPreview
+      ? previewBreakdown || "—"
+      : localRewards.length ? formatCreatorReward(localRewards[0]!.currency, total) : "—",
     totalOrders: input.performanceRows.reduce((sum, row) => sum + Number(row.orders || 0), 0),
   };
 }

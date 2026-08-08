@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   assertCampaignCanCreateInvitation,
   assertCampaignCanAcceptApplication,
+  assertCreatorCanAccessCampaign,
   canTransitionParticipation,
   rankCampaignRecommendations,
   resolveApplicationStatus,
@@ -100,7 +101,7 @@ test("global market targets are wildcards and the administrator preview sees ove
   assert.equal(rankCampaignRecommendations({ ...creator, market: "Malaysia" }, [explicitGlobal]).length, 1);
   assert.equal(rankCampaignRecommendations({ ...creator, market: "베트남" }, [{ ...explicitGlobal, markets: ["Global"] }]).length, 1);
 
-  const adminPreview = { id: "admin-preview", market: "South Korea", platform: "K-MODU", categories: ["beauty"] };
+  const adminPreview = { id: "admin-preview", market: "South Korea", platform: "K-MODU", categories: ["beauty"], owner_role: "admin" };
   const recruitingDemoCampaigns = DEMO_CAMPAIGNS
     .filter((campaign) => campaign.status === "recruiting")
     .map((campaign) => ({
@@ -112,6 +113,26 @@ test("global market targets are wildcards and the administrator preview sees ove
     }));
   const ranked = rankCampaignRecommendations(adminPreview, recruitingDemoCampaigns, new Date("2026-08-09T00:00:00.000Z"));
   assert.deepEqual(new Set(ranked.map((campaign) => campaign.id)), new Set(["demo-beauty-serum-recruiting", "demo-beauty-cream-invited"]));
+});
+
+test("demo campaigns are hidden and cannot be applied to outside the administrator-owned preview", () => {
+  const demoCampaign = {
+    id: "demo-beauty-serum-recruiting",
+    title: "[DEMO] Barrier Recovery Serum",
+    markets: ["Malaysia"],
+    platforms: ["TikTok"],
+    category: "beauty",
+    application_deadline: futureDeadline,
+  };
+  const normalCreator = { ...creator, market: "Malaysia", platform: "TikTok", owner_role: "creator" };
+  const spoofedPreview = { ...normalCreator, market: "South Korea", platform: "K-MODU" };
+  const adminPreview = { ...spoofedPreview, owner_role: "admin" };
+
+  assert.deepEqual(rankCampaignRecommendations(normalCreator, [demoCampaign]), []);
+  assert.deepEqual(rankCampaignRecommendations(spoofedPreview, [demoCampaign]), []);
+  assert.equal(rankCampaignRecommendations(adminPreview, [demoCampaign]).length, 1);
+  assert.throws(() => assertCreatorCanAccessCampaign(normalCreator, demoCampaign), /administrator preview/i);
+  assert.doesNotThrow(() => assertCreatorCanAccessCampaign(adminPreview, demoCampaign));
 });
 
 test("rejects duplicate applications and campaigns that are expired or not recruiting", () => {

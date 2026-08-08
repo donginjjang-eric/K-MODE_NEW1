@@ -61,6 +61,40 @@ test("creator center never substitutes a foreign-currency reward", async () => {
   assert.equal(metrics.expectedEarnings, "—");
 });
 
+test("administrator preview shows a multi-currency reward breakdown without conversion", async () => {
+  const { buildCreatorCenterMetrics } = await import("../src/lib/creator-center.ts");
+  const metrics = buildCreatorCenterMetrics({
+    market: "South Korea",
+    administratorPreview: true,
+    recommendedCount: 2,
+    deadlineCount: 0,
+    workItems: [
+      { status: "review", expectedReward: "VND 2,500,000", settlementStatus: "pending" },
+      { status: "completed", expectedReward: "RM 420", settlementStatus: "paid" },
+      { status: "invited", expectedReward: "VND 9,999,999", settlementStatus: "none" },
+    ],
+    performanceRows: [],
+  });
+  assert.equal(metrics.expectedEarnings, "RM 420 · VND 2,500,000");
+});
+
+test("settlement reward totals use creator expected rewards and keep gross performance separate", async () => {
+  const { summarizeCreatorSettlementRewards } = await import("../src/lib/creator-rewards.ts");
+  const summary = summarizeCreatorSettlementRewards([
+    { status: "review", expected_reward: "VND 2,500,000", settlement_status: "pending" },
+    { status: "completed", expected_reward: "RM 420", settlement_status: "paid" },
+    { status: "invited", expected_reward: "RM 900", settlement_status: "none" },
+  ]);
+  assert.deepEqual(summary, [
+    { currency: "MYR", expected: 420, pending: 0, confirmed: 0, paid: 420 },
+    { currency: "VND", expected: 2_500_000, pending: 2_500_000, confirmed: 0, paid: 0 },
+  ]);
+
+  const db = await readFile(new URL("src/lib/db.ts", root), "utf8");
+  assert.match(db, /expected_reward/);
+  assert.doesNotMatch(db.match(/export async function getCreatorSettlementSummary[\s\S]*?\n}/)?.[0] || "", /performance\.revenue/);
+});
+
 test("mission stages distinguish pre-shipping work and exclude terminal missions from active selection", async () => {
   const { creatorGrade, isActiveMissionStatus, missionPreStageLabel, missionStageIndex, selectActiveMission } = await import("../src/lib/creator-center.ts");
   assert.equal(creatorGrade(0), "STARTER");
@@ -131,5 +165,24 @@ test("core home actions have complete four-locale runtime dictionary entries", a
     const malayEntry = new RegExp(`"${escapedLabel}"\\s*:\\s*"[^"]+"`);
     assert.match(i18n, overseasEntry, `${label} needs Vietnamese, Traditional Chinese and English`);
     assert.match(i18n, malayEntry, `${label} needs Malay`);
+  }
+});
+
+test("dynamic creator-home and grade strings are composed from runtime-translatable nodes", async () => {
+  const [home, grade, i18n] = await Promise.all([
+    readFile(new URL("src/app/dashboard/creator/page.tsx", root), "utf8"),
+    readFile(new URL("src/app/dashboard/creator/grade/page.tsx", root), "utf8"),
+    readFile(new URL("site-i18n.js", root), "utf8"),
+  ]);
+  assert.match(home, /<span>한국 공급자<\/span>/);
+  assert.match(home, /<span>마감<\/span>/);
+  assert.match(grade, /<span>완료 캠페인<\/span>/);
+  assert.match(grade, /<span>다음 등급까지<\/span>/);
+  assert.match(grade, /<span>건 남았습니다\.<\/span>/);
+
+  for (const label of ["한국 공급자", "마감", "완료 캠페인", "건", "다음 등급까지", "건 남았습니다."]) {
+    const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    assert.match(i18n, new RegExp(`'${escapedLabel}'\\s*:\\s*\\[[^\\]]+,[^\\]]+,[^\\]]+\\]`));
+    assert.match(i18n, new RegExp(`"${escapedLabel}"\\s*:\\s*"[^"]+"`));
   }
 });

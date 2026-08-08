@@ -43,7 +43,10 @@ test("settlement and profile pages keep monetary totals grouped by currency and 
   ]);
 
   assert.match(db, /export async function getCreatorSettlementSummary\(creatorId: string\)/);
-  assert.match(db, /GROUP BY p\.settlement_status, performance\.currency/);
+  assert.match(db, /summarizeCreatorSettlementRewards/);
+  assert.match(db, /p\.expected_reward/);
+  const settlementFunction = db.slice(db.indexOf("export async function getCreatorSettlementSummary"), db.indexOf("export async function getCreatorSubmissionWorkspace"));
+  assert.doesNotMatch(settlementFunction, /performance\.revenue/);
   assert.match(settlement, /requireApprovedCreator\(\)/);
   assert.match(settlement, /getCreatorSettlementSummary\(creator\.id\)/);
   assert.match(settlement, /expected/);

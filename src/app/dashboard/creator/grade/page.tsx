@@ -22,8 +22,10 @@ export default async function CreatorGradePage() {
         <span>한국 브랜드와의 협업 완료 이력에 따라 더 많은 캠페인과 판매 기회가 열립니다.</span>
       </header>
       <section className="creator-grade-hero">
-        <div><p>현재 등급</p><strong>{current}</strong><span>완료 캠페인 {completed}건</span></div>
-        <div><p>{current === "PRO" ? "최고 등급을 유지하고 있습니다." : `다음 등급까지 ${Math.max(nextTarget - completed, 0)}건 남았습니다.`}</p>
+        <div><p>현재 등급</p><strong>{current}</strong><span><span>완료 캠페인</span> {completed}<span>건</span></span></div>
+        <div>{current === "PRO"
+          ? <p>최고 등급을 유지하고 있습니다.</p>
+          : <p><span>다음 등급까지</span> {Math.max(nextTarget - completed, 0)}<span>건 남았습니다.</span></p>}
           <progress max={Math.max(nextTarget, 1)} value={Math.min(completed, Math.max(nextTarget, 1))} aria-label="다음 등급 진행률" />
           <small>정확한 콘텐츠 제출과 일정 준수가 등급에 반영됩니다.</small>
         </div>

@@ -27,7 +27,7 @@ function deadlineLabel(value: string | null) {
 }
 
 export default async function CreatorActionHomePage() {
-  const { creator } = await requireApprovedCreator();
+  const { user, creator } = await requireApprovedCreator();
   const [recommended, missions, performanceRows] = await Promise.all([
     getRecommendedCampaigns(creator.id),
     getCreatorMissionParticipations(creator.id),
@@ -43,6 +43,7 @@ export default async function CreatorActionHomePage() {
       settlementStatus: mission.settlement_status,
     })),
     performanceRows,
+    administratorPreview: user.role === "admin",
   });
   const activeMission = selectActiveMission(missions);
   const activeStage = activeMission ? missionStageIndex(activeMission.status) : -1;
@@ -58,7 +59,7 @@ export default async function CreatorActionHomePage() {
       <section className="creator-kpi-grid" aria-label="오늘의 활동 지표">
         <article className="is-blue"><span>추천 캠페인</span><strong>{metrics.recommendedCount}</strong><small>내 국가와 채널에 맞는 제안</small></article>
         <article className="is-yellow"><span>오늘 마감</span><strong>{metrics.deadlineCount}</strong><small>오늘 신청이 끝나는 캠페인</small></article>
-        <article className="is-mint"><span>예상 수익</span><strong>{metrics.expectedEarnings}</strong><small>크리에이터 현지 통화 기준</small></article>
+        <article className="is-mint"><span>{user.role === "admin" ? "데모 보상 구성" : "예상 수익"}</span><strong>{metrics.expectedEarnings}</strong><small>{user.role === "admin" ? "관리자 미리보기 · 통화별 보상" : "크리에이터 현지 통화 기준"}</small></article>
         <article className="is-gray"><span>누적 주문</span><strong>{metrics.totalOrders}</strong><small>게시 콘텐츠에서 발생한 누적 주문</small></article>
       </section>
 
@@ -72,8 +73,8 @@ export default async function CreatorActionHomePage() {
             <ul>
               {recommended.slice(0, 3).map((campaign) => (
                 <li key={campaign.id}>
-                  <div><strong>{campaign.title}</strong><span>한국 공급자 · {campaign.markets.join(" · ") || creator.market}</span></div>
-                  <p><b>{campaign.reward_text || "보상 협의"}</b><small>{deadlineLabel(campaign.application_deadline)} 마감</small></p>
+                  <div><strong>{campaign.title}</strong><span><span>한국 공급자</span> · <span>{campaign.markets.join(" · ") || creator.market}</span></span></div>
+                  <p><b>{campaign.reward_text || "보상 협의"}</b><small><span>{deadlineLabel(campaign.application_deadline)}</span> <span>마감</span></small></p>
                 </li>
               ))}
             </ul>
