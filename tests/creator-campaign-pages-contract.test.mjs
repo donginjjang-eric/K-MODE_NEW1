@@ -14,12 +14,15 @@ test("creator campaign action surfaces preserve the guarded recruiting workflow"
   ]);
 
   assert.match(home, /requireApprovedCreator\(\)/);
-  assert.match(home, /getCreatorActionSummary\(creator\.id\)/);
   assert.match(home, /getRecommendedCampaigns\(creator\.id\)/);
-  assert.match(home, /getCreatorCampaignActivity\(creator\.id\)/);
-  assert.match(home, /getCreatorSettlementSummary\(creator\.id\)/);
-  assert.ok(home.indexOf("오늘 할 일") < home.indexOf("마감 임박"), "home must prioritize today actions before deadlines");
-  assert.match(home, /recommendedCampaigns\.slice\(0, 3\)/);
+  assert.match(home, /getCreatorMissionParticipations\(creator\.id\)/);
+  assert.match(home, /getCreatorPerformanceRows\(creator\.id\)/);
+  assert.match(home, /buildCreatorCenterMetrics/);
+  assert.match(home, /selectActiveMission\(missions\)/);
+  assert.ok(home.indexOf("오늘의 활동") < home.indexOf("추천 캠페인"), "home must prioritize activity KPIs before recommendations");
+  assert.match(home, /recommended\.slice\(0, 3\)/);
+  assert.match(home, /누적 주문/);
+  assert.doesNotMatch(home, /getCreatorMonthlyOrders/);
   assert.match(home, /href="\/dashboard\/creator\/campaigns"/);
 
   assert.match(campaigns, /requireApprovedCreator\(\)/);

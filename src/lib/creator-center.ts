@@ -1,11 +1,17 @@
 import { hasDatabase, query } from "./db";
-import type { ParticipationStatus } from "./types";
+import type { ParticipationStatus, SettlementStatus } from "./types";
 
 export type CreatorCenterMetrics = {
   recommendedCount: number;
   deadlineCount: number;
   expectedEarnings: string;
-  monthlyOrders: number;
+  totalOrders: number;
+};
+
+export type CreatorCenterWorkItem = {
+  status: ParticipationStatus;
+  expectedReward: string;
+  settlementStatus: SettlementStatus;
 };
 
 export type CreatorPerformanceRow = {
@@ -47,30 +53,52 @@ export function buildCreatorCenterMetrics(input: {
   market: string;
   recommendedCount: number;
   deadlineCount: number;
-  rewards: string[];
-  monthlyOrders: number;
+  workItems: CreatorCenterWorkItem[];
+  performanceRows: Array<Pick<CreatorPerformanceRow, "orders">>;
 }): CreatorCenterMetrics {
   const currency = localCurrencyForMarket(input.market);
-  const rewards = input.rewards.map(parseReward).filter((item): item is NonNullable<typeof item> => Boolean(item));
-  const localRewards = rewards.filter((item) => item.currency === currency);
-  const selected = localRewards.length ? localRewards : rewards.slice(0, 1);
-  const selectedCurrency = selected[0]?.currency ?? currency;
-  const total = selected.reduce((sum, item) => sum + item.amount, 0);
+  const localRewards = input.workItems
+    .filter((item) => isAcceptedActiveWork(item.status) && item.settlementStatus !== "paid")
+    .map((item) => parseReward(item.expectedReward))
+    .filter((item): item is NonNullable<typeof item> => item !== null && item.currency === currency);
+  const total = localRewards.reduce((sum, item) => sum + item.amount, 0);
 
   return {
     recommendedCount: input.recommendedCount,
     deadlineCount: input.deadlineCount,
-    expectedEarnings: formatLocalReward(selectedCurrency, total),
-    monthlyOrders: input.monthlyOrders,
+    expectedEarnings: localRewards.length ? formatLocalReward(currency, total) : "—",
+    totalOrders: input.performanceRows.reduce((sum, row) => sum + Number(row.orders || 0), 0),
   };
 }
 
 export function missionStageIndex(status: ParticipationStatus) {
-  if (status === "shipping" || status === "matched" || status === "applied" || status === "invited") return 0;
+  if (status === "invited" || status === "applied" || status === "matched" || status === "cancelled") return -1;
+  if (status === "shipping") return 0;
   if (status === "creating") return 1;
   if (status === "review") return 2;
   if (status === "published") return 3;
   return 4;
+}
+
+const ACCEPTED_ACTIVE_STATUSES: ParticipationStatus[] = ["matched", "shipping", "creating", "review", "published", "settlement"];
+
+export function isAcceptedActiveWork(status: ParticipationStatus) {
+  return ACCEPTED_ACTIVE_STATUSES.includes(status);
+}
+
+export function isActiveMissionStatus(status: ParticipationStatus) {
+  return status !== "completed" && status !== "cancelled";
+}
+
+export function selectActiveMission<T extends { status: ParticipationStatus }>(missions: T[]) {
+  return missions.find((mission) => isActiveMissionStatus(mission.status));
+}
+
+export function missionPreStageLabel(status: ParticipationStatus) {
+  if (status === "invited") return "초대 확인 전";
+  if (status === "applied") return "지원 검토 중";
+  if (status === "matched") return "배송 준비 중";
+  return "";
 }
 
 export function creatorGrade(completedCampaigns: number) {
@@ -93,17 +121,4 @@ export async function getCreatorPerformanceRows(creatorId: string): Promise<Crea
       ORDER BY performance.updated_at DESC`,
     [creatorId],
   );
-}
-
-export async function getCreatorMonthlyOrders(creatorId: string) {
-  if (!hasDatabase()) return 0;
-  const rows = await query<{ orders: string }>(
-    `SELECT COALESCE(SUM(performance.orders), 0)::text AS orders
-       FROM campaign_performance performance
-       JOIN campaign_participations participation ON participation.id = performance.participation_id
-      WHERE participation.creator_account_id = $1
-        AND date_trunc('month', performance.updated_at) = date_trunc('month', now())`,
-    [creatorId],
-  );
-  return Number(rows[0]?.orders || 0);
 }

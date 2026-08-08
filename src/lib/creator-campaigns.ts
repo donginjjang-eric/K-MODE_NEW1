@@ -21,6 +21,12 @@ function includesNormalized(values: string[], value: string) {
   return values.some((candidate) => normalize(candidate) === needle);
 }
 
+export function campaignTargetsCreator(creator: CampaignFitCreator, campaign: CampaignFitCampaign) {
+  const marketMatches = campaign.markets.length === 0 || includesNormalized(campaign.markets, creator.market);
+  const platformMatches = campaign.platforms.length === 0 || includesNormalized(campaign.platforms, creator.platform);
+  return marketMatches && platformMatches;
+}
+
 function deadlineIsOpen(deadline: string | null, now: Date) {
   return Boolean(deadline && new Date(deadline).getTime() > now.getTime());
 }
@@ -44,6 +50,7 @@ export function scoreCampaignFit({ creator, campaign, now = new Date() }: {
 
 export function rankCampaignRecommendations<T extends CampaignFitCampaign>(creator: CampaignFitCreator, campaigns: T[], now = new Date()): Array<T & { fit: { score: number; reasons: string[] } }> {
   return campaigns
+    .filter((campaign) => campaignTargetsCreator(creator, campaign))
     .map((campaign, index) => ({ campaign, index, fit: scoreCampaignFit({ creator, campaign, now }) }))
     .sort((left, right) => {
       const scoreDifference = right.fit.score - left.fit.score;

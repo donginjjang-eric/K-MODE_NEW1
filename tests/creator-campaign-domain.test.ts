@@ -62,6 +62,22 @@ test("ranks equal-fit campaigns by deadline while preserving original order for 
   assert.deepEqual(ranked.map((campaign) => campaign.id), ["earlier-first", "earlier-second", "later", "no-deadline"]);
 });
 
+test("recommendations require both the creator market and channel when campaign targets are explicit", () => {
+  const malaysiaTikTokCreator = { ...creator, market: "Malaysia", platform: "TikTok" };
+  const ranked = rankCampaignRecommendations(
+    malaysiaTikTokCreator,
+    [
+      { id: "malaysia-tiktok", markets: ["Malaysia"], platforms: ["TikTok"], category: "beauty", application_deadline: futureDeadline },
+      { id: "vietnam-tiktok", markets: ["Vietnam"], platforms: ["TikTok"], category: "beauty", application_deadline: futureDeadline },
+      { id: "malaysia-instagram", markets: ["Malaysia"], platforms: ["Instagram"], category: "beauty", application_deadline: futureDeadline },
+      { id: "global-any-channel", markets: [], platforms: [], category: "beauty", application_deadline: futureDeadline },
+    ],
+    new Date("2030-01-01T00:00:00.000Z"),
+  );
+
+  assert.deepEqual(ranked.map((campaign) => campaign.id), ["malaysia-tiktok", "global-any-channel"]);
+});
+
 test("rejects duplicate applications and campaigns that are expired or not recruiting", () => {
   const recruiting = { id: "campaign-1", status: "recruiting" as const, application_deadline: futureDeadline };
 

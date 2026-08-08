@@ -175,6 +175,7 @@
 .creator-center .creator-mission-board h3,
 .creator-center .creator-mission-board > p { margin: 0; }
 .creator-center .creator-mission-board > p { margin-top: 6px; color: #716a5d; font-size: 13px; }
+.creator-center .creator-mission-prestage { display: inline-flex; margin-top: 10px; padding: 5px 9px; border: 1px solid #d7cdbd; border-radius: 999px; background: #f7f1e7; color: #6b5635; font-size: 11px; letter-spacing: .04em; }
 .creator-center .creator-mission-stages { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin: 26px 0 0; padding: 0; list-style: none; }
 .creator-center .creator-mission-stages li { display: grid; position: relative; justify-items: center; gap: 9px; color: #aaa397; font-size: 11px; text-align: center; }
 .creator-center .creator-mission-stages li::before { position: absolute; top: 15px; right: 50%; left: -50%; height: 1px; background: #d9d2c6; content: ""; }

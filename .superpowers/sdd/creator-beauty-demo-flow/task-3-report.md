@@ -9,7 +9,7 @@
 
 ## Implemented
 
-- Four live KPIs: recommendation count, deadlines today, expected earnings in creator-local currency, and orders recorded this month.
+- Four live KPIs: eligible recommendation count, deadlines today, expected earnings in creator-local currency, and cumulative orders from published content.
 - Local reward parsing for RM/MYR, VND, TWD, USD, and KRW.
 - Five-stage mission board: 제품 수령 → 콘텐츠 제작 → 검수 → 게시 → 정산.
 - New campaign performance page with views, likes, comments, orders, revenue, and campaign rows.
@@ -24,19 +24,33 @@
 2. RED: 5/5 tests failed because the seven-item nav, KPI labels, domain helper, routes, and translations were absent.
 3. GREEN: implemented the minimum domain/UI/routes and reran the same test; 5/5 passed.
 
+## Review fix round
+
+All six Important findings were reproduced with failing tests before the fixes:
+
+1. Recommendation eligibility now requires both the creator market and channel when a campaign explicitly targets them. Empty target arrays remain intentionally global.
+2. Expected earnings now include only accepted, active work (`matched` through `settlement`), exclude paid/terminal/unaccepted work, and sum only rewards already denominated in the creator's local currency. Foreign-only rewards show `—`; no implicit conversion or foreign fallback is performed.
+3. The database has cumulative campaign performance but no per-order event timestamp. The misleading “monthly orders” calculation based on `campaign_performance.updated_at` was removed. The KPI is now explicitly “누적 주문 / Total orders” and sums the current cumulative performance snapshot.
+4. `invited`, `applied`, and `matched` are represented as pre-shipping states and do not falsely highlight “제품 수령”. `cancelled` and `completed` are excluded from active-mission selection, while the approved five operational stages remain unchanged.
+5. Critical KPI descriptions, next-step fallback, grade thresholds, mission labels/details, and production guidance were completed for Malay, Vietnamese, Traditional Chinese, and English.
+6. The stale creator campaign pages contract was updated to the current activity-center data flow. Behavior tests now directly execute recommendation filtering, reward/status/currency calculation, cumulative order calculation, stage mapping, and active mission selection.
+
 ## Verification
 
 - Focused and regression tests:
-  - Command: `node --import tsx --experimental-test-module-mocks --test tests/creator-activity-revenue-center.test.mjs tests/creator-beauty-demo-domain.test.mjs tests/creator-beauty-demo-transaction-runner.mjs tests/creator-beauty-demo-controls.test.mjs tests/creator-mission-contract.test.mjs tests/creator-performance-contract.test.mjs tests/admin-creator-preview-contract.test.mjs`
-  - Result: 27/27 passed.
-- TypeScript: `cmd /c npx.cmd tsc --noEmit` passed.
+  - Command: `node --import tsx --experimental-test-module-mocks --test tests/creator-activity-revenue-center.test.mjs tests/creator-campaign-domain.test.ts tests/creator-campaign-pages-contract.test.mjs tests/creator-beauty-demo-domain.test.mjs tests/creator-beauty-demo-transaction-runner.mjs tests/creator-beauty-demo-controls.test.mjs tests/creator-mission-contract.test.mjs tests/creator-performance-contract.test.mjs tests/admin-creator-preview-contract.test.mjs`
+  - Result: 39/39 passed.
+- Final focused rerun: 17/17 passed.
+- TypeScript: `cmd /c npx.cmd tsc --noEmit --incremental false` passed.
 - Production build: `cmd /c npm.cmd run build` passed and compiled the new `/dashboard/creator/performance` and `/dashboard/creator/grade` routes.
 - Build emitted only the existing multi-lockfile/workspace-root tracing warnings.
+- The production build was not rerun for this review-fix commit because disk space was near zero and the previous Task 3 build had already passed. Focused behavior tests, the broader regression suite, and a fresh non-incremental TypeScript check were used instead.
 - Local server started at `http://localhost:8012`, but visual dashboard inspection was redirected to `/login?error=creator_required` because the in-app browser did not have a localhost creator session. No production mutation or deployment was performed in this task.
 
 ## Files changed
 
 - `src/lib/creator-center.ts`
+- `src/lib/creator-campaigns.ts`
 - `src/components/CreatorNav.tsx`
 - `src/app/dashboard/creator/page.tsx`
 - `src/app/dashboard/creator/performance/page.tsx`
@@ -46,3 +60,5 @@
 - `src/app/dashboard/creator/creator.css`
 - `site-i18n.js`
 - `tests/creator-activity-revenue-center.test.mjs`
+- `tests/creator-campaign-domain.test.ts`
+- `tests/creator-campaign-pages-contract.test.mjs`

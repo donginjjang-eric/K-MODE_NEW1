@@ -4,8 +4,10 @@ import { getRecommendedCampaigns } from "@/lib/creator-campaigns";
 import { getCreatorMissionParticipations } from "@/lib/db";
 import {
   buildCreatorCenterMetrics,
-  getCreatorMonthlyOrders,
+  getCreatorPerformanceRows,
+  missionPreStageLabel,
   missionStageIndex,
+  selectActiveMission,
 } from "@/lib/creator-center";
 
 const MISSION_STAGES = ["제품 수령", "콘텐츠 제작", "검수", "게시", "정산"];
@@ -26,19 +28,23 @@ function deadlineLabel(value: string | null) {
 
 export default async function CreatorActionHomePage() {
   const { creator } = await requireApprovedCreator();
-  const [recommended, missions, monthlyOrders] = await Promise.all([
+  const [recommended, missions, performanceRows] = await Promise.all([
     getRecommendedCampaigns(creator.id),
     getCreatorMissionParticipations(creator.id),
-    getCreatorMonthlyOrders(creator.id),
+    getCreatorPerformanceRows(creator.id),
   ]);
   const metrics = buildCreatorCenterMetrics({
     market: creator.market,
     recommendedCount: recommended.length,
     deadlineCount: recommended.filter((campaign) => isToday(campaign.application_deadline)).length,
-    rewards: missions.map((mission) => mission.expected_reward).filter(Boolean),
-    monthlyOrders,
+    workItems: missions.map((mission) => ({
+      status: mission.status,
+      expectedReward: mission.expected_reward,
+      settlementStatus: mission.settlement_status,
+    })),
+    performanceRows,
   });
-  const activeMission = missions.find((mission) => mission.status !== "completed") ?? missions[0];
+  const activeMission = selectActiveMission(missions);
   const activeStage = activeMission ? missionStageIndex(activeMission.status) : -1;
 
   return (
@@ -53,7 +59,7 @@ export default async function CreatorActionHomePage() {
         <article className="is-blue"><span>추천 캠페인</span><strong>{metrics.recommendedCount}</strong><small>내 국가와 채널에 맞는 제안</small></article>
         <article className="is-yellow"><span>오늘 마감</span><strong>{metrics.deadlineCount}</strong><small>오늘 신청이 끝나는 캠페인</small></article>
         <article className="is-mint"><span>예상 수익</span><strong>{metrics.expectedEarnings}</strong><small>크리에이터 현지 통화 기준</small></article>
-        <article className="is-gray"><span>이번 달 주문</span><strong>{metrics.monthlyOrders}</strong><small>게시 콘텐츠에서 발생한 주문</small></article>
+        <article className="is-gray"><span>누적 주문</span><strong>{metrics.totalOrders}</strong><small>게시 콘텐츠에서 발생한 누적 주문</small></article>
       </section>
 
       <div className="creator-home-columns creator-home-columns-primary">
@@ -82,6 +88,7 @@ export default async function CreatorActionHomePage() {
           {activeMission ? (
             <>
               <h3>{activeMission.campaign_title}</h3>
+              {activeStage < 0 ? <b className="creator-mission-prestage">{missionPreStageLabel(activeMission.status)}</b> : null}
               <p>{activeMission.next_action || "다음 단계 안내를 확인하세요."}</p>
               <ol className="creator-mission-stages">
                 {MISSION_STAGES.map((stage, index) => (
