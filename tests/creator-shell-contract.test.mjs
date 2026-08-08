@@ -24,15 +24,17 @@ test("creator center shell is guarded, isolated, and exposes its campaign naviga
     "/dashboard/creator/campaigns",
     "/dashboard/creator/my-campaigns",
     "/dashboard/creator/submissions",
+    "/dashboard/creator/performance",
     "/dashboard/creator/settlement",
-    "/dashboard/creator/profile",
+    "/dashboard/creator/grade",
   ]) {
     assert.match(nav, new RegExp(`href:\\s*["']${href}["']`));
   }
+  assert.match(nav, /<Link href="\/dashboard\/creator\/profile" className="creator-identity"/);
   assert.match(nav, /export function CreatorSideNav/);
   assert.match(nav, /export function CreatorTabBar/);
   assert.match(nav, /className="creator-mobile-nav"/);
-  assert.match(nav, /CREATOR_NAV\.slice\(0, 5\)/);
+  assert.match(nav, /CREATOR_NAV\.map/);
   assert.doesNotMatch(nav, /dashboard\/designer|StudioNav/);
 
   assert.match(css, /\.creator-center/);
