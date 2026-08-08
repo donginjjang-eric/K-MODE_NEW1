@@ -342,6 +342,10 @@ const [authNav, i18n] = await Promise.all([
   source("../site-i18n.js"),
 ]);
 
+test("mobile creator center hides redundant floating quick links above its bottom navigation", () => {
+  assert.match(authNav, /body:has\(\.creator-center\) \.quick-link-stack\s*\{[\s\S]*?display:\s*none/);
+});
+
 test("auth navigation injects one ordered fixed-link stack without overlapping sibling banners", () => {
   const document = boot({ locale: "ko-KR", authNav, i18n });
   const stack = document.querySelector(".quick-link-stack");

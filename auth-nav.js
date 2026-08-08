@@ -133,6 +133,9 @@
           pointer-events: none;
         }
         @media (max-width: 760px) {
+          body:has(.creator-center) .quick-link-stack {
+            display: none;
+          }
           .quick-link-stack {
             right: 12px;
             top: auto;
