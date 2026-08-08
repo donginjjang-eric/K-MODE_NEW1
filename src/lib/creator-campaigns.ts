@@ -16,15 +16,45 @@ function normalize(value: string) {
   return value.trim().toLocaleLowerCase();
 }
 
-function includesNormalized(values: string[], value: string) {
-  const needle = normalize(value);
-  return values.some((candidate) => normalize(candidate) === needle);
+const MARKET_ALIASES: Record<string, string> = {
+  malaysia: "malaysia", malaysian: "malaysia", "말레이시아": "malaysia", my: "malaysia", mys: "malaysia", msmy: "malaysia",
+  vietnam: "vietnam", vietnamese: "vietnam", "베트남": "vietnam", vn: "vietnam", vnm: "vietnam", vivn: "vietnam",
+  taiwan: "taiwan", taiwanese: "taiwan", "대만": "taiwan", tw: "taiwan", twn: "taiwan", zhtw: "taiwan",
+  unitedstates: "united-states", unitedstatesofamerica: "united-states", usa: "united-states", us: "united-states", "미국": "united-states", enus: "united-states",
+  southkorea: "south-korea", republicofkorea: "south-korea", korea: "south-korea", "대한민국": "south-korea", "한국": "south-korea", kr: "south-korea", kor: "south-korea", kokr: "south-korea",
+  global: "global", "글로벌": "global", worldwide: "global", world: "global", all: "global", "전체": "global",
+};
+
+export function normalizeCampaignMarket(value: string) {
+  const compact = normalize(value).replace(/[\s._-]+/g, "");
+  return MARKET_ALIASES[compact] ?? compact;
+}
+
+function isWildcard(value: string) {
+  return normalizeCampaignMarket(value) === "global";
+}
+
+function marketTargetsCreator(markets: string[], creatorMarket: string) {
+  const normalizedCreatorMarket = normalizeCampaignMarket(creatorMarket);
+  return normalizedCreatorMarket === "global"
+    || markets.length === 0
+    || markets.some((market) => isWildcard(market) || normalizeCampaignMarket(market) === normalizedCreatorMarket);
+}
+
+function platformTargetsCreator(platforms: string[], creatorPlatform: string) {
+  return platforms.length === 0
+    || platforms.some((platform) => isWildcard(platform) || normalize(platform) === normalize(creatorPlatform));
+}
+
+function isAdministratorPreviewCreator(creator: CampaignFitCreator) {
+  return normalize(creator.platform).replace(/[\s._-]+/g, "") === "kmodu"
+    && normalizeCampaignMarket(creator.market) === "south-korea";
 }
 
 export function campaignTargetsCreator(creator: CampaignFitCreator, campaign: CampaignFitCampaign) {
-  const marketMatches = campaign.markets.length === 0 || includesNormalized(campaign.markets, creator.market);
-  const platformMatches = campaign.platforms.length === 0 || includesNormalized(campaign.platforms, creator.platform);
-  return marketMatches && platformMatches;
+  if (isAdministratorPreviewCreator(creator)) return true;
+  return marketTargetsCreator(campaign.markets, creator.market)
+    && platformTargetsCreator(campaign.platforms, creator.platform);
 }
 
 function deadlineIsOpen(deadline: string | null, now: Date) {
@@ -37,8 +67,9 @@ export function scoreCampaignFit({ creator, campaign, now = new Date() }: {
   now?: Date;
 }): { score: number; reasons: string[] } {
   const reasons: string[] = [];
-  if (includesNormalized(campaign.markets, creator.market)) reasons.push("market");
-  if (includesNormalized(campaign.platforms, creator.platform)) reasons.push("platform");
+  const administratorPreview = isAdministratorPreviewCreator(creator);
+  if (administratorPreview || marketTargetsCreator(campaign.markets, creator.market)) reasons.push("market");
+  if (administratorPreview || platformTargetsCreator(campaign.platforms, creator.platform)) reasons.push("platform");
   if (creator.categories.some((category) => normalize(category) === normalize(campaign.category))) reasons.push("category");
   if (deadlineIsOpen(campaign.application_deadline, now)) reasons.push("deadline");
 

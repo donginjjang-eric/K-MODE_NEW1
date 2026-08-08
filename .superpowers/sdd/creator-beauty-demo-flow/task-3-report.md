@@ -35,12 +35,21 @@ All six Important findings were reproduced with failing tests before the fixes:
 5. Critical KPI descriptions, next-step fallback, grade thresholds, mission labels/details, and production guidance were completed for Malay, Vietnamese, Traditional Chinese, and English.
 6. The stale creator campaign pages contract was updated to the current activity-center data flow. Behavior tests now directly execute recommendation filtering, reward/status/currency calculation, cumulative order calculation, stage mapping, and active mission selection.
 
+## Review follow-up — market aliases and complete home actions
+
+- Campaign market matching now canonicalizes production conventions for Malaysia (`Malaysia`, `말레이시아`, `MY`, `MYS`, `ms-MY`), Vietnam (`Vietnam`, `베트남`, `VN`, `VNM`, `vi-VN`), Taiwan (`Taiwan`, `대만`, `TW`, `TWN`, `zh-TW`), the United States (`United States`, `USA`, `US`, `미국`, `en-US`), and South Korea (`South Korea`, `대한민국`, `한국`, `KR`, `KOR`, `ko-KR`).
+- `글로벌`, `Global`, `worldwide`, `all`, and an empty target list are explicit market wildcards.
+- The reserved administrator-preview identity convention (`market = South Korea`, `platform = K-MODU`) can inspect overseas recruiting campaigns. A behavior test imports the real demo campaign definitions and confirms the operator sees both the Malaysia and Vietnam recruiting demos.
+- Added complete Malay, Vietnamese, Traditional Chinese, and English runtime dictionary entries for the creator-home description, view/detail actions, reward and deadline fallbacks, all three pre-shipping states, and recommendation/mission empty states.
+- The pre-shipping helper outputs (`초대 확인 전`, `지원 검토 중`, `배송 준비 중`) are asserted against the exact runtime dictionary keys so dynamically rendered badges are translated.
+
 ## Verification
 
 - Focused and regression tests:
   - Command: `node --import tsx --experimental-test-module-mocks --test tests/creator-activity-revenue-center.test.mjs tests/creator-campaign-domain.test.ts tests/creator-campaign-pages-contract.test.mjs tests/creator-beauty-demo-domain.test.mjs tests/creator-beauty-demo-transaction-runner.mjs tests/creator-beauty-demo-controls.test.mjs tests/creator-mission-contract.test.mjs tests/creator-performance-contract.test.mjs tests/admin-creator-preview-contract.test.mjs`
   - Result: 39/39 passed.
 - Final focused rerun: 17/17 passed.
+- Follow-up focused suite: 21/21 passed, including campaign behavior, creator-home translations, campaign page contract, and administrator preview contract.
 - TypeScript: `cmd /c npx.cmd tsc --noEmit --incremental false` passed.
 - Production build: `cmd /c npm.cmd run build` passed and compiled the new `/dashboard/creator/performance` and `/dashboard/creator/grade` routes.
 - Build emitted only the existing multi-lockfile/workspace-root tracing warnings.

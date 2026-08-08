@@ -62,7 +62,7 @@ test("creator center never substitutes a foreign-currency reward", async () => {
 });
 
 test("mission stages distinguish pre-shipping work and exclude terminal missions from active selection", async () => {
-  const { creatorGrade, isActiveMissionStatus, missionStageIndex, selectActiveMission } = await import("../src/lib/creator-center.ts");
+  const { creatorGrade, isActiveMissionStatus, missionPreStageLabel, missionStageIndex, selectActiveMission } = await import("../src/lib/creator-center.ts");
   assert.equal(creatorGrade(0), "STARTER");
   assert.equal(creatorGrade(2), "RISING");
   assert.equal(creatorGrade(3), "PRO");
@@ -76,6 +76,10 @@ test("mission stages distinguish pre-shipping work and exclude terminal missions
   assert.equal(isActiveMissionStatus("cancelled"), false);
   assert.equal(isActiveMissionStatus("completed"), false);
   assert.equal(selectActiveMission([{ id: "done", status: "completed" }, { id: "cancelled", status: "cancelled" }, { id: "waiting", status: "invited" }])?.id, "waiting");
+  assert.deepEqual(
+    [missionPreStageLabel("invited"), missionPreStageLabel("applied"), missionPreStageLabel("matched")],
+    ["초대 확인 전", "지원 검토 중", "배송 준비 중"],
+  );
 });
 
 test("performance, grade and settlement routes carry creator-local context", async () => {
@@ -109,5 +113,23 @@ test("critical center labels are translated to Malay, Vietnamese and English", a
   ]) {
     const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     assert.match(i18n, new RegExp(`['\"]${escapedLabel}['\"]\\s*:`), `${label} needs an overseas translation entry`);
+  }
+});
+
+test("core home actions have complete four-locale runtime dictionary entries", async () => {
+  const i18n = await readFile(new URL("site-i18n.js", root), "utf8");
+  const labels = [
+    "한국 공급자의 K-뷰티·패션 제품을 해외 크리에이터의 콘텐츠와 판매로 연결합니다.",
+    "전체 보기", "상세 보기", "보상 협의", "상시 모집", "마감",
+    "초대 확인 전", "지원 검토 중", "배송 준비 중",
+    "현재 조건에 맞는 추천 캠페인이 없습니다.", "진행 중인 미션이 없습니다.", "추천 캠페인 찾기",
+  ];
+
+  for (const label of labels) {
+    const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const overseasEntry = new RegExp(`'${escapedLabel}'\\s*:\\s*\\[[^\\]]+,[^\\]]+,[^\\]]+\\]`);
+    const malayEntry = new RegExp(`"${escapedLabel}"\\s*:\\s*"[^"]+"`);
+    assert.match(i18n, overseasEntry, `${label} needs Vietnamese, Traditional Chinese and English`);
+    assert.match(i18n, malayEntry, `${label} needs Malay`);
   }
 });

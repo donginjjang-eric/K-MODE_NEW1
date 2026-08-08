@@ -69,7 +69,7 @@ type DemoPerformance = {
   currency: "MYR" | "VND";
 };
 
-const DEMO_CAMPAIGNS: DemoCampaign[] = [
+export const DEMO_CAMPAIGNS: DemoCampaign[] = [
   {
     id: "demo-beauty-serum-recruiting",
     title: "[DEMO] Barrier Recovery Serum · Malaysia Creator Test",

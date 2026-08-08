@@ -10,6 +10,7 @@ import {
   resolveInvitationResponseStatus,
   scoreCampaignFit,
 } from "../src/lib/creator-campaigns";
+import { DEMO_CAMPAIGNS } from "../src/lib/creator-demo";
 
 const creator = {
   id: "creator-1",
@@ -76,6 +77,41 @@ test("recommendations require both the creator market and channel when campaign 
   );
 
   assert.deepEqual(ranked.map((campaign) => campaign.id), ["malaysia-tiktok", "global-any-channel"]);
+});
+
+test("market matching normalizes production country names, Korean labels and ISO-like values", () => {
+  const campaign = (market: string) => ({ id: market, markets: [market], platforms: ["TikTok"], category: "beauty", application_deadline: futureDeadline });
+  const cases = [
+    ["Malaysia", "MY"], ["말레이시아", "ms-MY"], ["MYS", "Malaysia"],
+    ["Vietnam", "베트남"], ["vi-VN", "VN"], ["VNM", "Vietnam"],
+    ["Taiwan", "대만"], ["zh-TW", "TW"], ["TWN", "Taiwan"],
+    ["United States", "미국"], ["USA", "en-US"], ["US", "United States"],
+    ["South Korea", "대한민국"], ["한국", "ko-KR"], ["KOR", "South Korea"],
+  ] as const;
+
+  for (const [targetMarket, creatorMarket] of cases) {
+    const ranked = rankCampaignRecommendations({ ...creator, market: creatorMarket }, [campaign(targetMarket)]);
+    assert.equal(ranked.length, 1, `${creatorMarket} must match ${targetMarket}`);
+  }
+});
+
+test("global market targets are wildcards and the administrator preview sees overseas demo campaigns", () => {
+  const explicitGlobal = { id: "global", markets: ["글로벌"], platforms: ["TikTok"], category: "beauty", application_deadline: futureDeadline };
+  assert.equal(rankCampaignRecommendations({ ...creator, market: "Malaysia" }, [explicitGlobal]).length, 1);
+  assert.equal(rankCampaignRecommendations({ ...creator, market: "베트남" }, [{ ...explicitGlobal, markets: ["Global"] }]).length, 1);
+
+  const adminPreview = { id: "admin-preview", market: "South Korea", platform: "K-MODU", categories: ["beauty"] };
+  const recruitingDemoCampaigns = DEMO_CAMPAIGNS
+    .filter((campaign) => campaign.status === "recruiting")
+    .map((campaign) => ({
+      id: campaign.id,
+      markets: campaign.markets,
+      platforms: campaign.platforms,
+      category: campaign.category,
+      application_deadline: campaign.applicationDeadline,
+    }));
+  const ranked = rankCampaignRecommendations(adminPreview, recruitingDemoCampaigns, new Date("2026-08-09T00:00:00.000Z"));
+  assert.deepEqual(new Set(ranked.map((campaign) => campaign.id)), new Set(["demo-beauty-serum-recruiting", "demo-beauty-cream-invited"]));
 });
 
 test("rejects duplicate applications and campaigns that are expired or not recruiting", () => {
