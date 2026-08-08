@@ -118,8 +118,25 @@
   font-size: 13px;
 }
 
+.creator-admin-preview-copy,
+.creator-demo-controls { display: flex; align-items: center; gap: 10px; }
 .creator-admin-preview strong { letter-spacing: .08em; }
 .creator-admin-preview a { color: inherit; font-weight: 800; text-decoration: underline; }
+.creator-demo-controls { gap: 6px; }
+.creator-demo-controls form { margin: 0; }
+.creator-demo-controls button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid #18140d;
+  border-radius: 999px;
+  background: #18140d;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.creator-demo-controls button.is-reset { background: transparent; color: #18140d; }
 
 @media (max-width: 760px) {
   .creator-admin-preview {
@@ -129,4 +146,6 @@
     justify-content: flex-start;
     padding: 10px 14px;
   }
+  .creator-admin-preview-copy { flex-wrap: wrap; }
+  .creator-demo-controls { width: 100%; }
 }
