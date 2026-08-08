@@ -90,4 +90,55 @@ exit code 0
 
 ## 커밋
 
-커밋 후 해시를 기록합니다.
+초기 구현 커밋: `b4b9311`
+
+## Fix round 1
+
+리뷰에서 지적된 하위 레코드 provenance 문제를 수정했습니다.
+
+### 수정 내용
+
+- 참여 레코드 전체를 데모 캠페인 관계, 관리자 CreatorAccount, source/status/action/reward/settlement payload와 함께 검증합니다.
+- 이벤트 레코드 전체를 데모 참여 관계, 관리자 actor, event type/status/message payload와 함께 검증합니다.
+- 제출물 레코드 전체를 데모 참여 관계와 version/content/status/review/publish payload와 함께 검증합니다.
+- 성과 레코드는 데모 참여 관계와 views/likes/comments/orders/revenue/currency를 검증합니다.
+- 고정 ID가 아닌 임의의 실제 하위 레코드가 데모 캠페인에 붙어 있어도 provenance 위반으로 거부합니다.
+- seed와 reset 모두 하위 그래프 검증을 먼저 실행합니다. 따라서 reset의 FK cascade가 실제 하위 데이터를 삭제하기 전에 rollback됩니다.
+- 반복 seed에서 이전에 정상 생성된 동일 payload만 허용하고, 같은 ID의 다른 payload는 충돌로 거부합니다.
+
+### 추가 실행 테스트
+
+새 테스트 파일:
+
+- `tests/creator-beauty-demo-transaction-runner.mjs`
+
+실제 `pg` 모듈을 트랜잭션 실행 모형으로 대체해 다음을 검증합니다.
+
+- 반복 seed의 idempotency와 전체 그래프 개수
+- 참여 고정 ID 충돌 보존
+- reset 전 하위 데이터 충돌 거부와 cascade 방지
+- 후속 제출물 SQL 실패 시 전체 rollback
+- 비관리자 seed 거부와 rollback
+
+### Fix round RED/GREEN
+
+RED:
+
+```text
+node --experimental-test-module-mocks --import tsx --test tests/creator-beauty-demo-transaction-runner.mjs
+```
+
+기존 구현에서 고정 하위 ID 충돌 테스트가 예상대로 거부되지 않아 실패했습니다.
+
+GREEN:
+
+```text
+creator-beauty-demo-transaction-runner.mjs: 5 passed, 0 failed
+creator-beauty-demo-domain.test.mjs: 5 passed, 0 failed
+관련 회귀 계약 테스트: 12 passed, 0 failed
+cmd /c npx.cmd tsc --noEmit: exit code 0
+```
+
+### Fix round 커밋
+
+커밋 후 이 항목에 수정 커밋 해시를 기록합니다.

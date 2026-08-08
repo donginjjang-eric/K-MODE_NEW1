@@ -235,6 +235,11 @@ const DEMO_PERFORMANCE: DemoPerformance[] = [
   },
 ];
 
+const DEMO_PARTICIPATION_BY_ID = new Map(DEMO_PARTICIPATIONS.map((participation) => [participation.id, participation]));
+const DEMO_EVENT_BY_ID = new Map(DEMO_EVENTS.map((event) => [event.id, event]));
+const DEMO_SUBMISSION_BY_ID = new Map(DEMO_SUBMISSIONS.map((submission) => [submission.id, submission]));
+const DEMO_PERFORMANCE_BY_PARTICIPATION = new Map(DEMO_PERFORMANCE.map((performance) => [performance.participationId, performance]));
+
 async function assertAdminOwnedCreator(client: DatabaseTransactionClient, adminUserId: string, creatorAccountId: string): Promise<CreatorAccount> {
   if (!adminUserId.trim() || !creatorAccountId.trim()) throw new Error("Admin and creator IDs are required.");
 
@@ -260,6 +265,82 @@ async function assertDemoCampaignSlots(client: DatabaseTransactionClient, adminU
   for (const campaign of existing.rows) {
     if (!campaign.title.startsWith("[DEMO]") || campaign.owner_id !== adminUserId) {
       throw new Error(`Demo campaign ID collision: ${campaign.id}`);
+    }
+  }
+}
+
+function isDemoId(value: unknown): value is string {
+  return typeof value === "string" && value.startsWith("demo-beauty-");
+}
+
+async function assertDemoChildGraph(client: DatabaseTransactionClient, adminUserId: string, creatorAccountId: string) {
+  const campaignIds = [...DEMO_CAMPAIGN_IDS];
+  const participationIds = [...DEMO_PARTICIPATION_BY_ID.keys()];
+  const eventIds = [...DEMO_EVENT_BY_ID.keys()];
+  const submissionIds = [...DEMO_SUBMISSION_BY_ID.keys()];
+
+  const [relatedParticipations, fixedParticipations] = await Promise.all([
+    client.query<{ id: string; campaign_id: string; creator_account_id: string; source: string; status: string; next_action: string; expected_reward: string; settlement_status: string }>(
+      "SELECT id, campaign_id, creator_account_id, source, status, next_action, expected_reward, settlement_status FROM campaign_participations WHERE campaign_id = ANY($1::text[]) FOR UPDATE",
+      [campaignIds],
+    ),
+    client.query<{ id: string; campaign_id: string; creator_account_id: string; source: string; status: string; next_action: string; expected_reward: string; settlement_status: string }>(
+      "SELECT id, campaign_id, creator_account_id, source, status, next_action, expected_reward, settlement_status FROM campaign_participations WHERE id = ANY($1::text[]) FOR UPDATE",
+      [participationIds],
+    ),
+  ]);
+  const participations = new Map([...relatedParticipations.rows, ...fixedParticipations.rows].map((row) => [row.id, row]));
+  for (const row of participations.values()) {
+    const expected = DEMO_PARTICIPATION_BY_ID.get(row.id);
+    if (!expected || !isDemoId(row.id) || row.campaign_id !== expected.campaignId || row.creator_account_id !== creatorAccountId || row.source !== expected.source || row.status !== expected.status || row.next_action !== expected.nextAction || row.expected_reward !== expected.expectedReward || row.settlement_status !== expected.settlementStatus) {
+      throw new Error(`Demo participation ID collision: ${row.id}`);
+    }
+  }
+
+  const actualParticipationIds = [...participations.keys()];
+  const [relatedEvents, fixedEvents, relatedSubmissions, fixedSubmissions, performanceRows] = await Promise.all([
+    client.query<{ id: string; participation_id: string; actor_user_id: string | null; event_type: string; from_status: ParticipationStatus | null; to_status: ParticipationStatus; message: string }>(
+      "SELECT id, participation_id, actor_user_id, event_type, from_status, to_status, message FROM campaign_events WHERE participation_id = ANY($1::text[]) FOR UPDATE",
+      [actualParticipationIds],
+    ),
+    client.query<{ id: string; participation_id: string; actor_user_id: string | null; event_type: string; from_status: ParticipationStatus | null; to_status: ParticipationStatus; message: string }>(
+      "SELECT id, participation_id, actor_user_id, event_type, from_status, to_status, message FROM campaign_events WHERE id = ANY($1::text[]) FOR UPDATE",
+      [eventIds],
+    ),
+    client.query<{ id: string; participation_id: string; version: number; content_url: string; caption_text: string; status: SubmissionStatus; review_note: string; published_url: string | null; submitted_at: string; reviewed_at: string | null; published_at: string | null }>(
+      "SELECT id, participation_id, version, content_url, caption_text, status, review_note, published_url, submitted_at, reviewed_at, published_at FROM content_submissions WHERE participation_id = ANY($1::text[]) FOR UPDATE",
+      [actualParticipationIds],
+    ),
+    client.query<{ id: string; participation_id: string; version: number; content_url: string; caption_text: string; status: SubmissionStatus; review_note: string; published_url: string | null; submitted_at: string; reviewed_at: string | null; published_at: string | null }>(
+      "SELECT id, participation_id, version, content_url, caption_text, status, review_note, published_url, submitted_at, reviewed_at, published_at FROM content_submissions WHERE id = ANY($1::text[]) FOR UPDATE",
+      [submissionIds],
+    ),
+    client.query<{ participation_id: string; views: number; likes: number; comments: number; orders: number; revenue: number; currency: string }>(
+      "SELECT participation_id, views, likes, comments, orders, revenue, currency FROM campaign_performance WHERE participation_id = ANY($1::text[]) FOR UPDATE",
+      [actualParticipationIds],
+    ),
+  ]);
+
+  const events = new Map([...relatedEvents.rows, ...fixedEvents.rows].map((row) => [row.id, row]));
+  for (const row of events.values()) {
+    const expected = DEMO_EVENT_BY_ID.get(row.id);
+    if (!expected || !isDemoId(row.id) || row.participation_id !== expected.participationId || row.actor_user_id !== adminUserId || row.event_type !== expected.eventType || row.from_status !== expected.fromStatus || row.to_status !== expected.toStatus || row.message !== expected.message) {
+      throw new Error(`Demo event ID collision: ${row.id}`);
+    }
+  }
+
+  const submissions = new Map([...relatedSubmissions.rows, ...fixedSubmissions.rows].map((row) => [row.id, row]));
+  for (const row of submissions.values()) {
+    const expected = DEMO_SUBMISSION_BY_ID.get(row.id);
+    if (!expected || !isDemoId(row.id) || row.participation_id !== expected.participationId || row.version !== expected.version || row.content_url !== expected.contentUrl || row.caption_text !== expected.captionText || row.status !== expected.status || row.review_note !== expected.reviewNote || row.published_url !== expected.publishedUrl || row.submitted_at !== expected.submittedAt || row.reviewed_at !== expected.reviewedAt || row.published_at !== expected.publishedAt) {
+      throw new Error(`Demo submission ID collision: ${row.id}`);
+    }
+  }
+
+  for (const row of performanceRows.rows) {
+    const expected = DEMO_PERFORMANCE_BY_PARTICIPATION.get(row.participation_id);
+    if (!expected || row.views !== expected.views || row.likes !== expected.likes || row.comments !== expected.comments || row.orders !== expected.orders || Number(row.revenue) !== expected.revenue || row.currency !== expected.currency) {
+      throw new Error(`Demo performance provenance violation: ${row.participation_id}`);
     }
   }
 }
@@ -377,6 +458,7 @@ export async function seedCreatorBeautyDemo(adminUserId: string, creatorAccountI
   return withDatabaseTransaction(async (client) => {
     await assertAdminOwnedCreator(client, adminUserId, creatorAccountId);
     await assertDemoCampaignSlots(client, adminUserId);
+    await assertDemoChildGraph(client, adminUserId, creatorAccountId);
     for (const campaign of DEMO_CAMPAIGNS) await upsertDemoCampaign(client, adminUserId, campaign);
     for (const participation of DEMO_PARTICIPATIONS) await upsertDemoParticipation(client, creatorAccountId, participation);
     for (const event of DEMO_EVENTS) await upsertDemoEvent(client, adminUserId, event);
@@ -396,6 +478,8 @@ export async function seedCreatorBeautyDemo(adminUserId: string, creatorAccountI
 export async function resetCreatorBeautyDemo(adminUserId: string, creatorAccountId: string): Promise<DemoResetResult> {
   return withDatabaseTransaction(async (client) => {
     await assertAdminOwnedCreator(client, adminUserId, creatorAccountId);
+    await assertDemoCampaignSlots(client, adminUserId);
+    await assertDemoChildGraph(client, adminUserId, creatorAccountId);
     const deleted = await client.query<{ id: string }>(
       "DELETE FROM campaigns WHERE id = ANY($2::text[]) AND owner_id = $1 AND title LIKE '[DEMO]%' RETURNING id",
       [adminUserId, [...DEMO_CAMPAIGN_IDS]],
