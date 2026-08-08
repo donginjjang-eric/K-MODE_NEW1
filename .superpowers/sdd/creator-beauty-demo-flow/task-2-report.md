@@ -2,7 +2,7 @@
 
 ## 상태
 
-`DONE_WITH_CONCERNS`
+`DONE`
 
 관리자 전용 체험 데이터 생성·초기화 서버 액션과 기존 관리자 운영 모드 배너의 제어 UI를 구현했습니다. 실제 데모 데이터는 아직 생성하지 않았습니다.
 
@@ -69,3 +69,41 @@ exit code 0
 
 1. 로컬 서버에서 관리자 세션을 공유할 수 없어 실제 로그인된 화면의 시각 검수는 하지 못했습니다. 로컬 URL은 로그인 페이지로 리디렉션됐고, 컴파일·타입·계약 검증으로 확인했습니다.
 2. 초기화 버튼은 Task 1의 데모 데이터만 대상으로 하지만, 운영 사용 전에는 관리자 화면에서 한 번 시드·초기화 동작을 확인해야 합니다.
+
+## 리뷰 수정 라운드 1 — I1
+
+### 지적 내용
+
+데모 생성·초기화 뒤 목록 페이지들만 재검증하고, 동적 미션 상세와 profile 및 이후 활동·수익센터 경로가 누락돼 있었습니다.
+
+### 수정 내용
+
+`revalidateCreatorCenter()`에 다음 경로를 명시적으로 추가했습니다.
+
+- `/dashboard/creator/my-campaigns/[id]` with Next `page` type
+- `/dashboard/creator/profile`
+- `/dashboard/creator/performance`
+- `/dashboard/creator/grade`
+
+### RED/GREEN
+
+RED:
+
+```text
+node --test tests/creator-beauty-demo-controls.test.mjs
+FAIL: dynamic /dashboard/creator/my-campaigns/[id] page revalidation was missing
+```
+
+GREEN:
+
+```text
+node --test tests/creator-beauty-demo-controls.test.mjs
+1 passed, 0 failed
+
+cmd /c npx tsc --noEmit
+exit code 0
+```
+
+## 최종 상태
+
+`DONE` — I1에서 지적된 동적 상세·profile·향후 활동·수익센터 경로 누락을 수정했고, Task 2 범위의 계약 테스트와 TypeScript 검증을 통과했습니다.

@@ -18,8 +18,12 @@ test("admin demo controls protect actions and refresh every creator-center view"
   assert.match(actions, /revalidatePath\("\/dashboard\/creator"\)/);
   assert.match(actions, /revalidatePath\("\/dashboard\/creator\/campaigns"\)/);
   assert.match(actions, /revalidatePath\("\/dashboard\/creator\/my-campaigns"\)/);
+  assert.match(actions, /revalidatePath\("\/dashboard\/creator\/my-campaigns\/\[id\]", "page"\)/);
   assert.match(actions, /revalidatePath\("\/dashboard\/creator\/submissions"\)/);
   assert.match(actions, /revalidatePath\("\/dashboard\/creator\/settlement"\)/);
+  assert.match(actions, /revalidatePath\("\/dashboard\/creator\/profile"\)/);
+  assert.match(actions, /revalidatePath\("\/dashboard\/creator\/performance"\)/);
+  assert.match(actions, /revalidatePath\("\/dashboard\/creator\/grade"\)/);
   assert.match(controls, /체험 데이터 채우기/);
   assert.match(controls, /체험 데이터 초기화/);
   assert.match(controls, /seedDemoAction/);

@@ -23,8 +23,12 @@ function revalidateCreatorCenter() {
   revalidatePath("/dashboard/creator");
   revalidatePath("/dashboard/creator/campaigns");
   revalidatePath("/dashboard/creator/my-campaigns");
+  revalidatePath("/dashboard/creator/my-campaigns/[id]", "page");
   revalidatePath("/dashboard/creator/submissions");
   revalidatePath("/dashboard/creator/settlement");
+  revalidatePath("/dashboard/creator/profile");
+  revalidatePath("/dashboard/creator/performance");
+  revalidatePath("/dashboard/creator/grade");
 }
 
 export async function seedDemoAction(): Promise<void> {
