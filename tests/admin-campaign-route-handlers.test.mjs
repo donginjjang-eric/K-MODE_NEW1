@@ -8,7 +8,7 @@ const validCampaign = {
   markets: ["KR"],
   platforms: ["Instagram"],
   brief: "Create one short-form campaign video.",
-  reward_text: "500,000 KRW",
+  reward_text: "KRW 500,000",
   application_deadline: "2026-09-01T00:00:00.000Z",
   content_deadline: "2026-09-15T00:00:00.000Z",
   slots: 3,
@@ -78,6 +78,24 @@ test("PATCH rejects a reversed deadline pair before updating", async () => {
 
   assert.equal(response.status, 400);
   assert.equal(calls, 0);
+});
+
+test("POST and PATCH return a clear reward-format error before persistence", async () => {
+  for (const operation of ["create", "update"]) {
+    const dependencies = {
+      adminId: "admin-1",
+      createAdminCampaign: async () => { throw new Error("Campaign reward must use a supported currency code followed by a whole-number amount, for example RM 420 or VND 2,500,000."); },
+      updateAdminCampaign: async () => { throw new Error("Campaign reward must use a supported currency code followed by a whole-number amount, for example RM 420 or VND 2,500,000."); },
+      revalidatePath: () => {},
+    };
+    const response = operation === "create"
+      ? await handleAdminCampaignCreate(malformedRequest({ ...validCampaign, reward_text: "420 RM" }), dependencies)
+      : await handleAdminCampaignUpdate(malformedRequest({ reward_text: "420 RM" }), "campaign-1", dependencies);
+    const body = await response.json();
+    assert.equal(response.status, 400);
+    assert.equal(body.code, "invalid_reward");
+    assert.match(body.error, /RM 420/);
+  }
 });
 
 test("an immutable campaign update maps to a stable Korean conflict response", async () => {

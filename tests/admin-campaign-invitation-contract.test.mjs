@@ -12,6 +12,8 @@ test("admin invitation creation is transactional, capacity-aware, and records an
   assert.match(domain, /SELECT \* FROM campaigns WHERE id = \$1 FOR UPDATE/);
   assert.match(domain, /SELECT \* FROM creator_accounts WHERE id = \$1 FOR UPDATE/);
   assert.match(domain, /approval_status !== "approved"/);
+  assert.match(domain, /assertCreatorCanAccessCampaign\(\{ \.\.\.creator, owner_role:/);
+  assert.match(domain, /SELECT role FROM users WHERE id = \$1 FOR UPDATE/);
   assert.match(domain, /COUNT\(\*\).*campaign_participations/s);
   assert.match(domain, /INSERT INTO campaign_participations/);
   assert.match(domain, /'invitation', 'invited'/);

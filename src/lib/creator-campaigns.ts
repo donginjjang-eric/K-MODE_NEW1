@@ -209,6 +209,16 @@ function assertNonEmpty(value: string, field: string) {
   if (!value.trim()) throw new Error(`${field} is required.`);
 }
 
+const CANONICAL_REWARD_PATTERN = /^(RM|MYR|VND|USD|TWD|KRW) (?:0|[1-9]\d{0,2}(?:,\d{3})*|[1-9]\d*)$/;
+
+export function normalizeCampaignRewardText(value: string) {
+  const reward = value.trim().replace(/\s+/g, " ");
+  if (!CANONICAL_REWARD_PATTERN.test(reward)) {
+    throw new Error("Campaign reward must use a supported currency code followed by a whole-number amount, for example RM 420 or VND 2,500,000.");
+  }
+  return reward;
+}
+
 function assertHttpsImageUrls(imageUrls: string[]) {
   for (const imageUrl of imageUrls) {
     try {
@@ -226,7 +236,7 @@ function assertValidAdminCampaignInput(input: Omit<AdminCampaignInput, "applicat
   assertNonEmpty(input.title, "Campaign title");
   assertNonEmpty(input.category, "Campaign category");
   assertNonEmpty(input.brief, "Campaign brief");
-  assertNonEmpty(input.reward_text, "Campaign reward");
+  normalizeCampaignRewardText(input.reward_text);
   if (!Number.isInteger(input.slots) || input.slots <= 0) throw new Error("Campaign slots must be positive.");
   if (!input.markets.some((market) => market.trim())) throw new Error("At least one market is required.");
   if (!input.platforms.some((platform) => platform.trim())) throw new Error("At least one platform is required.");
@@ -345,13 +355,14 @@ export async function getAdminCampaign(id: string): Promise<AdminCampaignDetail 
 
 export async function createAdminCampaign(adminId: string, input: AdminCampaignInput): Promise<Campaign> {
   assertValidAdminCampaignInput(input);
+  const rewardText = normalizeCampaignRewardText(input.reward_text);
   return withDatabaseTransaction(async (client) => {
     await getAdminForUpdate(client, adminId);
     const result = await client.query<Campaign>(
       `INSERT INTO campaigns (owner_id, title, category, markets, platforms, brief, reward_text, application_deadline, content_deadline, slots, image_urls)
        VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6, $7, $8, $9, $10, $11::jsonb)
        RETURNING *`,
-      [adminId, input.title.trim(), input.category.trim(), JSON.stringify(input.markets), JSON.stringify(input.platforms), input.brief.trim(), input.reward_text.trim(), input.application_deadline ?? null, input.content_deadline ?? null, input.slots, JSON.stringify(input.image_urls ?? [])],
+      [adminId, input.title.trim(), input.category.trim(), JSON.stringify(input.markets), JSON.stringify(input.platforms), input.brief.trim(), rewardText, input.application_deadline ?? null, input.content_deadline ?? null, input.slots, JSON.stringify(input.image_urls ?? [])],
     );
     const campaign = result.rows[0];
     if (!campaign) throw new Error("Campaign could not be created.");
@@ -370,6 +381,7 @@ export async function updateAdminCampaign(adminId: string, id: string, input: Pa
     }
     const next = { ...campaign, ...input, image_urls: input.image_urls ?? campaign.image_urls };
     assertValidAdminCampaignInput(next);
+    const rewardText = normalizeCampaignRewardText(next.reward_text);
     if (next.slots < campaign.slots) {
       const occupiedSlots = await getCampaignOccupiedSlots(client, id);
       if (next.slots < occupiedSlots) throw new Error("Campaign slots cannot be reduced below occupied capacity.");
@@ -379,7 +391,7 @@ export async function updateAdminCampaign(adminId: string, id: string, input: Pa
           SET title = $2, category = $3, markets = $4::jsonb, platforms = $5::jsonb, brief = $6, reward_text = $7,
               application_deadline = $8, content_deadline = $9, slots = $10, image_urls = $11::jsonb, updated_at = now()
         WHERE id = $1 RETURNING *`,
-      [id, next.title.trim(), next.category.trim(), JSON.stringify(next.markets), JSON.stringify(next.platforms), next.brief.trim(), next.reward_text.trim(), next.application_deadline ?? null, next.content_deadline ?? null, next.slots, JSON.stringify(next.image_urls ?? [])],
+      [id, next.title.trim(), next.category.trim(), JSON.stringify(next.markets), JSON.stringify(next.platforms), next.brief.trim(), rewardText, next.application_deadline ?? null, next.content_deadline ?? null, next.slots, JSON.stringify(next.image_urls ?? [])],
     );
     const updated = result.rows[0];
     if (!updated) throw new Error("Campaign could not be updated.");
@@ -574,6 +586,10 @@ export async function createCampaignInvitation(actorUserId: string, campaignId: 
     const campaignResult = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [campaignId]);
     const campaign = campaignResult.rows[0];
     if (!campaign) throw new Error("Campaign was not found.");
+    if (isDemoCampaign(campaign)) {
+      const ownerResult = await client.query<{ role: string }>("SELECT role FROM users WHERE id = $1 FOR UPDATE", [creator.user_id]);
+      assertCreatorCanAccessCampaign({ ...creator, owner_role: ownerResult.rows[0]?.role }, campaign);
+    }
 
     const existingResult = await client.query<CampaignParticipation>(
       "SELECT * FROM campaign_participations WHERE campaign_id = $1 AND creator_account_id = $2 FOR UPDATE",

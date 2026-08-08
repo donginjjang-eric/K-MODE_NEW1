@@ -21,7 +21,7 @@ function reasonLabel(reason: string) {
 }
 
 function deadlineLabel(deadline: string | null) {
-  return deadline ? new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(deadline)) : "No application deadline";
+  return deadline?.slice(0, 10) || "No application deadline";
 }
 
 export default async function CreatorCampaignsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -52,7 +52,7 @@ export default async function CreatorCampaignsPage({ searchParams }: { searchPar
       <p className="creator-result-count" aria-live="polite">{campaigns.length} recruiting campaigns</p>
       {campaigns.length ? <div className="creator-campaign-grid">{campaigns.map((campaign) => <article className="creator-campaign-card" key={campaign.id}>
         <img src={imageForCategory(campaign.category)} alt="" />
-        <div className="creator-campaign-card-body"><div className="creator-card-kicker"><span>{campaign.category}</span><b>{campaign.status}</b></div><h2>{campaign.title}</h2><p>{campaign.brief}</p><dl><div><dt>Reward</dt><dd>{campaign.reward_text || "To be confirmed"}</dd></div><div><dt>Deadline</dt><dd>{deadlineLabel(campaign.application_deadline)}</dd></div><div><dt>Slots</dt><dd>{campaign.slots}</dd></div></dl><div className="creator-match-tags" aria-label={`Match score ${campaign.fit.score}`}>{campaign.fit.reasons.map((reason) => <span key={reason}>{reasonLabel(reason)}</span>)}</div><CreatorCampaignApplyButton campaignId={campaign.id} /></div>
+        <div className="creator-campaign-card-body"><div className="creator-card-kicker"><span>{campaign.category}</span><b>{campaign.status}</b></div><h2>{campaign.title}</h2><p>{campaign.brief}</p><dl><div><dt>Reward</dt><dd>{campaign.reward_text || "To be confirmed"}</dd></div><div><dt>Deadline</dt><dd>{campaign.application_deadline ? <time dateTime={campaign.application_deadline} data-i18n-date="medium">{deadlineLabel(campaign.application_deadline)}</time> : "No application deadline"}</dd></div><div><dt>Slots</dt><dd>{campaign.slots}</dd></div></dl><div className="creator-match-tags" aria-label={`Match score ${campaign.fit.score}`}>{campaign.fit.reasons.map((reason) => <span key={reason}>{reasonLabel(reason)}</span>)}</div><CreatorCampaignApplyButton campaignId={campaign.id} /></div>
       </article>)}</div> : <div className="creator-empty-state"><h2>조건에 맞는 모집 캠페인이 없습니다.</h2><p>필터를 바꾸거나 나중에 다시 확인해 주세요.</p><Link href="/dashboard/creator/campaigns">필터 초기화</Link></div>}
     </div>
   );

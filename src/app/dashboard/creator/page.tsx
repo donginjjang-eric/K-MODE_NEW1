@@ -23,7 +23,7 @@ function isToday(value: string | null) {
 
 function deadlineLabel(value: string | null) {
   if (!value) return "상시 모집";
-  return new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric" }).format(new Date(value));
+  return value.slice(0, 10);
 }
 
 export default async function CreatorActionHomePage() {
@@ -74,7 +74,7 @@ export default async function CreatorActionHomePage() {
               {recommended.slice(0, 3).map((campaign) => (
                 <li key={campaign.id}>
                   <div><strong>{campaign.title}</strong><span><span>한국 공급자</span> · <span>{campaign.markets.join(" · ") || creator.market}</span></span></div>
-                  <p><b>{campaign.reward_text || "보상 협의"}</b><small><span>{deadlineLabel(campaign.application_deadline)}</span> <span>마감</span></small></p>
+                  <p><b>{campaign.reward_text || "보상 협의"}</b><small>{campaign.application_deadline ? <time dateTime={campaign.application_deadline} data-i18n-date="short">{deadlineLabel(campaign.application_deadline)}</time> : <span>상시 모집</span>} <span>마감</span></small></p>
                 </li>
               ))}
             </ul>

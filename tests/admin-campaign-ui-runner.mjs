@@ -25,7 +25,7 @@ const baseCampaign = {
   markets: ["KR"],
   platforms: ["Instagram"],
   brief: "Campaign brief",
-  reward_text: "500,000 KRW",
+  reward_text: "KRW 500,000",
   application_deadline: "2026-09-01T00:00:00.000Z",
   content_deadline: "2026-09-15T00:00:00.000Z",
   slots: 3,

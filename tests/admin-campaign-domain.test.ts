@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import * as campaignDomain from "../src/lib/creator-campaigns";
-import { createAdminCampaign } from "../src/lib/creator-campaigns";
+import { createAdminCampaign, normalizeCampaignRewardText } from "../src/lib/creator-campaigns";
 import type { AdminCampaignInput } from "../src/lib/types";
 
 const execFileAsync = promisify(execFile);
@@ -21,7 +21,7 @@ const validInput: AdminCampaignInput = {
   markets: ["KR"],
   platforms: ["Instagram"],
   brief: "Create one short-form campaign video.",
-  reward_text: "₩300,000",
+  reward_text: "KRW 300,000",
   application_deadline: "2026-09-01T00:00:00.000Z",
   content_deadline: "2026-09-15T00:00:00.000Z",
   slots: 3,
@@ -63,6 +63,15 @@ test("requires both campaign deadlines", async (t) => {
     await t.test(name, async () => {
       await assert.rejects(createAdminCampaign("admin-1", input), /deadline is required/i);
     });
+  }
+});
+
+test("accepts only canonical creator reward formats", () => {
+  for (const reward of ["RM 420", "MYR 420", "VND 2,500,000", "USD 250", "TWD 8,000", "KRW 300,000"]) {
+    assert.equal(normalizeCampaignRewardText(reward), reward);
+  }
+  for (const reward of ["420 RM", "$420", "₩300,000", "free products", "RM 4,20", "USD 12.50"]) {
+    assert.throws(() => normalizeCampaignRewardText(reward), /currency code followed by a whole-number amount/i);
   }
 });
 

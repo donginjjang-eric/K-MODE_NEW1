@@ -51,6 +51,12 @@ All six Important findings were reproduced with failing tests before the fixes:
 4. Administrator preview earnings are explicitly presented as a currency-by-currency demo reward breakdown, for example `RM 420 · VND 2,500,000`, without pretending to convert into a South Korean local currency.
 5. Supplier/market, date/deadline, completed campaign count, and campaigns-remaining strings are rendered as composable translatable nodes. Their Korean, Malay, Vietnamese, Traditional Chinese, and English labels are present in the runtime dictionary.
 
+## Final invitation, locale, and reward validation fixes
+
+1. Administrator invitation creation now invokes the same demo-campaign access guard as creator applications. A real Malaysia/Vietnam creator cannot be invited to a demo campaign; only the administrator-owned South Korea/K-MODU preview identity is accepted.
+2. Creator deadlines now use locale-aware `<time data-i18n-date>` rendering instead of a hardcoded Korean formatter. Performance table labels and grade copy/count fragments are translated in Korean, Malay, Vietnamese, Traditional Chinese, and English.
+3. Campaign create and update validate rewards before database persistence. Accepted values use a supported currency code followed by a whole-number amount (`RM`, `MYR`, `VND`, `USD`, `TWD`, `KRW`); reversed, symbolic, decimal, and unstructured values return a clear `invalid_reward` API response.
+
 ## Verification
 
 - Focused and regression tests:
@@ -61,6 +67,7 @@ All six Important findings were reproduced with failing tests before the fixes:
 - TypeScript: `cmd /c npx.cmd tsc --noEmit --incremental false` passed.
 - Final whole-branch creator suite: 57/57 passed across authentication, demo provenance/reset, recommendation/apply eligibility, activity/revenue calculations, mission flow, performance, settlement, translations, navigation, schema, and designer-studio isolation.
 - Final targeted review suite: 33/33 passed.
+- Final invitation/locale/reward targeted suite: 39/39 passed, followed by a passing non-incremental TypeScript check.
 - Production build: `cmd /c npm.cmd run build` passed and compiled the new `/dashboard/creator/performance` and `/dashboard/creator/grade` routes.
 - Build emitted only the existing multi-lockfile/workspace-root tracing warnings.
 - The production build was not rerun for this review-fix commit because disk space was near zero and the previous Task 3 build had already passed. Focused behavior tests, the broader regression suite, and a fresh non-incremental TypeScript check were used instead.

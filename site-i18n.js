@@ -87,6 +87,17 @@
     '건 남았습니다.': ['chiến dịch nữa.', '件。', 'campaigns remaining.'],
     '데모 보상 구성': ['Cơ cấu phần thưởng demo', '示範獎勵組成', 'Demo reward breakdown'],
     '관리자 미리보기 · 통화별 보상': ['Bản xem trước quản trị · phần thưởng theo tiền tệ', '管理員預覽・依幣別顯示獎勵', 'Admin preview · rewards by currency'],
+    '캠페인별 성과': ['Hiệu suất theo chiến dịch', '各活動成效', 'Performance by campaign'],
+    '캠페인': ['Chiến dịch', '活動', 'Campaign'],
+    '조회': ['Lượt xem', '瀏覽', 'Views'],
+    '좋아요': ['Lượt thích', '讚', 'Likes'],
+    '댓글': ['Bình luận', '留言', 'Comments'],
+    '주문': ['Đơn hàng', '訂單', 'Orders'],
+    '매출': ['Doanh thu', '銷售額', 'Gross sales'],
+    '현재 등급': ['Hạng hiện tại', '目前等級', 'Current grade'],
+    '최고 등급을 유지하고 있습니다.': ['Bạn đang duy trì hạng cao nhất.', '您目前維持最高等級。', 'You are maintaining the highest grade.'],
+    '다음 등급 진행률': ['Tiến độ đến hạng tiếp theo', '下一等級進度', 'Progress to next grade'],
+    '정확한 콘텐츠 제출과 일정 준수가 등급에 반영됩니다.': ['Nộp nội dung chính xác và đúng hạn sẽ được phản ánh vào hạng.', '準確提交內容並遵守時程會反映在等級中。', 'Accurate submissions and on-time delivery contribute to your grade.'],
     '한국 공급자의 가이드에 맞춰 콘텐츠 링크를 제출하고, 검수 의견과 수정 이력을 한곳에서 관리합니다.': ['Gửi liên kết nội dung theo hướng dẫn của nhà cung cấp Hàn Quốc và quản lý phản hồi duyệt cùng lịch sử chỉnh sửa tại một nơi.', '依韓國供應商指南提交內容連結，並在同一處管理審核意見與修改紀錄。', 'Submit content links using the Korean supplier guide and manage review feedback and revisions in one place.'],
     '콘텐츠 제작 흐름': ['Quy trình sản xuất nội dung', '內容製作流程', 'Content production flow'],
     '제작할 콘텐츠가 없습니다.': ['Chưa có nội dung cần sản xuất.', '目前沒有要製作的內容。', 'There is no content to produce yet.'],
@@ -670,6 +681,17 @@
       "건 남았습니다.": "kempen lagi.",
       "데모 보상 구성": "Pecahan ganjaran demo",
       "관리자 미리보기 · 통화별 보상": "Pratonton pentadbir · ganjaran mengikut mata wang",
+      "캠페인별 성과": "Prestasi mengikut kempen",
+      "캠페인": "Kempen",
+      "조회": "Tontonan",
+      "좋아요": "Suka",
+      "댓글": "Komen",
+      "주문": "Pesanan",
+      "매출": "Jualan kasar",
+      "현재 등급": "Tahap semasa",
+      "최고 등급을 유지하고 있습니다.": "Anda sedang mengekalkan tahap tertinggi.",
+      "다음 등급 진행률": "Kemajuan ke tahap seterusnya",
+      "정확한 콘텐츠 제출과 일정 준수가 등급에 반영됩니다.": "Penghantaran kandungan yang tepat dan pematuhan jadual menyumbang kepada tahap anda.",
       "한국 공급자의 가이드에 맞춰 콘텐츠 링크를 제출하고, 검수 의견과 수정 이력을 한곳에서 관리합니다.": "Hantar pautan kandungan mengikut panduan pembekal Korea dan urus maklum balas semakan serta sejarah pindaan di satu tempat.",
       "콘텐츠 제작 흐름": "Aliran penghasilan kandungan",
       "제작할 콘텐츠가 없습니다.": "Belum ada kandungan untuk dihasilkan.",
@@ -914,7 +936,7 @@
 
   function shouldSkip(node) {
     const parent = node.parentElement;
-    return !parent || parent.closest('[data-kmodu-locale-ui], script, style, noscript, code, pre, textarea');
+    return !parent || parent.closest('[data-kmodu-locale-ui], [data-i18n-date], script, style, noscript, code, pre, textarea');
   }
 
   function translateTextNode(node) {
@@ -935,6 +957,15 @@
 
   function translateAttributes(el) {
     if (!(el instanceof Element) || el.closest('[data-kmodu-locale-ui]')) return;
+    const dateStyle = el.getAttribute('data-i18n-date');
+    if (dateStyle && el.getAttribute('datetime')) {
+      const date = new Date(el.getAttribute('datetime'));
+      if (!Number.isNaN(date.getTime())) {
+        el.textContent = new Intl.DateTimeFormat(locale, dateStyle === 'short'
+          ? { month: 'short', day: 'numeric' }
+          : { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
+      }
+    }
     const attrs = ['placeholder', 'aria-label', 'title'];
     if (!originalAttrs.has(el)) originalAttrs.set(el, {});
     const stored = originalAttrs.get(el);

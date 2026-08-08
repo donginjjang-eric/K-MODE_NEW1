@@ -2,6 +2,9 @@ import { invalidCampaignInputResponse, parseAdminCampaignCreateInput, parseAdmin
 
 export function campaignMutationError(error) {
   const message = error instanceof Error ? error.message : "Campaign operation failed.";
+  if (/supported currency code followed by a whole-number amount/i.test(message)) {
+    return Response.json({ code: "invalid_reward", error: "리워드는 RM 420, VND 2,500,000처럼 지원 통화 코드와 정수 금액 순서로 입력해 주세요." }, { status: 400 });
+  }
   if (/not found/i.test(message)) return Response.json({ code: "not_found", error: "캠페인을 찾을 수 없습니다. 목록을 새로고침해 주세요." }, { status: 404 });
   if (/capacity/i.test(message)) return Response.json({ code: "capacity_full", error: "현재 확정 인원보다 모집 인원을 적게 설정할 수 없습니다." }, { status: 409 });
   if (/only draft or recruiting|closed|conflict|cannot transition|cannot be reopened/i.test(message)) {

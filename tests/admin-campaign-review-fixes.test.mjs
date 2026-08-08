@@ -26,7 +26,7 @@ test("malformed campaign JSON is rejected with 400 before a domain mutation", as
     markets: ["KR"],
     platforms: ["Instagram"],
     brief: "Brief",
-    reward_text: "Reward",
+    reward_text: "KRW 300,000",
     application_deadline: "2026-09-01T00:00:00.000Z",
     content_deadline: "2026-09-15T00:00:00.000Z",
     slots: 5,

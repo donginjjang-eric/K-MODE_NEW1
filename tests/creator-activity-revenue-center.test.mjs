@@ -186,3 +186,21 @@ test("dynamic creator-home and grade strings are composed from runtime-translata
     assert.match(i18n, new RegExp(`"${escapedLabel}"\\s*:\\s*"[^"]+"`));
   }
 });
+
+test("deadline and performance-grade labels are locale-ready", async () => {
+  const [home, campaigns, performance, grade, i18n] = await Promise.all([
+    readFile(new URL("src/app/dashboard/creator/page.tsx", root), "utf8"),
+    readFile(new URL("src/app/dashboard/creator/campaigns/page.tsx", root), "utf8"),
+    readFile(new URL("src/app/dashboard/creator/performance/page.tsx", root), "utf8"),
+    readFile(new URL("src/app/dashboard/creator/grade/page.tsx", root), "utf8"),
+    readFile(new URL("site-i18n.js", root), "utf8"),
+  ]);
+  assert.doesNotMatch(home, /DateTimeFormat\("ko-KR"/);
+  assert.match(home, /data-i18n-date/);
+  assert.match(campaigns, /data-i18n-date/);
+  assert.match(i18n, /getAttribute\('data-i18n-date'\)/);
+  for (const label of ["캠페인별 성과", "캠페인", "조회", "좋아요", "댓글", "주문", "매출", "현재 등급", "최고 등급을 유지하고 있습니다.", "다음 등급 진행률", "정확한 콘텐츠 제출과 일정 준수가 등급에 반영됩니다."]) {
+    assert.match(performance + grade, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(i18n, new RegExp(`['\"]${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['\"]`));
+  }
+});

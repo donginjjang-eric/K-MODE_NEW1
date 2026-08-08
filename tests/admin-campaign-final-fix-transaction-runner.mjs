@@ -13,7 +13,7 @@ function campaign(status = "recruiting", slots = 2) {
     markets: ["KR"],
     platforms: ["Instagram"],
     brief: "Brief",
-    reward_text: "Reward",
+    reward_text: "KRW 300,000",
     application_deadline: "2026-09-01T00:00:00.000Z",
     content_deadline: "2026-09-15T00:00:00.000Z",
     slots,
@@ -27,11 +27,13 @@ class TransactionClient {
   countParams;
   updateParams;
 
-  constructor({ participationStatus = "applied", campaignStatus = "recruiting", slots = 2, occupied = 0 } = {}) {
+  constructor({ participationStatus = "applied", campaignStatus = "recruiting", slots = 2, occupied = 0, demo = false, preview = false } = {}) {
     this.participationStatus = participationStatus;
     this.campaignStatus = campaignStatus;
     this.slots = slots;
     this.occupied = occupied;
+    this.demo = demo;
+    this.preview = preview;
   }
 
   async query(sql, params = []) {
@@ -41,11 +43,11 @@ class TransactionClient {
     }
     if (sql.includes("FROM users WHERE id")) {
       this.calls.push("admin lock");
-      return { rows: [{ id: "admin-1", role: "admin" }] };
+      return { rows: [{ id: this.preview ? "creator-user-1" : "admin-1", role: this.preview ? "admin" : "creator" }] };
     }
     if (sql.includes("FROM creator_accounts WHERE id")) {
       this.calls.push("creator lock");
-      return { rows: [{ id: "creator-1", approval_status: "approved", user_id: "creator-user-1" }] };
+      return { rows: [{ id: "creator-1", approval_status: "approved", user_id: "creator-user-1", market: this.preview ? "South Korea" : "Malaysia", platform: this.preview ? "K-MODU" : "TikTok", categories: ["beauty"] }] };
     }
     if (sql.includes("FROM campaign_participations WHERE id")) {
       this.calls.push("participation lock");
@@ -57,7 +59,8 @@ class TransactionClient {
     }
     if (sql.includes("FROM campaigns WHERE id")) {
       this.calls.push("campaign lock");
-      return { rows: [campaign(this.campaignStatus, this.slots)] };
+      const value = campaign(this.campaignStatus, this.slots);
+      return { rows: [this.demo ? { ...value, id: "demo-beauty-private", title: "[DEMO] Private" } : value] };
     }
     if (sql.includes("COUNT(*)") && sql.includes("campaign_participations")) {
       this.calls.push("capacity count");
@@ -186,6 +189,16 @@ test("invitations use the same locked lifecycle capacity query", async () => {
   assert.equal(result.status, "invited");
   assert.deepEqual(client.countParams, ["campaign-1", capacityStatuses]);
   assert.ok(client.calls.indexOf("campaign lock") < client.calls.indexOf("capacity count"));
+});
+
+test("admin invitations cannot expose demo campaigns to real overseas creators", async () => {
+  activeClient = new TransactionClient({ participationStatus: null, demo: true, preview: false });
+  await assert.rejects(createCampaignInvitation("admin-1", "demo-beauty-private", "creator-1"), /administrator preview/i);
+  assert.equal(activeClient.calls.includes("invitation insert"), false);
+
+  activeClient = new TransactionClient({ participationStatus: null, demo: true, preview: true });
+  const result = await createCampaignInvitation("admin-1", "demo-beauty-private", "creator-1");
+  assert.equal(result.status, "invited");
 });
 
 test("creator invitation acceptance and application convergence cannot overbook", async () => {
