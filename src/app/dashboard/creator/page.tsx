@@ -1,62 +1,98 @@
 import Link from "next/link";
 import { requireApprovedCreator } from "@/lib/auth";
+import { getRecommendedCampaigns } from "@/lib/creator-campaigns";
+import { getCreatorMissionParticipations } from "@/lib/db";
 import {
-  getCreatorActionSummary,
-  getCreatorCampaignActivity,
-  getCreatorSettlementSummary,
-  getRecommendedCampaigns,
-} from "@/lib/creator-campaigns";
+  buildCreatorCenterMetrics,
+  getCreatorMonthlyOrders,
+  missionStageIndex,
+} from "@/lib/creator-center";
 
-function matchReasonLabel(reason: string) {
-  return ({ market: "Your market", platform: "Your platform", category: "Your category", deadline: "Open now" } as Record<string, string>)[reason] || reason;
+const MISSION_STAGES = ["제품 수령", "콘텐츠 제작", "검수", "게시", "정산"];
+
+function isToday(value: string | null) {
+  if (!value) return false;
+  const today = new Date();
+  const target = new Date(value);
+  return today.getFullYear() === target.getFullYear()
+    && today.getMonth() === target.getMonth()
+    && today.getDate() === target.getDate();
 }
 
-function deadlineLabel(deadline: string | null) {
-  if (!deadline) return "No application deadline";
-  return `Apply by ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(deadline))}`;
+function deadlineLabel(value: string | null) {
+  if (!value) return "상시 모집";
+  return new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric" }).format(new Date(value));
 }
 
 export default async function CreatorActionHomePage() {
   const { creator } = await requireApprovedCreator();
-  const [summary, recommendedCampaigns, currentParticipations, settlement] = await Promise.all([
-    getCreatorActionSummary(creator.id),
+  const [recommended, missions, monthlyOrders] = await Promise.all([
     getRecommendedCampaigns(creator.id),
-    getCreatorCampaignActivity(creator.id),
-    getCreatorSettlementSummary(creator.id),
+    getCreatorMissionParticipations(creator.id),
+    getCreatorMonthlyOrders(creator.id),
   ]);
-  const urgentCampaigns = recommendedCampaigns.filter((campaign) => campaign.application_deadline).slice(0, 2);
+  const metrics = buildCreatorCenterMetrics({
+    market: creator.market,
+    recommendedCount: recommended.length,
+    deadlineCount: recommended.filter((campaign) => isToday(campaign.application_deadline)).length,
+    rewards: missions.map((mission) => mission.expected_reward).filter(Boolean),
+    monthlyOrders,
+  });
+  const activeMission = missions.find((mission) => mission.status !== "completed") ?? missions[0];
+  const activeStage = activeMission ? missionStageIndex(activeMission.status) : -1;
 
   return (
     <div className="creator-action-home">
-      <header className="creator-page-heading">
-        <p>CREATOR ACTION CENTER</p>
-        <h1>오늘 할 일</h1>
-        <span>{creator.display_name}님에게 맞춘 다음 캠페인과 진행 현황입니다.</span>
+      <header className="creator-page-heading creator-page-heading-wide">
+        <p>CREATOR ACTIVITY · REVENUE CENTER</p>
+        <h1>오늘의 활동</h1>
+        <span>한국 공급자의 K-뷰티·패션 제품을 해외 크리에이터의 콘텐츠와 판매로 연결합니다.</span>
       </header>
 
-      <section className="creator-action-priority" aria-labelledby="today-actions-heading">
-        <div><p className="creator-eyebrow">TODAY</p><h2 id="today-actions-heading">지금 확인할 작업</h2></div>
-        <div className="creator-stat-row">
-          <strong>{summary.invited}</strong><span>Invitations</span>
-          <strong>{summary.applied}</strong><span>Applications</span>
-          <strong>{summary.active}</strong><span>Active work</span>
-        </div>
-        <Link href="/dashboard/creator/campaigns" className="creator-primary-link">추천 캠페인 보기</Link>
+      <section className="creator-kpi-grid" aria-label="오늘의 활동 지표">
+        <article className="is-blue"><span>추천 캠페인</span><strong>{metrics.recommendedCount}</strong><small>내 국가와 채널에 맞는 제안</small></article>
+        <article className="is-yellow"><span>오늘 마감</span><strong>{metrics.deadlineCount}</strong><small>오늘 신청이 끝나는 캠페인</small></article>
+        <article className="is-mint"><span>예상 수익</span><strong>{metrics.expectedEarnings}</strong><small>크리에이터 현지 통화 기준</small></article>
+        <article className="is-gray"><span>이번 달 주문</span><strong>{metrics.monthlyOrders}</strong><small>게시 콘텐츠에서 발생한 주문</small></article>
       </section>
 
-      <section className="creator-deadlines" aria-labelledby="deadline-heading">
-        <div className="creator-section-heading"><div><p className="creator-eyebrow">DEADLINES</p><h2 id="deadline-heading">마감 임박</h2></div><Link href="/dashboard/creator/campaigns">모두 보기</Link></div>
-        {urgentCampaigns.length ? <ul>{urgentCampaigns.map((campaign) => <li key={campaign.id}><strong>{campaign.title}</strong><span>{deadlineLabel(campaign.application_deadline)}</span></li>)}</ul> : <p>현재 임박한 모집 마감이 없습니다.</p>}
-      </section>
+      <div className="creator-home-columns creator-home-columns-primary">
+        <section className="creator-recommend-summary" aria-labelledby="recommend-summary-heading">
+          <div className="creator-section-heading">
+            <div><p className="creator-eyebrow">KOREA → GLOBAL</p><h2 id="recommend-summary-heading">추천 캠페인</h2></div>
+            <Link href="/dashboard/creator/campaigns">전체 보기</Link>
+          </div>
+          {recommended.length ? (
+            <ul>
+              {recommended.slice(0, 3).map((campaign) => (
+                <li key={campaign.id}>
+                  <div><strong>{campaign.title}</strong><span>한국 공급자 · {campaign.markets.join(" · ") || creator.market}</span></div>
+                  <p><b>{campaign.reward_text || "보상 협의"}</b><small>{deadlineLabel(campaign.application_deadline)} 마감</small></p>
+                </li>
+              ))}
+            </ul>
+          ) : <div className="creator-empty-state"><p>현재 조건에 맞는 추천 캠페인이 없습니다.</p></div>}
+        </section>
 
-      <section aria-labelledby="recommended-heading">
-        <div className="creator-section-heading"><div><p className="creator-eyebrow">RECOMMENDED</p><h2 id="recommended-heading">추천 캠페인</h2></div><Link href="/dashboard/creator/campaigns">전체 탐색</Link></div>
-        {recommendedCampaigns.length ? <div className="creator-home-campaigns">{recommendedCampaigns.slice(0, 3).map((campaign) => <article key={campaign.id}><p>{campaign.category}</p><h3>{campaign.title}</h3><span>{campaign.reward_text || "Reward to be confirmed"}</span><div>{campaign.fit.reasons.map((reason) => <small key={reason}>{matchReasonLabel(reason)}</small>)}</div></article>)}</div> : <div className="creator-empty-state"><p>현재 조건에 맞는 모집 캠페인이 없습니다.</p><Link href="/dashboard/creator/campaigns">추천 캠페인 다시 확인하기</Link></div>}
-      </section>
-
-      <div className="creator-home-columns">
-        <section aria-labelledby="progress-heading"><div className="creator-section-heading"><div><p className="creator-eyebrow">PROGRESS</p><h2 id="progress-heading">진행 중인 캠페인</h2></div></div>{currentParticipations.length ? <ul className="creator-activity-list">{currentParticipations.map((participation) => <li key={participation.id}><div><strong>{participation.campaign_title}</strong><span>{participation.next_action || participation.status}</span></div><b>{participation.status}</b></li>)}</ul> : <p className="creator-muted">진행 중인 캠페인이 없습니다.</p>}</section>
-        <section aria-labelledby="settlement-heading"><p className="creator-eyebrow">SETTLEMENT</p><h2 id="settlement-heading">정산 요약</h2><dl className="creator-settlement-summary"><div><dt>Pending</dt><dd>{settlement.pending}</dd></div><div><dt>Confirmed</dt><dd>{settlement.confirmed}</dd></div><div><dt>Paid</dt><dd>{settlement.paid}</dd></div></dl></section>
+        <section className="creator-mission-board" aria-labelledby="mission-board-heading">
+          <div className="creator-section-heading">
+            <div><p className="creator-eyebrow">MY MISSION</p><h2 id="mission-board-heading">내 미션 보드</h2></div>
+            <Link href="/dashboard/creator/my-campaigns">상세 보기</Link>
+          </div>
+          {activeMission ? (
+            <>
+              <h3>{activeMission.campaign_title}</h3>
+              <p>{activeMission.next_action || "다음 단계 안내를 확인하세요."}</p>
+              <ol className="creator-mission-stages">
+                {MISSION_STAGES.map((stage, index) => (
+                  <li key={stage} className={index < activeStage ? "is-done" : index === activeStage ? "is-current" : ""}>
+                    <span>{index < activeStage ? "✓" : index + 1}</span><b>{stage}</b>
+                  </li>
+                ))}
+              </ol>
+            </>
+          ) : <div className="creator-empty-state"><p>진행 중인 미션이 없습니다.</p><Link href="/dashboard/creator/campaigns">추천 캠페인 찾기</Link></div>}
+        </section>
       </div>
     </div>
   );
