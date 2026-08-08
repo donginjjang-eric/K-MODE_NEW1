@@ -1226,14 +1226,39 @@ export async function getOrCreateAdminCreatorAccount(userId: string, email: stri
   }
   try {
     return await one<CreatorAccount>(
-      `INSERT INTO creator_accounts
-         (user_id, creator_key, display_name, google_email, approval_status, platform, market, categories)
-       VALUES ($1, $2, 'K-MODU 운영자', $3, 'approved', 'K-MODU', 'South Korea', $4::jsonb)
-       ON CONFLICT (user_id) DO UPDATE
-         SET google_email = EXCLUDED.google_email,
-             approval_status = 'approved',
-             updated_at = now()
-       RETURNING *`,
+      `WITH updated AS (
+         UPDATE creator_accounts
+            SET user_id = $1,
+                creator_key = $2,
+                display_name = 'K-MODU 운영자',
+                google_email = $3,
+                approval_status = 'approved',
+                platform = 'K-MODU',
+                market = 'South Korea',
+                categories = $4::jsonb,
+                updated_at = now()
+          WHERE user_id = $1 OR creator_key = $2
+          RETURNING *
+       ), inserted AS (
+         INSERT INTO creator_accounts
+           (user_id, creator_key, display_name, google_email, approval_status, platform, market, categories)
+         SELECT $1, $2, 'K-MODU 운영자', $3, 'approved', 'K-MODU', 'South Korea', $4::jsonb
+          WHERE NOT EXISTS (SELECT 1 FROM updated)
+         ON CONFLICT (creator_key) DO UPDATE
+           SET user_id = EXCLUDED.user_id,
+               display_name = EXCLUDED.display_name,
+               google_email = EXCLUDED.google_email,
+               approval_status = 'approved',
+               platform = EXCLUDED.platform,
+               market = EXCLUDED.market,
+               categories = EXCLUDED.categories,
+               updated_at = now()
+         RETURNING *
+       )
+       SELECT * FROM updated
+       UNION ALL
+       SELECT * FROM inserted
+       LIMIT 1`,
       [userId, `admin-operator-${userId}`, email.trim().toLowerCase(), JSON.stringify(["fashion", "beauty", "operations"])],
     );
   } catch (error) {

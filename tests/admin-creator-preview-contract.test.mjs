@@ -16,7 +16,8 @@ test("admins receive a dedicated operational creator identity and mutation acces
   assert.match(auth, /user\.role === "admin"/);
   assert.match(db, /export async function getOrCreateAdminCreatorAccount/);
   assert.match(db, /K-MODU 운영자/);
-  assert.match(db, /ON CONFLICT \(user_id\)/);
+  assert.match(db, /WHERE user_id = \$1 OR creator_key = \$2/);
+  assert.match(db, /ON CONFLICT \(creator_key\)/);
   assert.match(layout, /관리자 운영 모드/);
   assert.match(layout, /\/dashboard\/admin\/campaigns/);
 
