@@ -142,3 +142,12 @@ cmd /c npx.cmd tsc --noEmit: exit code 0
 ### Fix round 커밋
 
 수정 커밋: `8bcadb5`
+
+## 추가 검증 증거
+
+요청된 실행 명령으로 Fix round 실행 테스트를 재확인했습니다.
+
+```text
+node --import tsx --experimental-test-module-mocks --test tests/creator-beauty-demo-transaction-runner.mjs
+5 passed, 0 failed
+```
