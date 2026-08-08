@@ -40,3 +40,13 @@ test("malformed campaign JSON is rejected with 400 before a domain mutation", as
   assert.equal(response.status, 400);
   assert.match(await response.text(), /error/);
 });
+
+test("campaign form explains canonical reward input and surfaces invalid_reward API detail", async () => {
+  const form = await source("../src/components/AdminCampaignForm.tsx");
+  const ui = await source("../src/lib/admin-campaign-ui.js");
+  assert.match(form, /placeholder="RM 420 · VND 2,500,000 · USD 250"/);
+  assert.match(form, /통화 코드를 먼저 쓰고 정수 금액을 입력하세요/);
+  assert.match(form, /code === "invalid_reward" && apiError/);
+  assert.match(form, /adminCampaignOperationMessage/);
+  assert.match(ui, /code === "invalid_reward"/);
+});

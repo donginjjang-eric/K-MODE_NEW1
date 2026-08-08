@@ -203,4 +203,7 @@ test("deadline and performance-grade labels are locale-ready", async () => {
     assert.match(performance + grade, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(i18n, new RegExp(`['\"]${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['\"]`));
   }
+  for (const label of ["해외 크리에이터가 한국 공급자 제품으로 만든 콘텐츠의 조회, 반응, 주문과 매출을 확인합니다.", "전체 성과", "아직 집계된 성과가 없습니다.", "콘텐츠 게시 후 조회·주문 데이터가 이곳에 표시됩니다.", "한국 브랜드와의 협업 완료 이력에 따라 더 많은 캠페인과 판매 기회가 열립니다.", "크리에이터 등급 안내"]) {
+    assert.match(i18n, new RegExp(`['\"]${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['\"]`));
+  }
 });

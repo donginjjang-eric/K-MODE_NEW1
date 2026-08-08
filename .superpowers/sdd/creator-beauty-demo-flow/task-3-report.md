@@ -57,6 +57,12 @@ All six Important findings were reproduced with failing tests before the fixes:
 2. Creator deadlines now use locale-aware `<time data-i18n-date>` rendering instead of a hardcoded Korean formatter. Performance table labels and grade copy/count fragments are translated in Korean, Malay, Vietnamese, Traditional Chinese, and English.
 3. Campaign create and update validate rewards before database persistence. Accepted values use a supported currency code followed by a whole-number amount (`RM`, `MYR`, `VND`, `USD`, `TWD`, `KRW`); reversed, symbolic, decimal, and unstructured values return a clear `invalid_reward` API response.
 
+## Final UI and test-harness completion
+
+- Completed Malay, Vietnamese, Traditional Chinese, and English entries for performance and grade descriptions, aggregate/table labels, empty states, `전체 성과`, and `크리에이터 등급 안내`.
+- The administrator campaign form now shows canonical reward examples and displays the server's `invalid_reward` guidance while retaining the existing generic fallback for all other failures.
+- Corrected the locked transaction runner's default user role to administrator; its explicit non-admin mutation test remains and passes.
+
 ## Verification
 
 - Focused and regression tests:
@@ -68,6 +74,7 @@ All six Important findings were reproduced with failing tests before the fixes:
 - Final whole-branch creator suite: 57/57 passed across authentication, demo provenance/reset, recommendation/apply eligibility, activity/revenue calculations, mission flow, performance, settlement, translations, navigation, schema, and designer-studio isolation.
 - Final targeted review suite: 33/33 passed.
 - Final invitation/locale/reward targeted suite: 39/39 passed, followed by a passing non-incremental TypeScript check.
+- Final exact transaction runner: 10/10 passed. Relevant i18n/UI suite: 22/22 passed. Non-incremental TypeScript check passed.
 - Production build: `cmd /c npm.cmd run build` passed and compiled the new `/dashboard/creator/performance` and `/dashboard/creator/grade` routes.
 - Build emitted only the existing multi-lockfile/workspace-root tracing warnings.
 - The production build was not rerun for this review-fix commit because disk space was near zero and the previous Task 3 build had already passed. Focused behavior tests, the broader regression suite, and a fresh non-incremental TypeScript check were used instead.

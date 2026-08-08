@@ -72,7 +72,10 @@ export default function AdminCampaignForm({ campaign, endpoint, method, redirect
     setBusy(false);
     if (!response?.ok) {
       const code = typeof result.code === "string" ? result.code : response ? "" : "network_error";
-      setError(adminCampaignOperationMessage({ status: response?.status ?? 0, code }));
+      const apiError = typeof result.error === "string" ? result.error : "";
+      setError(code === "invalid_reward" && apiError
+        ? apiError
+        : adminCampaignOperationMessage({ status: response?.status ?? 0, code }));
       return;
     }
     const saved = result.campaign as Campaign;
@@ -91,7 +94,7 @@ export default function AdminCampaignForm({ campaign, endpoint, method, redirect
       <fieldset><legend>콘텐츠 플랫폼</legend><div className="admin-campaign-checks">{PLATFORM_OPTIONS.map((platform) => <label key={platform}><input type="checkbox" checked={values.platforms.includes(platform)} onChange={() => toggle("platforms", platform)} />{platform}</label>)}</div></fieldset>
       <label>캠페인 브리프<textarea name="brief" value={values.brief} onChange={(event) => setValues({ ...values, brief: event.target.value })} required /></label>
       <div className="admin-campaign-form-grid">
-        <label>리워드<input name="reward" value={values.reward_text} onChange={(event) => setValues({ ...values, reward_text: event.target.value })} required /></label>
+        <label>리워드<input name="reward" placeholder="RM 420 · VND 2,500,000 · USD 250" aria-describedby="campaign-reward-help" value={values.reward_text} onChange={(event) => setValues({ ...values, reward_text: event.target.value })} required /><small id="campaign-reward-help">통화 코드를 먼저 쓰고 정수 금액을 입력하세요. 예: RM 420, KRW 300,000</small></label>
         <label>모집 인원<input name="slots" type="number" min="1" value={values.slots} onChange={(event) => setValues({ ...values, slots: event.target.value })} required /></label>
         <label>신청 마감<input name="application_deadline" type="datetime-local" max={values.content_deadline || undefined} value={values.application_deadline} onChange={(event) => setValues({ ...values, application_deadline: event.target.value })} required /></label>
         <label>콘텐츠 마감<input name="content_deadline" type="datetime-local" min={values.application_deadline || undefined} value={values.content_deadline} onChange={(event) => setValues({ ...values, content_deadline: event.target.value })} required /></label>

@@ -27,13 +27,14 @@ class TransactionClient {
   countParams;
   updateParams;
 
-  constructor({ participationStatus = "applied", campaignStatus = "recruiting", slots = 2, occupied = 0, demo = false, preview = false } = {}) {
+  constructor({ participationStatus = "applied", campaignStatus = "recruiting", slots = 2, occupied = 0, demo = false, preview = false, userRole = "admin" } = {}) {
     this.participationStatus = participationStatus;
     this.campaignStatus = campaignStatus;
     this.slots = slots;
     this.occupied = occupied;
     this.demo = demo;
     this.preview = preview;
+    this.userRole = userRole;
   }
 
   async query(sql, params = []) {
@@ -43,7 +44,7 @@ class TransactionClient {
     }
     if (sql.includes("FROM users WHERE id")) {
       this.calls.push("admin lock");
-      return { rows: [{ id: this.preview ? "creator-user-1" : "admin-1", role: this.preview ? "admin" : "creator" }] };
+      return { rows: [{ id: this.preview ? "creator-user-1" : "admin-1", role: this.preview ? "admin" : this.userRole }] };
     }
     if (sql.includes("FROM creator_accounts WHERE id")) {
       this.calls.push("creator lock");
@@ -192,13 +193,19 @@ test("invitations use the same locked lifecycle capacity query", async () => {
 });
 
 test("admin invitations cannot expose demo campaigns to real overseas creators", async () => {
-  activeClient = new TransactionClient({ participationStatus: null, demo: true, preview: false });
+  activeClient = new TransactionClient({ participationStatus: null, demo: true, preview: false, userRole: "creator" });
   await assert.rejects(createCampaignInvitation("admin-1", "demo-beauty-private", "creator-1"), /administrator preview/i);
   assert.equal(activeClient.calls.includes("invitation insert"), false);
 
   activeClient = new TransactionClient({ participationStatus: null, demo: true, preview: true });
   const result = await createCampaignInvitation("admin-1", "demo-beauty-private", "creator-1");
   assert.equal(result.status, "invited");
+});
+
+test("non-admin campaign mutation remains rejected", async () => {
+  activeClient = new TransactionClient({ userRole: "creator" });
+  await assert.rejects(updateAdminCampaign("creator-user-1", "campaign-1", { title: "Changed" }), /admin access/i);
+  assert.equal(activeClient.calls.includes("campaign update"), false);
 });
 
 test("creator invitation acceptance and application convergence cannot overbook", async () => {
