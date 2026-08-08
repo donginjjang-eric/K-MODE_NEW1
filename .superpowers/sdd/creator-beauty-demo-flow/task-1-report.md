@@ -141,4 +141,4 @@ cmd /c npx.cmd tsc --noEmit: exit code 0
 
 ### Fix round 커밋
 
-커밋 후 이 항목에 수정 커밋 해시를 기록합니다.
+수정 커밋: `8bcadb5`
