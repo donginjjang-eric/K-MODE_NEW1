@@ -788,6 +788,7 @@
   function translated(source, targetLocale) {
     if (targetLocale === DEFAULT_LOCALE) return source;
     const lookupSource = source.replace(/\s+/g, ' ');
+    if (targetLocale === 'ms-MY') return MALAY[lookupSource] || source;
     const row = TEXT[lookupSource];
     if (row) return row[INDEX[targetLocale]] || source;
 

@@ -18,6 +18,7 @@ test('Malay translations cover shared navigation and primary public pages', () =
   assert.match(i18n, /["']제품 둘러보기["']:\s*["']Terokai produk["']/);
   assert.match(i18n, /["']추천 캠페인["']:\s*["']Kempen disyorkan["']/);
   assert.match(i18n, /["']디자이너 스튜디오["']:\s*["']Studio Pereka["']/);
+  assert.match(i18n, /targetLocale === 'ms-MY'\) return MALAY\[lookupSource\] \|\| source/);
 });
 
 test('Malay dynamic listing counts are translated', () => {

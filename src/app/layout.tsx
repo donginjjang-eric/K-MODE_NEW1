@@ -71,7 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </header>
           {children}
         </div>
-        <Script src="/site-i18n.js?v=20260808-ms1" strategy="afterInteractive" />
+        <Script src="/site-i18n.js?v=20260808-ms2" strategy="afterInteractive" />
         <Script src="/auth-nav.js" strategy="afterInteractive" />
       </body>
     </html>
