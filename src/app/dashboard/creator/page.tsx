@@ -9,6 +9,7 @@ import {
   missionStageIndex,
   selectActiveMission,
 } from "@/lib/creator-center";
+import { creatorMissionActionHref, creatorMissionPresentation } from "@/lib/creator-mission-view";
 import { campaignMatchesPersona, creatorNextActionLabel, creatorPersona, currencyMatchesPersona, missionMatchesPersona, CREATOR_PERSONAS } from "@/lib/creator-persona";
 
 const MISSION_STAGES = ["제품 수령", "콘텐츠 제작", "검수", "게시", "정산"];
@@ -62,6 +63,18 @@ export default async function CreatorActionHomePage({ searchParams }: { searchPa
         <span>한국 공급자의 K-뷰티·패션 제품을 해외 크리에이터의 콘텐츠와 판매로 연결합니다.</span>
         {user.role === "admin" ? <b className="creator-persona-context">{CREATOR_PERSONAS[persona].label} 크리에이터 화면 · {CREATOR_PERSONAS[persona].currency}</b> : null}
       </header>
+
+      <section className="creator-today-card" aria-labelledby="today-action-heading">
+        <div>
+          <p className="creator-eyebrow">가장 먼저 확인하세요</p>
+          <h2 id="today-action-heading">{activeMission ? "지금 해야 할 일" : "새로운 캠페인을 찾아보세요"}</h2>
+          <strong>{activeMission ? activeMission.campaign_title : "현재 진행 중인 미션이 없습니다."}</strong>
+          <span>{activeMission ? creatorNextActionLabel(activeMission.status) : "내 채널과 시장에 맞는 추천 캠페인에 지원할 수 있습니다."}</span>
+        </div>
+        <Link className="creator-primary-action" href={activeMission ? creatorMissionActionHref(activeMission.status, activeMission.id) : `/dashboard/creator/campaigns?persona=${persona}`}>
+          {activeMission ? creatorMissionPresentation(activeMission.status).actionLabel : "추천 캠페인 보기"}
+        </Link>
+      </section>
 
       <section className="creator-kpi-grid" aria-label="오늘의 활동 지표">
         <article className="is-blue"><span>추천 캠페인</span><strong>{metrics.recommendedCount}</strong><small>내 국가와 채널에 맞는 제안</small></article>

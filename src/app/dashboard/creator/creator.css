@@ -119,6 +119,35 @@
   font-size: 13px;
 }
 
+/* Action-first creator workflow */
+.creator-center .creator-today-card { display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: clamp(24px, 4vw, 42px); border-radius: 22px; background: linear-gradient(135deg, #102f2b, #178b82); color: #fff; box-shadow: 0 18px 44px rgba(15, 92, 85, .18); }
+.creator-center .creator-today-card > div { display: grid; gap: 8px; max-width: 720px; }
+.creator-center .creator-today-card .creator-eyebrow { color: #9ee0d8; }
+.creator-center .creator-today-card h2 { margin: 0; color: #fff; font-size: clamp(28px, 4vw, 46px); letter-spacing: -.05em; }
+.creator-center .creator-today-card strong { font-size: 16px; }
+.creator-center .creator-today-card span { color: rgba(255,255,255,.78); font-size: 13px; line-height: 1.6; }
+.creator-center .creator-primary-action { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; min-height: 46px; padding: 0 20px; border-radius: 12px; background: var(--creator-black); color: #fff !important; font-size: 12px; font-weight: 900; text-decoration: none; }
+.creator-center .creator-today-card .creator-primary-action { background: #fff; color: #123b36 !important; }
+.creator-center .creator-detail-next { display: grid; gap: 6px; padding: 16px 18px; border-left: 4px solid var(--creator-teal); border-radius: 0 12px 12px 0; background: #edf7f5; }
+.creator-center .creator-detail-next small { color: var(--creator-teal); font-size: 10px; font-weight: 900; }
+.creator-center .creator-detail-next strong { font-size: 14px; line-height: 1.55; }
+.creator-center .creator-detail-progress ol { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.creator-center .creator-detail-activity summary { display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 13px; font-weight: 900; list-style: none; }
+.creator-center .creator-detail-activity summary::-webkit-details-marker { display: none; }
+.creator-center .creator-detail-activity summary span { display: grid; place-items: center; min-width: 26px; height: 26px; border-radius: 999px; background: #edf7f5; color: var(--creator-teal); }
+.creator-center .creator-detail-activity[open] summary { margin-bottom: 22px; }
+
+@media (max-width: 760px) {
+  .creator-center .creator-mobile-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); justify-content: stretch; overflow: visible; }
+  .creator-center .creator-mobile-nav a { min-height: 68px; }
+  .creator-center .creator-today-card { display: grid; gap: 22px; padding: 26px 22px; }
+  .creator-center .creator-today-card .creator-primary-action { width: 100%; }
+  .creator-center .creator-detail-progress ol { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; }
+  .creator-center .creator-detail-progress li:nth-child(5)::before { display: block; }
+  .creator-center .creator-detail-progress li span { font-size: 9px; }
+  .creator-center .creator-detail-hero-copy > .creator-primary-action { position: sticky; bottom: 82px; z-index: 10; width: 100%; min-height: 50px; box-shadow: 0 10px 24px rgba(22,20,15,.18); }
+}
+
 .creator-admin-preview-copy,
 .creator-demo-controls { display: flex; align-items: center; gap: 10px; }
 .creator-admin-preview strong { letter-spacing: .08em; }
@@ -567,4 +596,12 @@
   .creator-center .creator-profile-avatar { width: 62px; height: 62px; border-radius: 19px; }
   .creator-center .creator-profile-identity > b { grid-column: 1 / -1; justify-self: start; }
   .creator-center .creator-profile-columns, .creator-center .creator-profile-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .creator-center .creator-mobile-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); justify-content: stretch; overflow: visible; }
+  .creator-center .creator-mission-progress { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; }
+  .creator-center .creator-mission-progress li:nth-child(5)::before,
+  .creator-center .creator-detail-progress li:nth-child(5)::before { display: block; }
+  .creator-center .creator-detail-progress ol { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; }
 }

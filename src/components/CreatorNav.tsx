@@ -23,6 +23,14 @@ const CREATOR_NAV: NavItem[] = [
   { href: "/dashboard/creator/grade", icon: "badge", label: "등급", short: "등급" },
 ];
 
+const CREATOR_MOBILE_NAV: NavItem[] = [
+  { href: "/dashboard/creator", icon: "home", label: "홈", short: "홈" },
+  { href: "/dashboard/creator/my-campaigns", icon: "badge", label: "내 미션", short: "미션" },
+  { href: "/dashboard/creator/submissions", icon: "file", label: "콘텐츠 제작", short: "제작" },
+  { href: "/dashboard/creator/settlement", icon: "check", label: "수익·정산", short: "정산" },
+  { href: "/dashboard/creator/profile", icon: "user", label: "더보기", short: "더보기" },
+];
+
 type CreatorNavigationProps = {
   creator: Pick<CreatorAccount, "display_name" | "platform">;
   user: Pick<SessionUser, "email" | "role">;
@@ -84,7 +92,7 @@ export function CreatorTabBar({ creator, user }: CreatorNavigationProps) {
         <Link className="creator-mobile-menu" href="/dashboard/creator/profile" aria-label={`${creator.display_name} 내 정보`}>메뉴</Link>
       </header>
       <nav className="creator-mobile-nav" aria-label="크리에이터 빠른 메뉴">
-        {CREATOR_NAV.map((item) => (
+        {CREATOR_MOBILE_NAV.map((item) => (
           <Link key={item.href} href={withPersona(item.href)} className={isActive(pathname, item.href) ? "is-active" : ""}>
             <NavIcon name={item.icon} />
             <span>{item.short}</span>

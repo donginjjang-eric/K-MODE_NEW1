@@ -21,6 +21,43 @@ const ACTIVE_STATUSES = new Set([
   "settlement",
 ]);
 
+export const CREATOR_MISSION_STAGES = ["배송", "제작", "검수", "게시", "정산"] as const;
+
+export type CreatorMissionGroup = "attention" | "active" | "completed";
+
+type MissionPresentation = {
+  group: CreatorMissionGroup;
+  stageIndex: number;
+  actionLabel: string;
+  actionPath: "detail" | "submissions" | "performance" | "settlement";
+};
+
+const MISSION_PRESENTATION: Record<string, MissionPresentation> = {
+  invited: { group: "attention", stageIndex: 0, actionLabel: "참여 여부 선택", actionPath: "detail" },
+  applied: { group: "active", stageIndex: 0, actionLabel: "지원 현황 확인", actionPath: "detail" },
+  matched: { group: "active", stageIndex: 0, actionLabel: "배송 준비 확인", actionPath: "detail" },
+  shipping: { group: "attention", stageIndex: 0, actionLabel: "배송 정보 확인", actionPath: "detail" },
+  creating: { group: "attention", stageIndex: 1, actionLabel: "콘텐츠 제출하기", actionPath: "submissions" },
+  review: { group: "attention", stageIndex: 2, actionLabel: "검수 의견 확인", actionPath: "submissions" },
+  published: { group: "attention", stageIndex: 3, actionLabel: "성과 입력하기", actionPath: "performance" },
+  settlement: { group: "attention", stageIndex: 4, actionLabel: "정산 일정 확인", actionPath: "settlement" },
+  completed: { group: "completed", stageIndex: 4, actionLabel: "완료 내역 보기", actionPath: "detail" },
+  rejected: { group: "completed", stageIndex: -1, actionLabel: "종료 내역 보기", actionPath: "detail" },
+  cancelled: { group: "completed", stageIndex: -1, actionLabel: "종료 내역 보기", actionPath: "detail" },
+};
+
+export function creatorMissionPresentation(status: string): MissionPresentation {
+  return MISSION_PRESENTATION[status] || { group: "active", stageIndex: -1, actionLabel: "미션 확인하기", actionPath: "detail" };
+}
+
+export function creatorMissionActionHref(status: string, participationId: string) {
+  const path = creatorMissionPresentation(status).actionPath;
+  if (path === "submissions") return `/dashboard/creator/submissions#mission-${participationId}`;
+  if (path === "performance") return `/dashboard/creator/my-campaigns/${participationId}#performance`;
+  if (path === "settlement") return "/dashboard/creator/settlement";
+  return `/dashboard/creator/my-campaigns/${participationId}`;
+}
+
 export function missionStageIndex(status: string) {
   return STAGE_INDEX[status] ?? -1;
 }
