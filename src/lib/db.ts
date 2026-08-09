@@ -4,8 +4,8 @@ import path from "node:path";
 import { Pool } from "pg";
 import type { PoolClient, QueryResultRow } from "pg";
 import { designer as phaseDesigner, modelTemplates as phaseTemplates, products as phaseProducts } from "./phase1-data";
-import { summarizeCreatorSettlementRewards } from "./creator-rewards";
-import type { CreatorRewardSummary } from "./creator-rewards";
+import { summarizeCreatorSettlementRewards, toCreatorSettlementItems } from "./creator-rewards";
+import type { CreatorRewardSummary, CreatorSettlementItem, CreatorSettlementLedgerRow } from "./creator-rewards";
 import type { ApprovalStatus, CampaignEvent, CampaignParticipation, CampaignPerformance, CollabRequest, CollabRequestStatus, CollabRequestType, ContentSubmission, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User } from "./types";
 
 let pool: Pool | null = null;
@@ -1397,6 +1397,20 @@ export async function getCreatorSettlementSummary(creatorId: string): Promise<Cr
     [creatorId],
   );
   return summarizeCreatorSettlementRewards(rows);
+}
+
+export async function getCreatorSettlementItems(creatorId: string): Promise<CreatorSettlementItem[]> {
+  if (!hasDatabase()) return [];
+  const rows = await query<CreatorSettlementLedgerRow>(
+    `SELECT p.id, c.title AS campaign_title, c.category AS campaign_category,
+            p.status, p.expected_reward, p.settlement_status, p.updated_at
+       FROM campaign_participations p
+       JOIN campaigns c ON c.id = p.campaign_id
+      WHERE p.creator_account_id = $1
+      ORDER BY p.updated_at DESC`,
+    [creatorId],
+  );
+  return toCreatorSettlementItems(rows);
 }
 
 export async function getContentSubmissionsForParticipation(participationId: string): Promise<ContentSubmission[]> {

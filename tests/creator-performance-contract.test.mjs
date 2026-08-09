@@ -72,3 +72,14 @@ test("published-or-later mission detail pages expose the performance form", asyn
   assert.match(detail, /canReportPerformance \? <section className="creator-detail-panel creator-detail-work">/);
   assert.match(detail, /<CreatorPerformanceForm participationId=\{participation\.id\} \/>/);
 });
+
+test("settlement ledger query is campaign-aware and creator-scoped", async () => {
+  const db = await source("../src/lib/db.ts");
+  const start = db.indexOf("export async function getCreatorSettlementItems");
+  const settlementItemsFunction = db.slice(start, db.indexOf("export async function", start + 30));
+
+  assert.notEqual(start, -1);
+  assert.match(settlementItemsFunction, /JOIN campaigns c ON c\.id = p\.campaign_id/);
+  assert.match(settlementItemsFunction, /WHERE p\.creator_account_id = \$1/);
+  assert.match(settlementItemsFunction, /toCreatorSettlementItems\(rows\)/);
+});
