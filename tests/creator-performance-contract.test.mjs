@@ -69,5 +69,6 @@ test("published-or-later mission detail pages expose the performance form", asyn
 
   assert.match(detail, /import CreatorPerformanceForm from "@\/components\/CreatorPerformanceForm"/);
   assert.match(detail, /const canReportPerformance = participation\.status === "published" \|\| participation\.status === "settlement" \|\| participation\.status === "completed"/);
-  assert.match(detail, /canReportPerformance \? <section><h2>캠페인 성과<\/h2><CreatorPerformanceForm participationId=\{participation\.id\} \/><\/section> : null/);
+  assert.match(detail, /canReportPerformance \? <section className="creator-detail-panel creator-detail-work">/);
+  assert.match(detail, /<CreatorPerformanceForm participationId=\{participation\.id\} \/>/);
 });

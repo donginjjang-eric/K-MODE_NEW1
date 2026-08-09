@@ -6,8 +6,15 @@ import CreatorSubmissionForm from "@/components/CreatorSubmissionForm";
 import { requireApprovedCreator } from "@/lib/auth";
 import { getCampaignEventsForParticipation, getContentSubmissionsForParticipation, getParticipationForCreator } from "@/lib/db";
 import { creatorStatusLabel } from "@/lib/creator-copy";
+import { creatorNextActionLabel } from "@/lib/creator-persona";
+import { missionBriefLabel, missionImage, missionStageIndex } from "@/lib/creator-mission-view";
 
-const timeline = ["applied", "invited", "matched", "shipping", "creating", "review", "published", "settlement", "completed", "cancelled"];
+const timeline = ["applied", "matched", "shipping", "creating", "review", "published", "settlement", "completed"];
+
+function dateLabel(value: string | null) {
+  if (!value) return "일정 확인 중";
+  return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric" }).format(new Date(value));
+}
 
 export default async function CreatorMissionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { creator } = await requireApprovedCreator();
@@ -20,18 +27,31 @@ export default async function CreatorMissionDetailPage({ params }: { params: Pro
   ]);
   const canSubmit = participation.status === "creating" || participation.status === "review";
   const canReportPerformance = participation.status === "published" || participation.status === "settlement" || participation.status === "completed";
+  const currentStage = missionStageIndex(participation.status);
 
   return (
-    <div className="creator-mission-detail">
-      <Link href="/dashboard/creator/my-campaigns">← 내 미션</Link>
-      <header className="creator-page-heading"><p>{participation.campaign_category}</p><h1>{participation.campaign_title}</h1><span>{participation.next_action || creatorStatusLabel(participation.status)}</span></header>
-      <section aria-labelledby="timeline-heading"><h2 id="timeline-heading">진행 단계</h2><ol className="creator-mission-timeline">{timeline.map((status) => <li className={participation.status === status ? "is-current" : ""} key={status}>{creatorStatusLabel(status)}</li>)}</ol></section>
-      <section><h2>캠페인 안내</h2><p>{participation.campaign_brief}</p><dl><div><dt>배송 안내</dt><dd>{participation.shipping_note || "배송 일정은 확정 후 안내합니다."}</dd></div><div><dt>콘텐츠 마감일</dt><dd>{participation.content_deadline ? new Date(participation.content_deadline).toLocaleDateString("ko-KR") : "확정 후 안내"}</dd></div><div><dt>보상</dt><dd>{participation.expected_reward || "협의 후 안내"}</dd></div></dl></section>
-      {participation.status === "invited" ? <CreatorInvitationActions participationId={participation.id} /> : null}
-      {canSubmit ? <section><h2>콘텐츠 제출</h2><CreatorSubmissionForm participationId={participation.id} /></section> : null}
-      {canReportPerformance ? <section><h2>캠페인 성과</h2><CreatorPerformanceForm participationId={participation.id} /></section> : null}
-      <section><h2>제출 내역</h2>{submissions.length ? <ul>{submissions.map((submission) => <li key={submission.id}><a href={submission.content_url} target="_blank" rel="noreferrer">제출본 {submission.version}</a><span>{creatorStatusLabel(submission.status)}</span><p>{submission.caption_text}</p><p>검수 의견: {submission.review_note || "검수 대기 중"}</p><p>게시 상태: {submission.published_url ? <a href={submission.published_url} target="_blank" rel="noreferrer">게시된 콘텐츠 보기</a> : "승인 후 게시해 주세요."}</p></li>)}</ul> : <p>아직 제출한 콘텐츠가 없습니다.</p>}</section>
-      <section><h2>활동 기록</h2>{events.length ? <ul>{events.map((event) => <li key={event.id}>{event.message} <time dateTime={event.created_at}>{new Date(event.created_at).toLocaleString("ko-KR")}</time></li>)}</ul> : <p>아직 활동 기록이 없습니다.</p>}</section>
+    <div className="creator-mission-detail creator-campaigns-page">
+      <Link className="creator-detail-back" href="/dashboard/creator/my-campaigns">← 내 미션으로 돌아가기</Link>
+
+      <header className="creator-detail-hero">
+        <div className="creator-detail-hero-media"><img src={missionImage(participation.campaign_category)} alt={`${participation.campaign_title} 캠페인`} /><span>{participation.campaign_category}</span></div>
+        <div className="creator-detail-hero-copy"><span className="creator-mission-status">{creatorStatusLabel(participation.status)}</span><h1>{participation.campaign_title}</h1><p>{creatorNextActionLabel(participation.status)}</p><div className="creator-detail-hero-meta"><span><small>콘텐츠 마감</small><strong>{dateLabel(participation.content_deadline)}</strong></span><span><small>예상 보상</small><strong>{participation.expected_reward || "협의 후 안내"}</strong></span></div>{participation.status === "invited" ? <CreatorInvitationActions participationId={participation.id} /> : null}</div>
+      </header>
+
+      <section className="creator-detail-panel creator-detail-progress" aria-labelledby="timeline-heading"><div className="creator-detail-section-heading"><span>캠페인 진행률</span><h2 id="timeline-heading">진행 단계</h2></div><ol>{timeline.map((status, index) => <li className={index < currentStage ? "is-done" : index === currentStage ? "is-current" : ""} key={status}><i>{index < currentStage ? "✓" : index + 1}</i><span>{creatorStatusLabel(status)}</span></li>)}</ol></section>
+
+      <div className="creator-detail-columns">
+        <main className="creator-detail-main">
+          <section className="creator-detail-panel creator-detail-brief"><div className="creator-detail-section-heading"><span>캠페인 정보</span><h2>캠페인 안내</h2></div><p>{missionBriefLabel(participation.campaign_brief)}</p><dl><div><dt>배송 안내</dt><dd>{participation.shipping_note || "배송 일정은 확정 후 안내합니다."}</dd></div><div><dt>콘텐츠 마감일</dt><dd>{dateLabel(participation.content_deadline)}</dd></div><div><dt>예상 보상</dt><dd>{participation.expected_reward || "협의 후 안내"}</dd></div></dl></section>
+
+          {canSubmit ? <section className="creator-detail-panel creator-detail-work"><div className="creator-detail-section-heading"><span>콘텐츠 작업</span><h2>콘텐츠 제출</h2></div><CreatorSubmissionForm participationId={participation.id} /></section> : null}
+          {canReportPerformance ? <section className="creator-detail-panel creator-detail-work"><div className="creator-detail-section-heading"><span>게시 후 성과</span><h2>캠페인 성과</h2></div><p className="creator-detail-helper">게시된 콘텐츠의 실제 수치를 입력해 주세요. 저장한 값은 성과 화면과 정산에 반영됩니다.</p><CreatorPerformanceForm participationId={participation.id} /></section> : null}
+
+          <section className="creator-detail-panel creator-detail-history"><div className="creator-detail-section-heading"><span>검수 및 게시</span><h2>제출 내역</h2></div>{submissions.length ? <div className="creator-submission-history">{submissions.map((submission) => <article key={submission.id}><div><a href={submission.content_url} target="_blank" rel="noreferrer">제출본 {submission.version} 보기</a><span>{creatorStatusLabel(submission.status)}</span></div><p>{submission.caption_text}</p><dl><div><dt>검수 의견</dt><dd>{submission.review_note || "검수 대기 중"}</dd></div><div><dt>게시 상태</dt><dd>{submission.published_url ? <a href={submission.published_url} target="_blank" rel="noreferrer">게시된 콘텐츠 보기</a> : "승인 후 게시해 주세요."}</dd></div></dl></article>)}</div> : <div className="creator-detail-empty">아직 제출한 콘텐츠가 없습니다.</div>}</section>
+        </main>
+
+        <aside className="creator-detail-side"><section className="creator-detail-panel creator-detail-activity"><div className="creator-detail-section-heading"><span>최근 변경</span><h2>활동 기록</h2></div>{events.length ? <ol>{events.map((event) => <li key={event.id}><i></i><div><p>{event.message}</p><time dateTime={event.created_at}>{new Date(event.created_at).toLocaleString("ko-KR")}</time></div></li>)}</ol> : <div className="creator-detail-empty">아직 활동 기록이 없습니다.</div>}</section></aside>
+      </div>
     </div>
   );
 }

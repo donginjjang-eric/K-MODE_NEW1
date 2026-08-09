@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   isActiveMission,
   isCompletedMission,
+  missionBriefLabel,
   missionImage,
   missionStageIndex,
 } from "../src/lib/creator-mission-view";
@@ -29,4 +30,12 @@ test("진행 중과 완료 미션을 분리한다", () => {
 test("카테고리에 맞는 대표 이미지를 선택한다", () => {
   assert.equal(missionImage("K-Beauty Skin Care"), "/assets/campaign-kdesigner-02.png");
   assert.equal(missionImage("Fashion"), "/assets/campaign-kdesigner-01.png");
+});
+
+test("등록된 체험 캠페인 설명만 자연스러운 한국어로 표시한다", () => {
+  assert.equal(
+    missionBriefLabel("Completed demo campaign connecting a Korean lip tint supplier with a Malaysia creator's content and sales funnel."),
+    "한국 립 틴트 브랜드와 말레이시아 크리에이터가 콘텐츠 제작부터 판매까지 함께한 체험 캠페인입니다.",
+  );
+  assert.equal(missionBriefLabel("브랜드가 등록한 원문 설명"), "브랜드가 등록한 원문 설명");
 });

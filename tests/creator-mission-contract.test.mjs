@@ -77,9 +77,11 @@ test("invited mission cards retain a route to the brief beside invitation action
   assert.match(list, /완료한 미션/);
 });
 
-test("mission timeline includes application and cancellation states as visible current states", async () => {
+test("mission timeline presents the eight creator work stages and a computed current stage", async () => {
   const detail = await source("../src/app/dashboard/creator/my-campaigns/[id]/page.tsx");
 
-  assert.match(detail, /const timeline = \["applied", "invited", "matched", "shipping", "creating", "review", "published", "settlement", "completed", "cancelled"\]/);
-  assert.match(detail, /participation\.status === status \? "is-current" : ""/);
+  assert.match(detail, /const timeline = \["applied", "matched", "shipping", "creating", "review", "published", "settlement", "completed"\]/);
+  assert.match(detail, /const currentStage = missionStageIndex\(participation\.status\)/);
+  assert.match(detail, /index === currentStage \? "is-current"/);
+  assert.match(detail, /creator-detail-progress/);
 });

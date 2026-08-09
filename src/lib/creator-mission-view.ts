@@ -39,3 +39,12 @@ export function missionImage(category: string) {
     ? "/assets/campaign-kdesigner-02.png"
     : "/assets/campaign-kdesigner-01.png";
 }
+
+const DEMO_BRIEF_LABELS: Record<string, string> = {
+  "Completed demo campaign connecting a Korean lip tint supplier with a Malaysia creator's content and sales funnel.":
+    "한국 립 틴트 브랜드와 말레이시아 크리에이터가 콘텐츠 제작부터 판매까지 함께한 체험 캠페인입니다.",
+};
+
+export function missionBriefLabel(brief: string) {
+  return DEMO_BRIEF_LABELS[brief] || brief;
+}
