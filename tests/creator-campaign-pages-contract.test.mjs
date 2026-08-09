@@ -66,3 +66,14 @@ test("creator activity query only returns active participation statuses", async 
   assert.match(activityFunction[0], /p\.status = ANY\(\$2::text\[\]\)/);
   assert.match(activityFunction[0], /\[creatorId, CAPACITY_OCCUPYING_PARTICIPATION_STATUSES\]/);
 });
+
+test("content production page separates campaign work, review and submission actions", async () => {
+  const page = await source("../src/app/dashboard/creator/submissions/page.tsx");
+  assert.match(page, /className="creator-production-summary"/);
+  assert.match(page, /className="creator-production-card-grid"/);
+  assert.match(page, /className="creator-production-card"/);
+  assert.match(page, /className="creator-production-review"/);
+  assert.match(page, /submissions\[0\]\?\.review_note/);
+  assert.match(page, /participation\.status === "creating" \|\| participation\.status === "review"/);
+  assert.match(page, /`\/dashboard\/creator\/my-campaigns\/\$\{participation\.id\}`/);
+});
