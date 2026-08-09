@@ -238,6 +238,60 @@
 .creator-center .creator-production-meta { display: grid; justify-items: end; gap: 6px; font-size: 11px; }
 .creator-center .creator-production-meta b { color: var(--creator-teal); text-transform: uppercase; }
 .creator-center .creator-production-meta a { font-weight: 900; text-decoration: underline; }
+.creator-center .creator-missions-page { width: 100%; }
+.creator-center .creator-mission-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.creator-center .creator-mission-summary article { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 6px 12px; min-height: 118px; padding: 20px 22px; border: 1px solid #e3dbce; border-radius: 16px; background: #f5f1e9; }
+.creator-center .creator-mission-summary article:nth-child(2) { background: #e6f4f1; }
+.creator-center .creator-mission-summary article:nth-child(3) { background: #edf1f6; }
+.creator-center .creator-mission-summary span { align-self: start; color: #625b4f; font-size: 12px; font-weight: 900; }
+.creator-center .creator-mission-summary strong { grid-row: 1 / 3; grid-column: 2; font-size: 42px; line-height: 1; letter-spacing: -.06em; }
+.creator-center .creator-mission-summary small { color: #827a6e; font-size: 11px; }
+.creator-center .creator-mission-section { display: grid; gap: 14px; }
+.creator-center .creator-mission-section > .creator-section-heading { margin: 0; }
+.creator-center .creator-mission-section > .creator-section-heading > span { color: #777064; font-size: 12px; font-weight: 800; }
+.creator-center .creator-mission-card-grid { display: grid; gap: 18px; }
+.creator-center .creator-mission-card { display: grid; grid-template-columns: minmax(220px, .38fr) minmax(0, 1fr); overflow: hidden; border: 1px solid #ddd5c8; border-radius: 20px; background: #fff; box-shadow: 0 12px 34px rgba(22, 20, 15, .06); }
+.creator-center .creator-mission-card-media { position: relative; min-height: 330px; background: #e9e3d8; }
+.creator-center .creator-mission-card-media img { width: 100%; height: 100%; object-fit: cover; }
+.creator-center .creator-mission-card-media > span { position: absolute; top: 16px; left: 16px; padding: 7px 10px; border-radius: 999px; background: rgba(22, 20, 15, .82); color: #fff; font-size: 10px; font-weight: 900; backdrop-filter: blur(8px); }
+.creator-center .creator-mission-card-content { display: grid; align-content: start; gap: 20px; padding: 26px; }
+.creator-center .creator-mission-card-title { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+.creator-center .creator-mission-card-title > div { display: grid; gap: 8px; }
+.creator-center .creator-mission-card-title h3 { margin: 0; font-size: clamp(21px, 2.3vw, 30px); line-height: 1.15; letter-spacing: -.04em; }
+.creator-center .creator-mission-card-title > b { flex: 0 0 auto; color: var(--creator-teal); font-size: 13px; }
+.creator-center .creator-mission-status { width: fit-content; padding: 6px 9px; border-radius: 999px; background: var(--creator-teal); color: #fff; font-size: 10px; font-weight: 900; }
+.creator-center .creator-next-action { display: grid; gap: 6px; padding: 15px 17px; border-left: 4px solid var(--creator-teal); border-radius: 0 12px 12px 0; background: #edf7f5; }
+.creator-center .creator-next-action span { color: var(--creator-teal); font-size: 10px; font-weight: 900; }
+.creator-center .creator-next-action strong { font-size: 13px; line-height: 1.5; }
+.creator-center .creator-mission-progress { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+.creator-center .creator-mission-progress li { display: grid; position: relative; justify-items: center; gap: 7px; color: #aaa397; font-size: 10px; font-weight: 800; }
+.creator-center .creator-mission-progress li::before { position: absolute; top: 13px; right: 50%; left: -50%; height: 2px; background: #e2dbcf; content: ""; }
+.creator-center .creator-mission-progress li:first-child::before { display: none; }
+.creator-center .creator-mission-progress i { display: grid; z-index: 1; place-items: center; width: 28px; height: 28px; border: 2px solid #e2dbcf; border-radius: 50%; background: #fff; font-style: normal; }
+.creator-center .creator-mission-progress li.is-done,
+.creator-center .creator-mission-progress li.is-current { color: var(--creator-black); }
+.creator-center .creator-mission-progress li.is-done::before,
+.creator-center .creator-mission-progress li.is-current::before { background: var(--creator-teal); }
+.creator-center .creator-mission-progress li.is-done i { border-color: var(--creator-teal); background: var(--creator-teal); color: #fff; }
+.creator-center .creator-mission-progress li.is-current i { border-color: var(--creator-teal); color: var(--creator-teal); box-shadow: 0 0 0 4px #dff2ef; }
+.creator-center .creator-mission-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.creator-center .creator-mission-meta > div { display: grid; gap: 5px; padding: 12px 14px; border-radius: 11px; background: #f5f1e9; }
+.creator-center .creator-mission-meta span { color: #7c7468; font-size: 10px; font-weight: 800; }
+.creator-center .creator-mission-meta strong { font-size: 12px; }
+.creator-center .creator-mission-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.creator-center .creator-mission-actions > a { padding: 12px 16px; border-radius: 10px; background: var(--creator-black); color: #fff; font-size: 12px; font-weight: 900; }
+.creator-center .creator-mission-actions .creator-invitation-actions { display: flex; align-items: center; gap: 7px; margin-right: auto; }
+.creator-center .creator-mission-actions .creator-invitation-actions button { min-height: 38px; padding: 0 12px; border: 1px solid var(--creator-teal); border-radius: 9px; background: #fff; color: var(--creator-teal); font: inherit; font-size: 11px; font-weight: 900; }
+.creator-center .creator-mission-actions .creator-invitation-actions p { margin: 0; font-size: 11px; }
+.creator-center .creator-completed-missions { display: grid; gap: 10px; }
+.creator-center .creator-completed-missions article { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 12px; border: 1px solid #e2dbce; border-radius: 14px; background: #fff; }
+.creator-center .creator-completed-missions img { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; }
+.creator-center .creator-completed-missions div { display: grid; gap: 4px; }
+.creator-center .creator-completed-missions span { color: var(--creator-teal); font-size: 10px; font-weight: 900; }
+.creator-center .creator-completed-missions h3,
+.creator-center .creator-completed-missions p { margin: 0; }
+.creator-center .creator-completed-missions p { color: #756e62; font-size: 11px; }
+.creator-center .creator-completed-missions a { padding: 9px 12px; border: 1px solid #d9d1c4; border-radius: 9px; font-size: 11px; font-weight: 900; }
 
 @media (max-width: 760px) {
   .creator-center .creator-mobile-nav { grid-template-columns: repeat(7, 72px); justify-content: start; overflow-x: auto; scrollbar-width: none; }
@@ -255,4 +309,21 @@
   .creator-center .creator-production-guide { grid-template-columns: repeat(2, 1fr); }
   .creator-center .creator-production-list li { grid-template-columns: 1fr; gap: 16px; }
   .creator-center .creator-production-meta { justify-items: start; }
+  .creator-center .creator-mission-summary { grid-template-columns: 1fr; }
+  .creator-center .creator-mission-summary article { min-height: 94px; }
+  .creator-center .creator-mission-card { grid-template-columns: 1fr; }
+  .creator-center .creator-mission-card-media { min-height: 210px; max-height: 260px; }
+  .creator-center .creator-mission-card-content { gap: 17px; padding: 20px; }
+  .creator-center .creator-mission-card-title { display: grid; gap: 9px; }
+  .creator-center .creator-mission-card-title > b { justify-self: start; }
+  .creator-center .creator-mission-progress { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 0; }
+  .creator-center .creator-mission-progress li:nth-child(5)::before { display: none; }
+  .creator-center .creator-mission-meta { grid-template-columns: 1fr; }
+  .creator-center .creator-mission-actions { align-items: stretch; flex-direction: column; }
+  .creator-center .creator-mission-actions > a { text-align: center; }
+  .creator-center .creator-mission-actions .creator-invitation-actions { display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; margin: 0; }
+  .creator-center .creator-mission-actions .creator-invitation-actions p { grid-column: 1 / -1; }
+  .creator-center .creator-completed-missions article { grid-template-columns: 58px minmax(0, 1fr); }
+  .creator-center .creator-completed-missions img { width: 58px; height: 58px; }
+  .creator-center .creator-completed-missions a { grid-column: 1 / -1; text-align: center; }
 }

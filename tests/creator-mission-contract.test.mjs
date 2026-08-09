@@ -68,10 +68,13 @@ test("creator mission pages expose timeline, brief, history, review and publishi
 test("invited mission cards retain a route to the brief beside invitation actions", async () => {
   const list = await source("../src/app/dashboard/creator/my-campaigns/page.tsx");
 
-  assert.match(
-    list,
-    /participation\.status === "invited" \? <><CreatorInvitationActions participationId=\{participation\.id\} \/><Link href=\{`\/dashboard\/creator\/my-campaigns\/\$\{participation\.id\}`\}>미션 보기<\/Link><\/>/,
-  );
+  assert.match(list, /participation\.status === "invited" \? <CreatorInvitationActions participationId=\{participation\.id\} \/> : null/);
+  assert.match(list, /<Link href=\{`\/dashboard\/creator\/my-campaigns\/\$\{participation\.id\}`\}>미션 자세히 보기<\/Link>/);
+  assert.match(list, /className="creator-mission-summary"/);
+  assert.match(list, /className="creator-mission-progress"/);
+  assert.match(list, /className="creator-mission-meta"/);
+  assert.match(list, /진행 중인 미션/);
+  assert.match(list, /완료한 미션/);
 });
 
 test("mission timeline includes application and cancellation states as visible current states", async () => {
