@@ -22,15 +22,15 @@ export default function CreatorSubmissionForm({ participationId }: { participati
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setMessage(result.error || "We could not submit your content. Please try again.");
+        setMessage("콘텐츠를 제출하지 못했습니다. 입력 내용을 확인하고 다시 시도해 주세요.");
         return;
       }
       setContentUrl("");
       setCaptionText("");
-      setMessage(`Version ${result.submission?.version || ""} sent for review.`);
+      setMessage(`제출본 ${result.submission?.version || ""}을 검수 요청했습니다.`);
       router.refresh();
     } catch {
-      setMessage("We could not reach the submission service. Your entered details are still here.");
+      setMessage("제출 서비스에 연결하지 못했습니다. 입력 내용은 그대로 유지됩니다.");
     } finally {
       setBusy(false);
     }
@@ -38,9 +38,9 @@ export default function CreatorSubmissionForm({ participationId }: { participati
 
   return (
     <form className="creator-submission-form" onSubmit={submit}>
-      <label>Published or draft URL<input type="url" value={contentUrl} onChange={(event) => setContentUrl(event.target.value)} placeholder="https://..." required /></label>
-      <label>Caption<textarea value={captionText} onChange={(event) => setCaptionText(event.target.value)} rows={4} /></label>
-      <button type="submit" disabled={busy}>{busy ? "Submitting…" : "Submit for review"}</button>
+      <label>게시 또는 임시저장 URL<input type="url" value={contentUrl} onChange={(event) => setContentUrl(event.target.value)} placeholder="https://..." required /></label>
+      <label>게시 문구<textarea value={captionText} onChange={(event) => setCaptionText(event.target.value)} rows={4} /></label>
+      <button type="submit" disabled={busy}>{busy ? "제출 중…" : "검수 요청하기"}</button>
       <p role="status" aria-live="polite">{message}</p>
     </form>
   );

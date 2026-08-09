@@ -57,7 +57,7 @@ export default async function CreatorActionHomePage({ searchParams }: { searchPa
   return (
     <div className="creator-action-home">
       <header className="creator-page-heading creator-page-heading-wide">
-        <p>CREATOR ACTIVITY · REVENUE CENTER</p>
+        <p>크리에이터 활동·수익 관리</p>
         <h1>오늘의 활동</h1>
         <span>한국 공급자의 K-뷰티·패션 제품을 해외 크리에이터의 콘텐츠와 판매로 연결합니다.</span>
         {user.role === "admin" ? <b className="creator-persona-context">{CREATOR_PERSONAS[persona].label} 크리에이터 화면 · {CREATOR_PERSONAS[persona].currency}</b> : null}
@@ -73,7 +73,7 @@ export default async function CreatorActionHomePage({ searchParams }: { searchPa
       <div className="creator-home-columns creator-home-columns-primary">
         <section className="creator-recommend-summary" aria-labelledby="recommend-summary-heading">
           <div className="creator-section-heading">
-            <div><p className="creator-eyebrow">KOREA → GLOBAL</p><h2 id="recommend-summary-heading">추천 캠페인</h2></div>
+            <div><p className="creator-eyebrow">한국 브랜드 해외 협업</p><h2 id="recommend-summary-heading">추천 캠페인</h2></div>
             <Link href={`/dashboard/creator/campaigns?persona=${persona}`}>전체 보기</Link>
           </div>
           {recommended.length ? (
@@ -90,7 +90,7 @@ export default async function CreatorActionHomePage({ searchParams }: { searchPa
 
         <section className="creator-mission-board" aria-labelledby="mission-board-heading">
           <div className="creator-section-heading">
-            <div><p className="creator-eyebrow">MY MISSION</p><h2 id="mission-board-heading">내 미션 보드</h2></div>
+            <div><p className="creator-eyebrow">진행 중인 활동</p><h2 id="mission-board-heading">내 미션 보드</h2></div>
             <Link href={`/dashboard/creator/my-campaigns?persona=${persona}`}>상세 보기</Link>
           </div>
           {activeMission ? (

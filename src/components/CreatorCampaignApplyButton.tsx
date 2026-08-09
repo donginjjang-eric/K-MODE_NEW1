@@ -21,28 +21,28 @@ export default function CreatorCampaignApplyButton({ campaignId }: { campaignId:
       if (!response.ok) {
         if (result.code === "duplicate") {
           setState("duplicate");
-          setMessage(result.error || "You have already applied to this campaign.");
+          setMessage("이미 지원한 캠페인입니다.");
           return;
         }
         if (result.code === "closed") {
           setState("closed");
-          setMessage(result.error || "This campaign is no longer accepting applications.");
+          setMessage("이 캠페인은 모집이 마감되었습니다.");
           return;
         }
         setState("error");
-        setMessage(result.error || "We could not submit your application. Try again.");
+        setMessage("지원하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         return;
       }
       setState("success");
-      setMessage("Application submitted. We will update your campaign status here.");
+      setMessage("지원이 완료되었습니다. 진행 상황은 내 미션에서 확인할 수 있습니다.");
       router.refresh();
     } catch {
       setState("error");
-      setMessage("We could not reach the application service. Try again.");
+      setMessage("지원 서비스에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
   };
 
-  const label = busy ? "Submitting…" : state === "success" ? "Applied" : state === "duplicate" ? "Already applied" : state === "closed" ? "Applications closed" : state === "error" ? "다시 시도" : "Apply now";
+  const label = busy ? "지원 중…" : state === "success" ? "지원 완료" : state === "duplicate" ? "이미 지원함" : state === "closed" ? "모집 마감" : state === "error" ? "다시 시도" : "지금 지원하기";
 
   return (
     <div className="creator-apply-action">

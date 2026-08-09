@@ -70,7 +70,7 @@ test("invited mission cards retain a route to the brief beside invitation action
 
   assert.match(
     list,
-    /participation\.status === "invited" \? <><CreatorInvitationActions participationId=\{participation\.id\} \/><Link href=\{`\/dashboard\/creator\/my-campaigns\/\$\{participation\.id\}`\}>View mission<\/Link><\/>/,
+    /participation\.status === "invited" \? <><CreatorInvitationActions participationId=\{participation\.id\} \/><Link href=\{`\/dashboard\/creator\/my-campaigns\/\$\{participation\.id\}`\}>미션 보기<\/Link><\/>/,
   );
 });
 

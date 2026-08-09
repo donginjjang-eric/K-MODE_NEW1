@@ -26,7 +26,7 @@ export default async function CreatorPerformancePage({ searchParams }: { searchP
   return (
     <div className="creator-campaigns-page">
       <header className="creator-page-heading creator-page-heading-wide">
-        <p>PERFORMANCE</p><h1>성과</h1>
+        <p>캠페인 성과</p><h1>성과</h1>
         <span>해외 크리에이터가 한국 공급자 제품으로 만든 콘텐츠의 조회, 반응, 주문과 매출을 확인합니다.</span>
       </header>
       <section className="creator-kpi-grid creator-kpi-grid-compact" aria-label="전체 성과">

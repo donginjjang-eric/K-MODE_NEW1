@@ -57,11 +57,11 @@ export function CreatorSideNav({ creator, user }: CreatorNavigationProps) {
 
   return (
     <aside className="creator-rail">
-      <Link className="creator-brand" href="/dashboard/creator" aria-label="K-MODU Creator Center 홈">
-        <b>K-MODU</b><span>CREATOR</span>
+      <Link className="creator-brand" href="/dashboard/creator" aria-label="K-MODU 크리에이터 홈">
+        <b>K-MODU</b><span>크리에이터</span>
       </Link>
       <CreatorIdentity creator={creator} user={user} />
-      <nav className="creator-menu" aria-label="Creator Center 메뉴">
+      <nav className="creator-menu" aria-label="크리에이터 메뉴">
         {CREATOR_NAV.map((item) => (
           <Link key={item.href} href={withPersona(item.href)} className={isActive(pathname, item.href) ? "is-active" : ""}>
             <NavIcon name={item.icon} />
@@ -80,10 +80,10 @@ export function CreatorTabBar({ creator, user }: CreatorNavigationProps) {
   return (
     <>
       <header className="creator-mobile-top">
-        <Link className="creator-brand" href="/dashboard/creator"><b>K-MODU</b><span>CREATOR</span></Link>
+        <Link className="creator-brand" href="/dashboard/creator"><b>K-MODU</b><span>크리에이터</span></Link>
         <Link className="creator-mobile-menu" href="/dashboard/creator/profile" aria-label={`${creator.display_name} 내 정보`}>메뉴</Link>
       </header>
-      <nav className="creator-mobile-nav" aria-label="Creator Center 빠른 메뉴">
+      <nav className="creator-mobile-nav" aria-label="크리에이터 빠른 메뉴">
         {CREATOR_NAV.map((item) => (
           <Link key={item.href} href={withPersona(item.href)} className={isActive(pathname, item.href) ? "is-active" : ""}>
             <NavIcon name={item.icon} />

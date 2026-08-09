@@ -3,6 +3,7 @@ import CreatorCampaignApplyButton from "@/components/CreatorCampaignApplyButton"
 import { requireApprovedCreator } from "@/lib/auth";
 import { getRecommendedCampaigns } from "@/lib/creator-campaigns";
 import { campaignMatchesPersona, creatorPersona } from "@/lib/creator-persona";
+import { creatorMatchReasonLabel, creatorStatusLabel } from "@/lib/creator-copy";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -17,12 +18,8 @@ function imageForCategory(category: string) {
   return `/assets/${image}`;
 }
 
-function reasonLabel(reason: string) {
-  return ({ market: "Market match", platform: "Platform match", category: "Category match", deadline: "Open now" } as Record<string, string>)[reason] || reason;
-}
-
 function deadlineLabel(deadline: string | Date | null) {
-  if (!deadline) return "No application deadline";
+  if (!deadline) return "상시 모집";
   if (deadline instanceof Date) return deadline.toISOString().slice(0, 10);
   return String(deadline).slice(0, 10);
 }
@@ -46,19 +43,19 @@ export default async function CreatorCampaignsPage({ searchParams }: { searchPar
 
   return (
     <div className="creator-campaigns-page">
-      <header className="creator-page-heading"><p>RECOMMENDED CAMPAIGNS</p><h1>내게 맞는 모집 캠페인</h1><span>시장, 채널, 카테고리 적합도를 실제 프로필 기준으로 계산했습니다.</span></header>
+      <header className="creator-page-heading"><p>추천 캠페인</p><h1>내게 맞는 모집 캠페인</h1><span>활동 국가, 채널, 관심 분야를 내 프로필과 비교해 추천합니다.</span></header>
       <form className="creator-campaign-filters" action="/dashboard/creator/campaigns">
         {user.role === "admin" ? <input type="hidden" name="persona" value={persona} /> : null}
-        <label>Category<select name="category" defaultValue={category}><option value="">All categories</option>{categories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-        <label>Market<select name="market" defaultValue={market}><option value="">All markets</option>{markets.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-        <label>Platform<select name="platform" defaultValue={platform}><option value="">All platforms</option>{platforms.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-        <button type="submit">Apply filters</button>
-        <Link href="/dashboard/creator/campaigns">Clear</Link>
+        <label>카테고리<select name="category" defaultValue={category}><option value="">전체 카테고리</option>{categories.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+        <label>활동 국가<select name="market" defaultValue={market}><option value="">전체 국가</option>{markets.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+        <label>활동 채널<select name="platform" defaultValue={platform}><option value="">전체 채널</option>{platforms.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+        <button type="submit">조건 적용</button>
+        <Link href="/dashboard/creator/campaigns">초기화</Link>
       </form>
-      <p className="creator-result-count" aria-live="polite">{campaigns.length} recruiting campaigns</p>
+      <p className="creator-result-count" aria-live="polite">모집 중인 캠페인 {campaigns.length}개</p>
       {campaigns.length ? <div className="creator-campaign-grid">{campaigns.map((campaign) => <article className="creator-campaign-card" key={campaign.id}>
         <img src={imageForCategory(campaign.category)} alt="" />
-        <div className="creator-campaign-card-body"><div className="creator-card-kicker"><span>{campaign.category}</span><b>{campaign.status}</b></div><h2>{campaign.title}</h2><p>{campaign.brief}</p><dl><div><dt>Reward</dt><dd>{campaign.reward_text || "To be confirmed"}</dd></div><div><dt>Deadline</dt><dd>{campaign.application_deadline ? <time dateTime={campaign.application_deadline} data-i18n-date="medium">{deadlineLabel(campaign.application_deadline)}</time> : "No application deadline"}</dd></div><div><dt>Slots</dt><dd>{campaign.slots}</dd></div></dl><div className="creator-match-tags" aria-label={`Match score ${campaign.fit.score}`}>{campaign.fit.reasons.map((reason) => <span key={reason}>{reasonLabel(reason)}</span>)}</div><CreatorCampaignApplyButton campaignId={campaign.id} /></div>
+        <div className="creator-campaign-card-body"><div className="creator-card-kicker"><span>{campaign.category}</span><b>{creatorStatusLabel(campaign.status)}</b></div><h2>{campaign.title}</h2><p>{campaign.brief}</p><dl><div><dt>보상</dt><dd>{campaign.reward_text || "협의 후 안내"}</dd></div><div><dt>지원 마감</dt><dd>{campaign.application_deadline ? <time dateTime={campaign.application_deadline} data-i18n-date="medium">{deadlineLabel(campaign.application_deadline)}</time> : "상시 모집"}</dd></div><div><dt>모집 인원</dt><dd>{campaign.slots}명</dd></div></dl><div className="creator-match-tags" aria-label={`추천 점수 ${campaign.fit.score}점`}>{campaign.fit.reasons.map((reason) => <span key={reason}>{creatorMatchReasonLabel(reason)}</span>)}</div><CreatorCampaignApplyButton campaignId={campaign.id} /></div>
       </article>)}</div> : <div className="creator-empty-state"><h2>조건에 맞는 모집 캠페인이 없습니다.</h2><p>필터를 바꾸거나 나중에 다시 확인해 주세요.</p><Link href="/dashboard/creator/campaigns">필터 초기화</Link></div>}
     </div>
   );
