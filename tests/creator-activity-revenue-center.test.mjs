@@ -95,6 +95,24 @@ test("settlement reward totals use creator expected rewards and keep gross perfo
   assert.doesNotMatch(db.match(/export async function getCreatorSettlementSummary[\s\S]*?\n}/)?.[0] || "", /performance\.revenue/);
 });
 
+test("settlement ledger keeps real campaign rewards and maps payout progress", async () => {
+  const { toCreatorSettlementItems } = await import("../src/lib/creator-rewards.ts");
+  const items = toCreatorSettlementItems([
+    { id: "paid", campaign_title: "Velvet Lip Tint", campaign_category: "K-Beauty", status: "completed", expected_reward: "RM 420", settlement_status: "paid", updated_at: "2026-07-05T00:00:00.000Z" },
+    { id: "pending", campaign_title: "Skin Story", campaign_category: "Skincare", status: "review", expected_reward: "VND 2,500,000", settlement_status: "pending", updated_at: "2026-07-01T00:00:00.000Z" },
+    { id: "future", campaign_title: "Ready Campaign", campaign_category: "Fashion", status: "matched", expected_reward: "USD 100", settlement_status: "none", updated_at: "2026-06-30T00:00:00.000Z" },
+    { id: "cancelled", campaign_title: "Cancelled", campaign_category: "Beauty", status: "cancelled", expected_reward: "RM 999", settlement_status: "none", updated_at: "2026-06-20T00:00:00.000Z" },
+    { id: "invalid", campaign_title: "Invalid", campaign_category: "Beauty", status: "completed", expected_reward: "협의", settlement_status: "paid", updated_at: "2026-06-10T00:00:00.000Z" },
+  ]);
+
+  assert.deepEqual(items.map(({ id, currency, amount, statusLabel, stageIndex }) => ({ id, currency, amount, statusLabel, stageIndex })), [
+    { id: "paid", currency: "MYR", amount: 420, statusLabel: "지급 완료", stageIndex: 3 },
+    { id: "pending", currency: "VND", amount: 2_500_000, statusLabel: "성과 확인", stageIndex: 0 },
+    { id: "future", currency: "USD", amount: 100, statusLabel: "수익 예정", stageIndex: -1 },
+  ]);
+  assert.match(items[1].nextAction, /성과/);
+});
+
 test("mission stages distinguish pre-shipping work and exclude terminal missions from active selection", async () => {
   const { creatorGrade, isActiveMissionStatus, missionPreStageLabel, missionStageIndex, selectActiveMission } = await import("../src/lib/creator-center.ts");
   assert.equal(creatorGrade(0), "STARTER");

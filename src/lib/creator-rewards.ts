@@ -16,6 +16,21 @@ export type CreatorRewardSummary = {
   paid: number;
 };
 
+export type CreatorSettlementLedgerRow = CreatorRewardRow & {
+  id: string;
+  campaign_title: string;
+  campaign_category: string;
+  updated_at: string;
+};
+
+export type CreatorSettlementItem = CreatorSettlementLedgerRow & {
+  currency: CreatorRewardCurrency;
+  amount: number;
+  statusLabel: string;
+  stageIndex: number;
+  nextAction: string;
+};
+
 const REWARD_PATTERN = /\b(RM|MYR|VND|USD|TWD|KRW)\s*([\d,.]+)/i;
 const SETTLEMENT_ELIGIBLE_STATUSES: ParticipationStatus[] = ["matched", "shipping", "creating", "review", "published", "settlement", "completed"];
 const CURRENCY_ORDER: CreatorRewardCurrency[] = ["MYR", "VND", "TWD", "USD", "KRW"];
@@ -46,6 +61,22 @@ export function summarizeCreatorSettlementRewards(rows: CreatorRewardRow[]): Cre
     grouped.set(reward.currency, summary);
   }
   return CURRENCY_ORDER.flatMap((currency) => grouped.has(currency) ? [grouped.get(currency)!] : []);
+}
+
+const SETTLEMENT_VIEW = {
+  none: { statusLabel: "수익 예정", stageIndex: -1, nextAction: "캠페인 완료 후 성과 확인이 시작됩니다." },
+  pending: { statusLabel: "성과 확인", stageIndex: 0, nextAction: "등록된 성과와 확정 보상을 확인하고 있습니다." },
+  confirmed: { statusLabel: "정산 확정", stageIndex: 1, nextAction: "지급 처리를 준비하고 있습니다." },
+  paid: { statusLabel: "지급 완료", stageIndex: 3, nextAction: "확정 보상의 지급 처리가 완료되었습니다." },
+} as const;
+
+export function toCreatorSettlementItems(rows: CreatorSettlementLedgerRow[]): CreatorSettlementItem[] {
+  return rows.flatMap((row) => {
+    if (!SETTLEMENT_ELIGIBLE_STATUSES.includes(row.status)) return [];
+    const reward = parseCreatorReward(row.expected_reward);
+    if (!reward) return [];
+    return [{ ...row, ...reward, ...SETTLEMENT_VIEW[row.settlement_status] }];
+  });
 }
 
 export function formatCreatorRewardBreakdown(rows: CreatorRewardRow[]) {
