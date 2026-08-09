@@ -434,6 +434,34 @@
 .creator-center .creator-production-card footer { display: flex; justify-content: flex-end; padding-top: 14px; border-top: 1px solid #ece5da; }
 .creator-center .creator-production-card footer a { padding: 10px 13px; border-radius: 9px; background: var(--creator-black); color: #fff; font-size: 10px; font-weight: 900; }
 
+/* Creator performance dashboard */
+.creator-center .creator-performance-page { width: 100%; max-width: 1180px; }
+.creator-center .creator-performance-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.creator-center .creator-performance-summary article { display: grid; gap: 8px; min-height: 132px; padding: 20px; border: 1px solid #dfd8cc; border-radius: 16px; background: #f2f4f6; }
+.creator-center .creator-performance-summary article:nth-child(2) { background: #e7f3f1; }
+.creator-center .creator-performance-summary article:nth-child(3) { background: #fff2d6; }
+.creator-center .creator-performance-summary article:nth-child(4) { background: #e8f1fb; }
+.creator-center .creator-performance-summary span { color: #625b4f; font-size: 11px; font-weight: 900; }
+.creator-center .creator-performance-summary strong { align-self: end; font-size: clamp(25px,3vw,38px); letter-spacing: -.05em; }
+.creator-center .creator-performance-summary small { color: #80786b; font-size: 9px; }
+.creator-center .creator-performance-cards { display: grid; gap: 16px; }
+.creator-center .creator-performance-cards > article { display: grid; gap: 18px; padding: 24px; border: 1px solid #ddd5c8; border-radius: 18px; background: #fff; }
+.creator-center .creator-performance-cards header { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
+.creator-center .creator-performance-cards header > div { display: grid; gap: 5px; }
+.creator-center .creator-performance-cards header span { color: var(--creator-teal); font-size: 9px; font-weight: 900; }
+.creator-center .creator-performance-cards h2 { margin: 0; font-size: 23px; letter-spacing: -.03em; }
+.creator-center .creator-performance-cards header > strong { font-size: 23px; }
+.creator-center .creator-performance-card-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+.creator-center .creator-performance-card-metrics > div { display: grid; gap: 5px; padding: 13px; border-radius: 11px; background: #f5f1e9; }
+.creator-center .creator-performance-card-metrics span, .creator-center .creator-performance-rates span { color: #7a7265; font-size: 9px; font-weight: 800; }
+.creator-center .creator-performance-card-metrics strong { font-size: 18px; }
+.creator-center .creator-performance-rates { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.creator-center .creator-performance-rates > div { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-radius: 11px; background: #e6f4f1; }
+.creator-center .creator-performance-rates strong { color: var(--creator-teal); font-size: 19px; }
+.creator-center .creator-performance-cards footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 14px; border-top: 1px solid #ece5da; }
+.creator-center .creator-performance-cards footer > span { color: #81796d; font-size: 9px; }
+.creator-center .creator-performance-cards footer a { padding: 10px 13px; border-radius: 9px; background: var(--creator-black); color: #fff; font-size: 10px; font-weight: 900; }
+
 @media (max-width: 760px) {
   .creator-center .creator-mobile-nav { grid-template-columns: repeat(7, 72px); justify-content: start; overflow-x: auto; scrollbar-width: none; }
   .creator-center .creator-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -490,4 +518,9 @@
   .creator-center .creator-production-card > header b { justify-self: start; }
   .creator-center .creator-production-card .creator-submission-form { grid-template-columns: 1fr; }
   .creator-center .creator-production-card .creator-submission-form > p { grid-column: auto; }
+  .creator-center .creator-performance-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .creator-center .creator-performance-card-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .creator-center .creator-performance-rates { grid-template-columns: 1fr; }
+  .creator-center .creator-performance-cards header, .creator-center .creator-performance-cards footer { align-items: stretch; flex-direction: column; }
+  .creator-center .creator-performance-cards footer a { text-align: center; }
 }

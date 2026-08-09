@@ -143,6 +143,15 @@ test("creator rates and grade progress use honest zero-safe campaign thresholds"
   assert.deepEqual(creatorGradeProgress(3), { current: "PRO", next: null, remaining: 0, value: 3, max: 3 });
 });
 
+test("performance route presents real summary and campaign conversion cards", async () => {
+  const performance = await readFile(new URL("src/app/dashboard/creator/performance/page.tsx", root), "utf8");
+  assert.match(performance, /className="creator-performance-summary"/);
+  assert.match(performance, /className="creator-performance-cards"/);
+  assert.match(performance, /creatorRate\(row\.likes \+ row\.comments, row\.views\)/);
+  assert.match(performance, /creatorRate\(row\.orders, row\.views\)/);
+  assert.match(performance, /`\/dashboard\/creator\/my-campaigns\/\$\{row\.participation_id\}`/);
+});
+
 test("performance, grade and settlement routes carry creator-local context", async () => {
   const [performance, grade, settlement, submissions] = await Promise.all([
     readFile(new URL("src/app/dashboard/creator/performance/page.tsx", root), "utf8"),
