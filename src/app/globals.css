@@ -29,6 +29,10 @@ input {
   display: none;
 }
 
+.site-shell:has(.creator-center) > .top-nav {
+  position: relative;
+}
+
 .top-nav {
   position: sticky;
   top: 0;
