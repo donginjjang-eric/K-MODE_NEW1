@@ -104,6 +104,18 @@ export function creatorGrade(completedCampaigns: number) {
   return "STARTER";
 }
 
+export function creatorRate(numerator: number, denominator: number) {
+  if (denominator <= 0) return 0;
+  return Math.round((numerator / denominator) * 1000) / 10;
+}
+
+export function creatorGradeProgress(completed: number) {
+  const current = creatorGrade(completed);
+  if (current === "PRO") return { current, next: null, remaining: 0, value: completed, max: completed };
+  const max = current === "STARTER" ? 1 : 3;
+  return { current, next: current === "STARTER" ? "RISING" : "PRO", remaining: max - completed, value: completed, max };
+}
+
 export async function getCreatorPerformanceRows(creatorId: string): Promise<CreatorPerformanceRow[]> {
   if (!hasDatabase()) return [];
   return query<CreatorPerformanceRow>(

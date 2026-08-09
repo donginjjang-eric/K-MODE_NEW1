@@ -134,6 +134,15 @@ test("mission stages distinguish pre-shipping work and exclude terminal missions
   );
 });
 
+test("creator rates and grade progress use honest zero-safe campaign thresholds", async () => {
+  const { creatorRate, creatorGradeProgress } = await import("../src/lib/creator-center.ts");
+  assert.equal(creatorRate(15, 100), 15);
+  assert.equal(creatorRate(4, 0), 0);
+  assert.deepEqual(creatorGradeProgress(0), { current: "STARTER", next: "RISING", remaining: 1, value: 0, max: 1 });
+  assert.deepEqual(creatorGradeProgress(2), { current: "RISING", next: "PRO", remaining: 1, value: 2, max: 3 });
+  assert.deepEqual(creatorGradeProgress(3), { current: "PRO", next: null, remaining: 0, value: 3, max: 3 });
+});
+
 test("performance, grade and settlement routes carry creator-local context", async () => {
   const [performance, grade, settlement, submissions] = await Promise.all([
     readFile(new URL("src/app/dashboard/creator/performance/page.tsx", root), "utf8"),
