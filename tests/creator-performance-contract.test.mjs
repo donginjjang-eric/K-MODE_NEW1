@@ -94,3 +94,11 @@ test("settlement page explains totals, payout stages, campaign rows and payment 
   assert.match(settlement, /className="[^"]*creator-payment-guide[^"]*"/);
   assert.match(settlement, /`\/dashboard\/creator\/my-campaigns\/\$\{item\.id\}`/);
 });
+
+test("creator profile presents identity, account information and operations guidance without editing", async () => {
+  const profile = await source("../src/app/dashboard/creator/profile/page.tsx");
+  assert.match(profile, /className="creator-profile-identity"/);
+  assert.match(profile, /className="creator-profile-grid"/);
+  assert.match(profile, /className="[^"]*creator-profile-guide[^"]*"/);
+  assert.doesNotMatch(profile, /<input|<textarea|<form/);
+});

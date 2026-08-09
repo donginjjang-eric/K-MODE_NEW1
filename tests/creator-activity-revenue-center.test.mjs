@@ -152,6 +152,14 @@ test("performance route presents real summary and campaign conversion cards", as
   assert.match(performance, /`\/dashboard\/creator\/my-campaigns\/\$\{row\.participation_id\}`/);
 });
 
+test("grade route explains current progress and real benefits", async () => {
+  const grade = await readFile(new URL("src/app/dashboard/creator/grade/page.tsx", root), "utf8");
+  assert.match(grade, /creatorGradeProgress\(completed\)/);
+  assert.match(grade, /className="creator-grade-benefits"/);
+  assert.match(grade, /다음 등급까지/);
+  assert.match(grade, /우선 추천|협업 기회/);
+});
+
 test("performance, grade and settlement routes carry creator-local context", async () => {
   const [performance, grade, settlement, submissions] = await Promise.all([
     readFile(new URL("src/app/dashboard/creator/performance/page.tsx", root), "utf8"),
