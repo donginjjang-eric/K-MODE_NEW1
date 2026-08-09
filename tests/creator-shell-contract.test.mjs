@@ -46,5 +46,6 @@ test("creator center shell is guarded, isolated, and exposes its campaign naviga
   assert.match(css, /\.creator-center\s+\.creator-rail/);
   assert.match(css, /\.creator-center\s+\.creator-mobile-top/);
   assert.match(css, /\.creator-center\s+\.creator-mobile-nav/);
+  assert.match(css, /\.creator-center\s+\.nav-svg\s*\{[^}]*fill:\s*none;[^}]*stroke:\s*currentColor;/s);
   assert.doesNotMatch(css, /(^|\n)\s*(?:body|html|:root)\s*[{,]/);
 });
