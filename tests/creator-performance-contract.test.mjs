@@ -83,3 +83,14 @@ test("settlement ledger query is campaign-aware and creator-scoped", async () =>
   assert.match(settlementItemsFunction, /WHERE p\.creator_account_id = \$1/);
   assert.match(settlementItemsFunction, /toCreatorSettlementItems\(rows\)/);
 });
+
+test("settlement page explains totals, payout stages, campaign rows and payment guidance", async () => {
+  const settlement = await source("../src/app/dashboard/creator/settlement/page.tsx");
+
+  assert.match(settlement, /getCreatorSettlementItems\(creator\.id\)/);
+  assert.match(settlement, /className="creator-settlement-summary"/);
+  assert.match(settlement, /className="[^"]*creator-settlement-flow[^"]*"/);
+  assert.match(settlement, /className="[^"]*creator-settlement-ledger[^"]*"/);
+  assert.match(settlement, /className="[^"]*creator-payment-guide[^"]*"/);
+  assert.match(settlement, /`\/dashboard\/creator\/my-campaigns\/\$\{item\.id\}`/);
+});

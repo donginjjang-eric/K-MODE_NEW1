@@ -351,6 +351,58 @@
 .creator-center .creator-detail-activity time { color: #81796c; font-size: 10px; }
 .creator-center .creator-detail-empty { padding: 20px; border: 1px dashed #d2c8b9; border-radius: 12px; color: #716a5d; font-size: 12px; text-align: center; }
 
+/* Creator settlement center */
+.creator-center .creator-settlement-page { width: 100%; max-width: 1180px; }
+.creator-center .creator-settlement-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.creator-center .creator-settlement-summary article { display: grid; grid-template-columns: 1fr auto; gap: 8px 18px; padding: 24px; border: 1px solid #d8dfe5; border-radius: 18px; background: linear-gradient(135deg, #f0f5fa, #fff); box-shadow: 0 10px 30px rgba(22,20,15,.05); }
+.creator-center .creator-settlement-summary article > div:first-child { display: grid; gap: 3px; }
+.creator-center .creator-settlement-summary article > div span { color: var(--creator-teal); font-size: 12px; font-weight: 900; }
+.creator-center .creator-settlement-summary article > div small { color: #777064; font-size: 10px; }
+.creator-center .creator-settlement-summary article > strong { grid-column: 1 / -1; margin-top: 12px; font-size: clamp(30px, 4vw, 46px); letter-spacing: -.055em; }
+.creator-center .creator-settlement-summary article > p { margin: 0; color: var(--creator-teal); font-size: 11px; font-weight: 900; }
+.creator-center .creator-settlement-summary dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-column: 1 / -1; gap: 8px; margin: 12px 0 0; }
+.creator-center .creator-settlement-summary dl div { display: grid; gap: 5px; padding: 12px; border-radius: 11px; background: rgba(255,255,255,.8); }
+.creator-center .creator-settlement-summary dt { color: #766f63; font-size: 10px; font-weight: 800; }
+.creator-center .creator-settlement-summary dd { margin: 0; font-size: 13px; font-weight: 900; }
+.creator-center .creator-settlement-flow ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+.creator-center .creator-settlement-flow li { display: grid; position: relative; grid-template-columns: 34px 1fr; align-items: start; gap: 10px; padding-right: 18px; }
+.creator-center .creator-settlement-flow li:not(:first-child)::before { position: absolute; top: 16px; right: calc(100% + 7px); width: 18px; height: 1px; background: #cfc7ba; content: ""; }
+.creator-center .creator-settlement-flow i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #dff2ef; color: var(--creator-teal); font-style: normal; font-size: 12px; font-weight: 900; }
+.creator-center .creator-settlement-flow li div { display: grid; gap: 4px; }
+.creator-center .creator-settlement-flow strong { font-size: 12px; }
+.creator-center .creator-settlement-flow li span { color: #777064; font-size: 10px; line-height: 1.45; }
+.creator-center .creator-settlement-columns { display: grid; grid-template-columns: minmax(0, 1fr) 310px; align-items: start; gap: 18px; }
+.creator-center .creator-settlement-ledger > div:last-child { display: grid; gap: 14px; }
+.creator-center .creator-settlement-ledger article { display: grid; gap: 18px; padding: 20px; border: 1px solid #e2dbcf; border-radius: 15px; background: #fff; }
+.creator-center .creator-settlement-ledger-title { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.creator-center .creator-settlement-ledger-title > div { display: grid; gap: 6px; }
+.creator-center .creator-settlement-ledger-title span { color: var(--creator-teal); font-size: 10px; font-weight: 900; }
+.creator-center .creator-settlement-ledger-title h3 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+.creator-center .creator-settlement-ledger-title > b { flex: 0 0 auto; padding: 6px 9px; border-radius: 999px; background: #dff2ef; color: var(--creator-teal); font-size: 10px; }
+.creator-center .creator-settlement-ledger-amount { display: grid; gap: 3px; }
+.creator-center .creator-settlement-ledger-amount strong { font-size: 30px; letter-spacing: -.04em; }
+.creator-center .creator-settlement-ledger-amount span { color: #7c7468; font-size: 10px; }
+.creator-center .creator-settlement-ledger article > ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+.creator-center .creator-settlement-ledger article > ol li { display: grid; position: relative; justify-items: center; gap: 6px; color: #aaa397; font-size: 9px; font-weight: 800; }
+.creator-center .creator-settlement-ledger article > ol li::before { position: absolute; top: 12px; right: 50%; left: -50%; height: 2px; background: #e2dbcf; content: ""; }
+.creator-center .creator-settlement-ledger article > ol li:first-child::before { display: none; }
+.creator-center .creator-settlement-ledger article > ol i { display: grid; z-index: 1; place-items: center; width: 26px; height: 26px; border: 2px solid #e2dbcf; border-radius: 50%; background: #fff; font-style: normal; }
+.creator-center .creator-settlement-ledger article > ol li.is-active { color: var(--creator-black); }
+.creator-center .creator-settlement-ledger article > ol li.is-active::before { background: var(--creator-teal); }
+.creator-center .creator-settlement-ledger article > ol li.is-active i { border-color: var(--creator-teal); background: var(--creator-teal); color: #fff; }
+.creator-center .creator-settlement-ledger footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 16px; border-top: 1px solid #ece5da; }
+.creator-center .creator-settlement-ledger footer > div { display: grid; gap: 4px; }
+.creator-center .creator-settlement-ledger footer span { font-size: 11px; font-weight: 800; }
+.creator-center .creator-settlement-ledger footer small { color: #81796d; font-size: 9px; }
+.creator-center .creator-settlement-ledger footer a { flex: 0 0 auto; padding: 10px 12px; border-radius: 9px; background: var(--creator-black); color: #fff; font-size: 10px; font-weight: 900; }
+.creator-center .creator-payment-guide { position: sticky; top: 18px; }
+.creator-center .creator-payment-guide-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 15px; background: var(--creator-teal); color: #fff; font-size: 20px; font-weight: 900; }
+.creator-center .creator-payment-guide h3 { margin: 18px 0 8px; font-size: 18px; }
+.creator-center .creator-payment-guide > p { margin: 0; color: #625b4f; font-size: 12px; line-height: 1.65; }
+.creator-center .creator-payment-guide ul { display: grid; gap: 9px; margin: 18px 0; padding: 0; list-style: none; }
+.creator-center .creator-payment-guide li { padding: 10px 12px; border-radius: 10px; background: #f4efe6; font-size: 11px; font-weight: 800; }
+.creator-center .creator-payment-guide > small { display: block; padding-top: 15px; border-top: 1px solid #e6ded2; color: #81796d; font-size: 10px; line-height: 1.55; }
+
 @media (max-width: 760px) {
   .creator-center .creator-mobile-nav { grid-template-columns: repeat(7, 72px); justify-content: start; overflow-x: auto; scrollbar-width: none; }
   .creator-center .creator-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -394,4 +446,11 @@
   .creator-center .creator-detail-columns { grid-template-columns: 1fr; }
   .creator-center .creator-detail-brief dl, .creator-center .creator-submission-history dl { grid-template-columns: 1fr; }
   .creator-center .creator-detail-work .creator-submission-form { grid-template-columns: 1fr; }
+  .creator-center .creator-settlement-summary { grid-template-columns: 1fr; }
+  .creator-center .creator-settlement-flow ol { grid-template-columns: 1fr; gap: 14px; }
+  .creator-center .creator-settlement-flow li:not(:first-child)::before { top: -14px; right: auto; left: 16px; width: 1px; height: 14px; }
+  .creator-center .creator-settlement-columns { grid-template-columns: 1fr; }
+  .creator-center .creator-settlement-ledger footer { align-items: stretch; flex-direction: column; }
+  .creator-center .creator-settlement-ledger footer a { text-align: center; }
+  .creator-center .creator-payment-guide { position: static; }
 }
