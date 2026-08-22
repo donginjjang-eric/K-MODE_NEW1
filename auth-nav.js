@@ -207,12 +207,98 @@
     document.body.appendChild(stack);
   };
 
+  // 승인 전 디자이너에게 "무엇을 기다리는 중인지" 설명하는 말풍선 문구 (approval_status별)
+  const pendingHint = (designer) => {
+    const brand = designer && designer.brandName ? `'${designer.brandName}' ` : '';
+    const status = designer && designer.approvalStatus;
+    if (status === 'rejected') return `${brand}디자이너 신청이 반려되었어요. 로그인 페이지에서 안내를 확인해 주세요.`;
+    if (status === 'disabled') return `${brand}디자이너 계정이 비활성 상태예요. 관리자에게 문의해 주세요.`;
+    return `${brand}디자이너 신청이 접수되어 관리자 승인을 기다리고 있어요. 승인되면 이 버튼이 '디자이너 스튜디오'로 바뀝니다.`;
+  };
+
+  const ensureAuthHintStyle = () => {
+    if (document.getElementById('auth-link-hint-style')) return;
+    const style = document.createElement('style');
+    style.id = 'auth-link-hint-style';
+    style.textContent = `
+      [data-auth-link].auth-link--pending { position: relative; }
+      [data-auth-link] .auth-link-hint {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        width: min(280px, 80vw);
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #111;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.5;
+        letter-spacing: 0;
+        text-transform: none;
+        text-align: left;
+        white-space: normal;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, .22);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(4px);
+        transition: opacity .18s ease, transform .18s ease, visibility .18s;
+        pointer-events: none;
+        z-index: 1000;
+      }
+      [data-auth-link] .auth-link-hint::before {
+        content: "";
+        position: absolute;
+        top: -6px;
+        right: 18px;
+        border: 6px solid transparent;
+        border-top: 0;
+        border-bottom-color: #111;
+      }
+      [data-auth-link].auth-link--pending:hover .auth-link-hint,
+      [data-auth-link].auth-link--pending:focus-visible .auth-link-hint,
+      [data-auth-link].auth-link--pending.is-peek .auth-link-hint {
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+      }
+      .mobile-login .auth-link-hint { display: none; }
+    `;
+    document.head.appendChild(style);
+  };
+
+  // 승인 대기 버튼에 말풍선을 붙인다. 세션당 한 번은 자동으로 잠깐 펼쳐 보여 준다.
+  const PEEK_KEY = 'kmodu-auth-hint-peeked';
+  const applyHint = (link, hint) => {
+    link.querySelector('.auth-link-hint')?.remove();
+    link.classList.remove('auth-link--pending', 'is-peek');
+    if (!hint) {
+      link.removeAttribute('title');
+      return;
+    }
+    ensureAuthHintStyle();
+    link.classList.add('auth-link--pending');
+    link.setAttribute('title', hint);
+    const bubble = document.createElement('span');
+    bubble.className = 'auth-link-hint';
+    bubble.setAttribute('role', 'tooltip');
+    bubble.textContent = hint;
+    link.appendChild(bubble);
+    let peeked = false;
+    try { peeked = sessionStorage.getItem(PEEK_KEY) === '1'; } catch (error) { /* 무시 */ }
+    if (!peeked && !link.classList.contains('mobile-login')) {
+      link.classList.add('is-peek');
+      try { sessionStorage.setItem(PEEK_KEY, '1'); } catch (error) { /* 무시 */ }
+      setTimeout(() => link.classList.remove('is-peek'), 5000);
+    }
+  };
+
   const computeTarget = (user, designer) => {
     if (!user) return null;
     if (user.role === 'admin') return { href: '/dashboard/admin', label: '관리자 콘솔' };
     const approved = user.role === 'designer' && designer && designer.approvalStatus === 'approved';
     if (approved) return { href: '/dashboard/designer/brand', label: '디자이너 스튜디오' };
-    if (designer) return { href: '/login?notice=approval_pending', label: '승인 대기중' };
+    if (designer) return { href: '/login?notice=approval_pending', label: '승인 대기중', hint: pendingHint(designer) };
     return { href: '/apply', label: '디자이너 신청' };
   };
 
@@ -225,6 +311,7 @@
         link.href = '/login';
         link.textContent = '로그인';
         link.setAttribute('aria-label', '로그인');
+        applyHint(link, null);
         if (existingLogout) existingLogout.remove();
         return;
       }
@@ -232,6 +319,7 @@
       link.href = target.href;
       link.textContent = target.label;
       link.setAttribute('aria-label', target.label);
+      applyHint(link, target.hint);
 
       if (!existingLogout) {
         // 같은 스타일을 물려받도록 기존 링크를 복제해 로그아웃 버튼을 만든다.

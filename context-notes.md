@@ -82,3 +82,11 @@
 - 관리자도 /apply로 본인 디자이너 프로필을 만들 수 있음 (겸직). admin은 연결 프로필 있으면 스튜디오 입장, 없으면 콘솔로 안내.
 - 인앱 브라우저(카톡 등)는 구글 OAuth 차단 → 로그인 페이지가 자동으로 외부 브라우저 탈출 (kakaotalk://web/openExternal, Android intent).
 - 관리자 콘솔 구성: 운영 홈 / 회원 관리(가입자 전체, 신청 전 포함) / 디자이너 승인(대기 우선 정렬, 상태별 액션) / 상품 검수 / AI 검수.
+
+## 승인 대기중 버튼 말풍선 (2026-08-22)
+- 배경: 사용자가 헤더 우측 "승인 대기중" 버튼이 무엇인지 몰라 혼란. 버튼은 auth-nav.js computeTarget에서 `user.role !== 'admin'` 이고 designer 레코드가 있으며 approval_status가 approved가 아닐 때 표시됨.
+- 결정: 라벨은 그대로 두고(기존 동선 유지), 버튼에 말풍선(`.auth-link-hint`, role=tooltip) + title을 붙임. hover/focus-visible 시 표시, 세션당 1회 로드 직후 5초 자동 펼침(`is-peek`, sessionStorage `kmodu-auth-hint-peeked`). 모바일 메뉴 버튼에서는 말풍선 숨김(탭하면 /login?notice=approval_pending 카드가 설명).
+- 문구는 approval_status별(pending/rejected/disabled)로 분기하고 brandName이 있으면 앞에 붙임. rejected/disabled인데 라벨이 "승인 대기중"인 것은 기존 동작이라 손대지 않음(후속 과제).
+- 캐시 버스트: 정적 html 10개 + src/app/layout.tsx의 auth-nav.js?v= 를 20260822-pending-hint로 통일(기존엔 html과 layout.tsx 버전이 달랐음).
+- 이상 징후: donginjjang@gmail.com은 2026-06-12에 운영 DB role=admin으로 바꿨다고 기록돼 있는데 현재 헤더가 "승인 대기중"을 보여줌 → role이 admin이 아니거나 다른 구글 계정으로 로그인한 상태. 운영 DB 확인은 사용자 승인 필요.
+- 배포 방식 재확인: master push = GitHub 자동 배포(railway up도 가능). 이날 master를 라이브 커밋 0682b88로 ff 하고 push함(내용 동일이라 무변화). 작업 브랜치 work/20260822-from-live.
