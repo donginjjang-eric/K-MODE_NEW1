@@ -707,6 +707,9 @@ p {
   justify-self: center;
 }
 
+/* 이메일/비밀번호 로그인 폼 (토글로 열림) */
+.login-email-form { display: grid; gap: 12px; }
+
 .login-divider {
   margin: 0;
   color: #8a8478;

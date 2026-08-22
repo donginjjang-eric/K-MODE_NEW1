@@ -1,7 +1,7 @@
 "use client";
 
 // 파트너 로그인: 구글 로그인 단일 방식. 로그인된 상태면 상태 카드(누구로 로그인됨 + 다음 행동)를 보여준다.
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 
 const PARAM_MESSAGES: Record<string, string> = {
   approval_required: "승인된 디자이너 계정만 사용할 수 있어요. 승인 완료 후 다시 로그인해주세요.",
@@ -57,6 +57,11 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
   // 카카오톡 등 인앱 브라우저: 구글이 OAuth를 차단하므로 외부 브라우저로 탈출시킨다.
   const [inAppBrowser, setInAppBrowser] = useState(false);
   const googleLoginStarted = useRef(false);
+  // 이메일/비밀번호 로그인 (테스트 계정·백업 관리자용). 기본은 접혀 있고 토글로 연다.
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
@@ -112,6 +117,33 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
     if (event.currentTarget.getAttribute("href") !== target) {
       event.preventDefault();
       window.location.assign(target);
+    }
+  };
+
+  const submitEmailLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    setMessage("");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, next: nextPath }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        setMessage("이메일 또는 비밀번호가 올바르지 않아요.");
+        return;
+      }
+      // 입구(next)가 없으면 역할에 맞는 대시보드로 바로 보낸다.
+      const role = data.user?.role;
+      const roleHome = role === "creator" ? "/dashboard/creator" : role === "designer" ? "/dashboard/designer/brand" : role === "admin" ? "/dashboard/admin" : "";
+      window.location.assign(nextPath || !roleHome ? String(data.redirectTo || "/") : roleHome);
+    } catch {
+      setMessage("로그인 요청에 실패했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -239,6 +271,27 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
       ) : (
         <p className="login-google-hint">구글 로그인이 아직 설정되지 않았어요. 관리자에게 문의해주세요.</p>
       )}
+      {/* site-i18n.js가 텍스트 노드를 교체하므로 라벨만 바꾸면 화면에 안 남는다 → key로 버튼 자체를 갈아끼운다 */}
+      {emailOpen ? (
+        <button key="email-close" className="login-email-toggle" type="button" onClick={() => setEmailOpen(false)}>이메일 로그인 닫기</button>
+      ) : (
+        <button key="email-open" className="login-email-toggle" type="button" onClick={() => setEmailOpen(true)}>이메일로 로그인 (테스트·백업 계정)</button>
+      )}
+      {emailOpen ? (
+        <form className="login-email-form" onSubmit={submitEmailLogin}>
+          <label className="login-field">
+            <span className="kicker">이메일</span>
+            <input type="email" name="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <label className="login-field">
+            <span className="kicker">비밀번호</span>
+            <input type="password" name="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </label>
+          <button className="generate-button" type="submit" disabled={submitting}>
+            {submitting ? <span key="busy">로그인 중…</span> : <span key="idle">로그인</span>}
+          </button>
+        </form>
+      ) : null}
       {message ? <p className="notice">{message}</p> : null}
     </div>
   );

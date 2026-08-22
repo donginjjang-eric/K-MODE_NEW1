@@ -90,3 +90,14 @@
 - 캐시 버스트: 정적 html 10개 + src/app/layout.tsx의 auth-nav.js?v= 를 20260822-pending-hint로 통일(기존엔 html과 layout.tsx 버전이 달랐음).
 - 이상 징후: donginjjang@gmail.com은 2026-06-12에 운영 DB role=admin으로 바꿨다고 기록돼 있는데 현재 헤더가 "승인 대기중"을 보여줌 → role이 admin이 아니거나 다른 구글 계정으로 로그인한 상태. 운영 DB 확인은 사용자 승인 필요.
 - 배포 방식 재확인: master push = GitHub 자동 배포(railway up도 가능). 이날 master를 라이브 커밋 0682b88로 ff 하고 push함(내용 동일이라 무변화). 작업 브랜치 work/20260822-from-live.
+
+## 테스트 계정 + 이메일 로그인 폼 (2026-08-23)
+- 요구: 구글 로그인 없이 디자이너/크리에이터 동선을 바로 확인할 테스트 계정.
+- 구현: scripts/ensure-schema.mjs 부팅 시드에 `TEST_ACCOUNT_PASSWORD` 환경변수가 있을 때만 두 계정을 멱등 생성/갱신.
+  - test-designer@k-modu.co.kr (users.id=test-designer, role=designer) + designers 'test-designer-brand' approved ("K-MODU 테스트 브랜드")
+  - test-creator@k-modu.co.kr (users.id=test-creator, role=creator) + creator_accounts creator_key='test-creator' approved (TikTok/Malaysia)
+  - 매 부팅마다 비밀번호 해시와 approved 상태를 다시 맞추므로 운영에서 테스트 계정이 꼬여도 재배포로 복구됨. 변수 없으면 아무것도 만들지 않음.
+- 로그인 UI: LoginForm.tsx 비로그인 카드에 "이메일로 로그인 (테스트·백업 계정)" 토글 → 이메일/비밀번호 폼 → POST /api/auth/login(기존 백업 API). next 파라미터가 없으면 역할별 홈(creator→/dashboard/creator, designer→/dashboard/designer/brand, admin→/dashboard/admin)으로 바로 이동.
+- 함정: site-i18n.js가 텍스트 노드를 교체하므로 같은 요소의 텍스트만 바꾸는 React 갱신이 화면에 안 남는다. 토글/제출 버튼 라벨은 key로 요소를 갈아끼워 해결. (로컬 googleEnabled=false일 때 "로그인 상태를 확인하는 중…" 문구가 남는 것도 같은 원인, 운영 경로엔 영향 없음)
+- 검증: 로컬 Docker Postgres로 시드 2회 실행(멱등) → 폼 로그인으로 디자이너 스튜디오/크리에이터 센터 진입 E2E 확인.
+- 남은 과제: 크리에이터로 로그인해도 공개 헤더 버튼이 "디자이너 신청"으로 뜸(auth-nav computeTarget에 creator 분기 없음). 운영 반영은 Railway k-modu 서비스에 TEST_ACCOUNT_PASSWORD 변수 추가 후 재배포 필요.
