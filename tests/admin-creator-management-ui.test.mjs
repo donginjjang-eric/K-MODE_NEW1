@@ -95,5 +95,5 @@ test("creator management styling keeps bulk tools inline and table scrolling con
   assert.match(css, /admin-creator-bulk-tools/);
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*admin-creator-filters[\s\S]*grid-template-columns:\s*1fr/);
   assert.doesNotMatch(css, /admin-creator-bulk-tools[\s\S]{0,300}position:\s*fixed/);
-  assert.match(css, /site-shell:has\(\.admin-studio\)[\s\S]*quick-link-stack[\s\S]*display:\s*none/);
+  assert.match(css, /body:has\(\.admin-studio\)[\s\S]*quick-link-stack[\s\S]*display:\s*none/);
 });
