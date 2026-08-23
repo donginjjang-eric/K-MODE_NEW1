@@ -1,7 +1,7 @@
 import { one, query, withDatabaseTransaction } from "./db";
 import type { DatabaseTransactionClient } from "./db";
 import { CAPACITY_OCCUPYING_PARTICIPATION_STATUSES } from "./creator-campaigns";
-import type { AgencyInviteStatus, CreatorAccount, CreatorClaimState, CreatorManagementGroupStatus, CreatorOnboardingSource, ParticipationStatus, SettlementStatus } from "./types";
+import type { AgencyInviteStatus, CreatorAccount, CreatorClaimState, CreatorManagementGroupStatus, CreatorOnboardingSource, ParticipationStatus, Role, SettlementStatus } from "./types";
 
 type CreatorApprovalStatus = "pending" | "approved" | "disabled";
 
@@ -218,12 +218,122 @@ function normalizeCreatorIds(value: unknown) {
   return ids;
 }
 
-function normalizeEmail(value: unknown) {
-  const email = normalizeText(value, "AGENCY_EMAIL_REQUIRED", "대행사 이메일을 입력해 주세요.").toLocaleLowerCase();
+export function normalizeEmail(value: unknown) {
+  const email = normalizeText(value, "AGENCY_EMAIL_REQUIRED", "대행사 이메일을 입력해 주세요.").toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     domainError("AGENCY_EMAIL_INVALID", "대행사 이메일 형식이 올바르지 않습니다.");
   }
   return email;
+}
+
+export type AgencyLoginActivation = {
+  activatedCount: number;
+  hasActiveGroup: boolean;
+  role: Role;
+};
+
+type AgencyInvitationLoginRow = {
+  id: string;
+  group_id: string;
+  invite_status: AgencyInviteStatus;
+  user_id: string | null;
+};
+
+export async function hasActiveAgencyGroupRelationship(userId: string): Promise<boolean> {
+  const normalizedUserId = normalizeId(userId, "USER_ID_REQUIRED", "사용자 ID를 입력해 주세요.");
+  const result = await one<{ has_access: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1
+         FROM creator_management_group_users group_user
+         JOIN creator_management_groups group_row ON group_row.id = group_user.group_id
+        WHERE group_user.user_id = $1
+          AND group_user.invite_status = 'active'
+          AND group_row.status = 'active'
+     ) AS has_access`,
+    [normalizedUserId],
+  );
+  return Boolean(result?.has_access);
+}
+
+export async function activateAgencyInvitationsForLogin(userId: string, email: string): Promise<AgencyLoginActivation> {
+  const normalizedUserId = normalizeId(userId, "USER_ID_REQUIRED", "사용자 ID를 입력해 주세요.");
+  const normalizedEmail = normalizeEmail(email);
+
+  return withDatabaseTransaction(async (client) => {
+    const userResult = await client.query<{ id: string; role: Role }>(
+      "SELECT id, role FROM users WHERE id = $1 FOR UPDATE",
+      [normalizedUserId],
+    );
+    const user = userResult.rows[0];
+    if (!user) domainError("USER_NOT_FOUND", "사용자 계정을 찾을 수 없습니다.");
+
+    const invitationResult = await client.query<AgencyInvitationLoginRow>(
+      `SELECT group_user.id, group_user.group_id, group_user.invite_status, group_user.user_id
+         FROM creator_management_group_users group_user
+         JOIN creator_management_groups group_row ON group_row.id = group_user.group_id
+        WHERE (group_user.user_id IS NULL OR group_user.user_id = $1)
+          AND lower(group_user.invited_email) = $2
+          AND group_user.invite_status IN ('invited', 'active')
+          AND group_row.status = 'active'
+        FOR UPDATE`,
+      [normalizedUserId, normalizedEmail],
+    );
+    const eligibleInvitations = invitationResult.rows.filter((invitation) =>
+      (invitation.invite_status === "invited" || invitation.invite_status === "active")
+      && (!invitation.user_id || invitation.user_id === normalizedUserId));
+
+    let activatedCount = 0;
+    if (eligibleInvitations.length) {
+      const invitationIds = eligibleInvitations.map(({ id }) => id);
+      const activated = await client.query<{ id: string; group_id: string }>(
+        `UPDATE creator_management_group_users
+            SET user_id = $1,
+                invite_status = 'active',
+                activated_at = COALESCE(activated_at, now())
+          WHERE id = ANY($2::text[])
+            AND invite_status IN ('invited', 'active')
+            AND (user_id IS NULL OR user_id = $1)
+          RETURNING id, group_id`,
+        [normalizedUserId, invitationIds],
+      );
+      activatedCount = activated.rows.length;
+      await Promise.all(activated.rows.map(({ group_id: groupId }) => writeAudit(
+        client,
+        normalizedUserId,
+        "agency_user_activated",
+        groupId,
+        null,
+        { email: normalizedEmail },
+      )));
+    }
+
+    const activeResult = await client.query<{ has_access: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1
+           FROM creator_management_group_users group_user
+           JOIN creator_management_groups group_row ON group_row.id = group_user.group_id
+          WHERE group_user.user_id = $1
+            AND group_user.invite_status = 'active'
+            AND group_row.status = 'active'
+       ) AS has_access`,
+      [normalizedUserId],
+    );
+    const hasActiveGroup = Boolean(activeResult.rows[0]?.has_access);
+
+    let role = user.role;
+    if (hasActiveGroup && role !== "admin" && role !== "creator" && role !== "agency") {
+      const promoted = await client.query<{ role: Role }>(
+        `UPDATE users
+            SET role = 'agency', updated_at = now()
+          WHERE id = $1 AND role NOT IN ('admin', 'creator')
+          RETURNING role`,
+        [normalizedUserId],
+      );
+      role = promoted.rows[0]?.role ?? role;
+    }
+
+    return { activatedCount, hasActiveGroup, role };
+  });
 }
 
 function asNumber(value: string | number | null | undefined) {

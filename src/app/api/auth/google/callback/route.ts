@@ -2,6 +2,7 @@
 import { cookies } from "next/headers";
 import { createSessionToken, sessionCookieName, sessionMaxAgeSeconds } from "@/lib/auth";
 import { findOrCreateGoogleUser, getCreatorAccountByEmail, linkCreatorAccountToUser, updateUserRole } from "@/lib/db";
+import { activateAgencyInvitationsForLogin } from "@/lib/creator-management";
 import {
   exchangeGoogleCode,
   fetchGoogleProfile,
@@ -45,17 +46,31 @@ export async function GET(request: Request) {
     }
 
     const { user, designer } = await findOrCreateGoogleUser(email);
-    const creator = await getCreatorAccountByEmail(email);
     let sessionUser = user;
     let approvedCreator = false;
+    let activeAgency = false;
 
-    if (creator?.approval_status === "approved") {
-      const linkedCreator = await linkCreatorAccountToUser(creator.id, user.id, email);
-      if (linkedCreator) {
-        const creatorUser = await updateUserRole(user.id, "creator");
-        if (creatorUser) {
-          sessionUser = creatorUser;
-          approvedCreator = true;
+    // 계정 우선순위: 기존 관리자 → 승인 크리에이터 귀속 → 활성 대행사 초대 → 디자이너 기본 흐름.
+    if (user.role === "admin") {
+      sessionUser = user;
+    } else {
+      const creator = await getCreatorAccountByEmail(email);
+      if (creator?.approval_status === "approved") {
+        const linkedCreator = await linkCreatorAccountToUser(creator.id, user.id, email);
+        if (linkedCreator) {
+          const creatorUser = await updateUserRole(user.id, "creator");
+          if (creatorUser) {
+            sessionUser = creatorUser;
+            approvedCreator = true;
+          }
+        }
+      }
+
+      if (!approvedCreator && user.role !== "creator") {
+        const agencyActivation = await activateAgencyInvitationsForLogin(user.id, email);
+        if (agencyActivation.hasActiveGroup && agencyActivation.role === "agency") {
+          sessionUser = { ...user, role: "agency" };
+          activeAgency = true;
         }
       }
     }
@@ -82,6 +97,9 @@ export async function GET(request: Request) {
     }
     if (user.role === "admin") {
       return Response.redirect(withWelcome(dest || "/"), 302);
+    }
+    if (activeAgency) {
+      return Response.redirect(withWelcome(dest || "/dashboard/agency"), 302);
     }
     if (designer?.approval_status === "approved") {
       return Response.redirect(withWelcome(dest || "/"), 302);

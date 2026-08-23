@@ -1716,16 +1716,57 @@ export async function linkCreatorAccountToUser(creatorId: string, userId: string
     requireDatabaseForProduction();
     return null;
   }
-  return one<CreatorAccount>(
-    `UPDATE creator_accounts
-        SET user_id = $1, updated_at = now()
-      WHERE id = $2
-        AND approval_status = 'approved'
-        AND lower(google_email) = $3
-        AND (user_id IS NULL OR user_id = $1)
-      RETURNING *`,
-    [userId, creatorId, email.trim().toLowerCase()],
-  );
+  const normalizedEmail = email.trim().toLowerCase();
+  return withDatabaseTransaction(async (client) => {
+    const userResult = await client.query<Pick<User, "id" | "role">>(
+      "SELECT id, role FROM users WHERE id = $1 FOR UPDATE",
+      [userId],
+    );
+    const user = userResult.rows[0];
+    if (!user) return null;
+
+    const creatorResult = await client.query<CreatorAccount>(
+      `SELECT *
+         FROM creator_accounts
+        WHERE id = $1
+          AND approval_status = 'approved'
+          AND (user_id IS NULL OR user_id = $2)
+          AND lower(google_email) = $3
+        FOR UPDATE`,
+      [creatorId, userId, normalizedEmail],
+    );
+    const before = creatorResult.rows[0];
+    if (!before) return null;
+
+    const linkedResult = await client.query<CreatorAccount>(
+      `UPDATE creator_accounts
+          SET user_id = $1, claim_state = 'claimed', updated_at = now()
+        WHERE id = $2
+          AND approval_status = 'approved'
+          AND lower(google_email) = $3
+          AND (user_id IS NULL OR user_id = $1)
+        RETURNING *`,
+      [userId, creatorId, normalizedEmail],
+    );
+    const linked = linkedResult.rows[0];
+    if (!linked) return null;
+
+    if (user.role !== "admin" && user.role !== "creator") {
+      await client.query(
+        "UPDATE users SET role = $2, updated_at = now() WHERE id = $1 AND role <> 'admin'",
+        [userId, "creator"],
+      );
+    }
+    if (before.user_id !== userId || before.claim_state !== "claimed") {
+      await client.query(
+        `INSERT INTO creator_management_audit_logs
+          (actor_user_id, action, group_id, creator_account_id, metadata)
+         VALUES ($1, $2, $3, $4, $5::jsonb)`,
+        [userId, "creator_claimed", null, creatorId, JSON.stringify({ email: normalizedEmail })],
+      );
+    }
+    return linked;
+  });
 }
 
 export async function updateUserRole(userId: string, role: Role): Promise<User | null> {
