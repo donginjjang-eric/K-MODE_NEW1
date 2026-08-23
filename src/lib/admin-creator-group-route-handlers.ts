@@ -146,7 +146,8 @@ function parseCreatorProfileInput(body: Record<string, unknown>): UpdateManagedC
   for (const key of profileFields) {
     if (!(key in body)) continue;
     const value = body[key];
-    if (["displayName", "approvalStatus"].includes(key) && (typeof value !== "string" || !value.trim())) return null;
+    if (key === "displayName" && (typeof value !== "string" || !value.trim())) return null;
+    if (key === "approvalStatus" && value !== "pending" && value !== "approved" && value !== "disabled") return null;
     if (["profileImageUrl", "specialty", "bio", "instagramHandle", "instagramUrl", "tiktokHandle", "tiktokUrl"].includes(key) && value !== null && typeof value !== "string") return null;
     if (["instagramFollowers", "tiktokFollowers"].includes(key) && (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0)) return null;
     if (key === "followersVerifiedAt" && value !== null && (typeof value !== "string" || Number.isNaN(new Date(value).getTime()))) return null;

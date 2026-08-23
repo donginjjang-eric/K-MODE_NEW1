@@ -123,6 +123,27 @@ test("creator PATCH preserves normalized email and approved-status linking", asy
   });
 });
 
+test("creator PATCH rejects a mixed invalid profile body before either mutation", async () => {
+  let linkCalls = 0;
+  let profileCalls = 0;
+  const response = await handleAdminCreatorPatch(request({
+    email: "imported@example.com",
+    status: "approved",
+    approvalStatus: "rejected",
+  }, "PATCH"), "imported-key", {
+    adminId: "admin-1",
+    getManagedCreator: async () => ({ id: "creator-db-1", creator_key: "imported-key", display_name: "Imported", platform: "Instagram", market: "Malaysia", categories: [] }),
+    getLegacyCreator: async () => null,
+    updateCreatorProfile: async () => { profileCalls += 1; },
+    upsertCreatorLink: async () => { linkCalls += 1; },
+    revalidatePath: () => {},
+  });
+
+  assert.equal(response.status, 400);
+  assert.equal(linkCalls, 0);
+  assert.equal(profileCalls, 0);
+});
+
 test("creator PATCH maps the legacy email-link conflict to a safe 409 response", async () => {
   const duplicate = new Error("duplicate key value violates unique constraint");
   const response = await handleAdminCreatorPatch(request({ email: "imported@example.com", status: "approved" }, "PATCH"), "imported-key", {
