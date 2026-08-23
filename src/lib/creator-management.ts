@@ -407,23 +407,27 @@ export async function createCreatorManagementGroup(actorUserId: string, input: C
 export async function updateCreatorManagementGroup(actorUserId: string, groupId: string, input: UpdateCreatorManagementGroupInput): Promise<void> {
   const actorId = normalizeId(actorUserId, "ACTOR_ID_REQUIRED", "작업자 ID를 입력해 주세요.");
   const normalizedGroupId = normalizeId(groupId, "GROUP_ID_REQUIRED", "관리 그룹 ID를 입력해 주세요.");
-  const hasChange = input && Object.keys(input).some((key) => ["name", "agencyName", "notes", "status"].includes(key));
-  if (!hasChange) domainError("GROUP_UPDATE_REQUIRED", "변경할 관리 그룹 정보를 입력해 주세요.");
-  const name = input.name === undefined ? undefined : normalizeText(input.name, "GROUP_NAME_REQUIRED", "관리 그룹명을 입력해 주세요.");
-  const agencyName = input.agencyName === undefined ? undefined : normalizeOptionalText(input.agencyName);
-  const notes = input.notes === undefined ? undefined : normalizeOptionalText(input.notes);
-  if (input.status !== undefined && input.status !== "active" && input.status !== "inactive") {
+  const patch = {
+    name: input.name === undefined ? undefined : normalizeText(input.name, "GROUP_NAME_REQUIRED", "관리 그룹명을 입력해 주세요."),
+    agencyName: input.agencyName === undefined ? undefined : normalizeOptionalText(input.agencyName),
+    notes: input.notes === undefined ? undefined : normalizeOptionalText(input.notes),
+    status: input.status,
+  };
+  if (patch.status !== undefined && patch.status !== "active" && patch.status !== "inactive") {
     domainError("GROUP_STATUS_INVALID", "관리 그룹 상태가 올바르지 않습니다.");
+  }
+  if (Object.values(patch).every((value) => value === undefined)) {
+    domainError("GROUP_UPDATE_REQUIRED", "변경할 관리 그룹 정보를 입력해 주세요.");
   }
 
   await withDatabaseTransaction(async (client) => {
     await lockActor(client, actorId);
     const before = await lockGroup(client, normalizedGroupId);
     const after = {
-      name: name ?? before.name,
-      agencyName: agencyName === undefined ? before.agency_name : agencyName,
-      notes: notes === undefined ? before.notes : notes,
-      status: input.status ?? before.status,
+      name: patch.name ?? before.name,
+      agencyName: patch.agencyName === undefined ? before.agency_name : patch.agencyName,
+      notes: patch.notes === undefined ? before.notes : patch.notes,
+      status: patch.status ?? before.status,
     };
     await client.query(
       `UPDATE creator_management_groups

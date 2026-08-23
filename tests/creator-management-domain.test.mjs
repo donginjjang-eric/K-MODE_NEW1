@@ -265,6 +265,17 @@ test("updates groups and audits the actor", async () => {
   assert.equal(client.statements.at(-1).text, "COMMIT");
 });
 
+test("rejects an update whose permitted fields are all undefined before any transaction or audit", async () => {
+  const client = new RecordingClient();
+  activeClient = client;
+
+  await assert.rejects(
+    updateCreatorManagementGroup("admin-text-id", "group-new", { name: undefined }),
+    (error) => error.code === "GROUP_UPDATE_REQUIRED" && error.message === "변경할 관리 그룹 정보를 입력해 주세요.",
+  );
+  assert.deepEqual(client.statements, []);
+});
+
 test("rejects duplicate agency email case-insensitively with a rollback", async () => {
   const client = new RecordingClient({ duplicateEmail: true });
   activeClient = client;
