@@ -1519,6 +1519,8 @@ type PublicCreatorSnapshot = {
   platform: string;
   market: string;
   categories: string[];
+  profileImageUrl: string | null;
+  followerTotal: number;
 };
 
 function creatorAttribute(source: string, name: string) {
@@ -1537,6 +1539,54 @@ function creatorKeyFromSnapshot(displayName: string, detail: string) {
   return (handle || displayName).toLowerCase().replace(/\s+/g, "-").slice(0, 120);
 }
 
+function inlineCreatorArray(source: string, variableName: string) {
+  const escapedName = variableName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const body = source.match(new RegExp(`const\\s+${escapedName}\\s*=\\s*\\[([\\s\\S]*?)\\n\\s*\\];`))?.[1] || "";
+  return body.match(/\{[^{}]*\}/g) || [];
+}
+
+function inlineCreatorString(source: string, key: string) {
+  return source.match(new RegExp(`\\b${key}:\\s*'([^']*)'`))?.[1]?.trim() || "";
+}
+
+function inlineCreatorNumber(source: string, key: string) {
+  const value = Number(source.match(new RegExp(`\\b${key}:\\s*([0-9.]+)`))?.[1]);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function getRuntimeCreatorSnapshots(html: string): PublicCreatorSnapshot[] {
+  const vietnam = inlineCreatorArray(html, "vietnamBeautyCreators").map((entry) => {
+    const displayName = inlineCreatorString(entry, "name");
+    const handle = inlineCreatorString(entry, "handle");
+    const direction = inlineCreatorString(entry, "direction");
+    return {
+      creatorKey: creatorKeyFromSnapshot(displayName, `@${handle}`),
+      displayName,
+      platform: "TikTok",
+      market: "Vietnam",
+      categories: ["K-Beauty Creator", direction].filter(Boolean),
+      profileImageUrl: inlineCreatorString(entry, "image") || null,
+      followerTotal: inlineCreatorNumber(entry, "followers"),
+    };
+  });
+
+  const seeding = inlineCreatorArray(html, "seedingCreators").map((entry) => {
+    const displayName = inlineCreatorString(entry, "name");
+    const category = inlineCreatorString(entry, "category");
+    return {
+      creatorKey: creatorKeyFromSnapshot(displayName, ""),
+      displayName,
+      platform: inlineCreatorString(entry, "platform"),
+      market: "Malaysia",
+      categories: [category].filter(Boolean),
+      profileImageUrl: inlineCreatorString(entry, "image") || null,
+      followerTotal: inlineCreatorNumber(entry, "totalValue"),
+    };
+  });
+
+  return [...vietnam, ...seeding].filter((creator) => creator.creatorKey && creator.displayName);
+}
+
 async function getPublicCreatorSnapshots(): Promise<PublicCreatorSnapshot[]> {
   const filePath = path.join(/* turbopackIgnore: true */ process.cwd(), "creators.html");
   const html = await readFile(filePath, "utf8");
@@ -1545,10 +1595,11 @@ async function getPublicCreatorSnapshots(): Promise<PublicCreatorSnapshot[]> {
   const grid = html.slice(gridStart, scriptStart > gridStart ? scriptStart : undefined);
   const cards = [...grid.matchAll(/<article\b([^>]*\bclass=["'][^"']*\bmarket-card\b[^"']*["'][^>]*)>([\s\S]*?)<\/article>/gi)];
 
-  return cards.map(([, attributes, body]) => {
+  const staticCreators = cards.map(([, attributes, body]) => {
     const displayName = creatorText(body, "h3");
     const detail = creatorText(body, "p");
     const detailParts = detail.split("/").map((item) => item.trim()).filter(Boolean);
+    const imageTag = body.match(/<img\b[^>]*>/i)?.[0] || "";
     const categories = [...new Set([
       ...creatorAttribute(attributes, "data-category").split(/\s+/).filter(Boolean),
       detailParts[1],
@@ -1559,8 +1610,44 @@ async function getPublicCreatorSnapshots(): Promise<PublicCreatorSnapshot[]> {
       platform: creatorAttribute(attributes, "data-platform"),
       market: detailParts[0] || creatorAttribute(attributes, "data-market"),
       categories,
+      profileImageUrl: creatorAttribute(imageTag, "data-profile-src") || creatorAttribute(imageTag, "src") || null,
+      followerTotal: Number(creatorAttribute(attributes, "data-followers")) || 0,
     };
   }).filter((creator) => creator.creatorKey && creator.displayName);
+
+  return [...staticCreators, ...getRuntimeCreatorSnapshots(html)];
+}
+
+function toCatalogueCreatorAccount(creator: PublicCreatorSnapshot, now: string): AdminCreatorAccount {
+  const instagramFollowers = creator.platform === "Instagram" ? creator.followerTotal : 0;
+  const tiktokFollowers = creator.platform === "Instagram" ? 0 : creator.followerTotal;
+  return {
+    id: `catalogue-${creator.creatorKey}`,
+    user_id: null,
+    creator_key: creator.creatorKey,
+    display_name: creator.displayName,
+    google_email: "",
+    approval_status: "pending",
+    platform: creator.platform,
+    market: creator.market,
+    categories: creator.categories,
+    onboarding_source: "self_registered",
+    claim_state: "claimed",
+    created_by_admin_id: null,
+    profile_image_url: creator.profileImageUrl,
+    specialty: null,
+    bio: null,
+    instagram_handle: null,
+    instagram_url: null,
+    instagram_followers: instagramFollowers,
+    tiktok_handle: null,
+    tiktok_url: null,
+    tiktok_followers: tiktokFollowers,
+    followers_verified_at: null,
+    created_at: now,
+    updated_at: now,
+    is_linked: false,
+  };
 }
 
 export async function getPublicCreatorForAdmin(creatorKey: string): Promise<PublicCreatorSnapshot | null> {
@@ -1575,33 +1662,7 @@ export async function getCreatorAccountsForAdmin(): Promise<AdminCreatorAccount[
   if (!hasDatabase()) {
     requireDatabaseForProduction();
     const now = new Date("2026-05-30T00:00:00Z").toISOString();
-    return creators.map((creator) => ({
-      id: `catalogue-${creator.creatorKey}`,
-      user_id: null,
-      creator_key: creator.creatorKey,
-      display_name: creator.displayName,
-      google_email: "",
-      approval_status: "pending",
-      platform: creator.platform,
-      market: creator.market,
-      categories: creator.categories,
-      onboarding_source: "self_registered",
-      claim_state: "claimed",
-      created_by_admin_id: null,
-      profile_image_url: null,
-      specialty: null,
-      bio: null,
-      instagram_handle: null,
-      instagram_url: null,
-      instagram_followers: 0,
-      tiktok_handle: null,
-      tiktok_url: null,
-      tiktok_followers: 0,
-      followers_verified_at: null,
-      created_at: now,
-      updated_at: now,
-      is_linked: false,
-    }));
+    return creators.map((creator) => toCatalogueCreatorAccount(creator, now));
   }
 
   const accounts = await query<CreatorAccount>("SELECT * FROM creator_accounts");
@@ -1609,33 +1670,7 @@ export async function getCreatorAccountsForAdmin(): Promise<AdminCreatorAccount[
   const now = new Date("2026-05-30T00:00:00Z").toISOString();
   return creators.map((creator) => {
     const account = byKey.get(creator.creatorKey);
-    return account ? { ...account, is_linked: true } : {
-      id: `catalogue-${creator.creatorKey}`,
-      user_id: null,
-      creator_key: creator.creatorKey,
-      display_name: creator.displayName,
-      google_email: "",
-      approval_status: "pending",
-      platform: creator.platform,
-      market: creator.market,
-      categories: creator.categories,
-      onboarding_source: "self_registered",
-      claim_state: "claimed",
-      created_by_admin_id: null,
-      profile_image_url: null,
-      specialty: null,
-      bio: null,
-      instagram_handle: null,
-      instagram_url: null,
-      instagram_followers: 0,
-      tiktok_handle: null,
-      tiktok_url: null,
-      tiktok_followers: 0,
-      followers_verified_at: null,
-      created_at: now,
-      updated_at: now,
-      is_linked: false,
-    };
+    return account ? { ...account, is_linked: true } : toCatalogueCreatorAccount(creator, now);
   });
 }
 

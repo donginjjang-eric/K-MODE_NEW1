@@ -1,6 +1,6 @@
 import AdminCreatorManagementTable, { type AdminCreatorManagementRow } from "@/components/AdminCreatorManagementTable";
 import { getCreatorAccountsForAdmin, hasDatabase } from "@/lib/db";
-import { listCreatorManagementGroups, listManagedCreators } from "@/lib/creator-management";
+import { isOperationalCreatorKey, listCreatorManagementGroups, listManagedCreators } from "@/lib/creator-management";
 
 export default async function AdminCreatorAccountsPage() {
   const catalogue = await getCreatorAccountsForAdmin();
@@ -18,7 +18,7 @@ export default async function AdminCreatorAccountsPage() {
       durable: creator.is_linked,
     });
   }
-  for (const creator of durableCreators) {
+  for (const creator of durableCreators.filter((item) => isOperationalCreatorKey(item.creator_key))) {
     byCreatorKey.set(creator.creator_key, { ...creator, durable: true });
   }
 

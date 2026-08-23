@@ -9,6 +9,10 @@ export function participationCountsAsConfirmedDeal(status: string) {
   return CAPACITY_OCCUPYING_PARTICIPATION_STATUSES.includes(status as ParticipationStatus);
 }
 
+export function isOperationalCreatorKey(creatorKey: string) {
+  return creatorKey !== "test-creator" && !creatorKey.startsWith("admin-operator-");
+}
+
 const confirmedDealStatusSql = CAPACITY_OCCUPYING_PARTICIPATION_STATUSES.map((status) => `'${status}'`).join(", ");
 
 export type CreatorCampaignAdminSummary = {
