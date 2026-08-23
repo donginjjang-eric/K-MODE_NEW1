@@ -4,13 +4,14 @@ CREATE TABLE IF NOT EXISTS users (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
   email text UNIQUE NOT NULL,
   password_hash text NOT NULL,
-  role text NOT NULL CHECK (role IN ('admin', 'designer', 'creator')),
+  role text NOT NULL CHECK (role IN ('admin', 'designer', 'creator', 'agency')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Existing installations created the original two-role constraint. Replace it in
--- place so creator accounts can be added without recreating the users table.
+-- Existing installations use the legacy CHECK (role IN ('admin', 'designer', 'creator'))
+-- constraint. Replace it in place so agency accounts can be added without
+-- recreating the users table.
 DO $$
 BEGIN
   IF EXISTS (
@@ -24,7 +25,7 @@ BEGIN
 
   ALTER TABLE users
     ADD CONSTRAINT users_role_check
-    CHECK (role IN ('admin', 'designer', 'creator'));
+    CHECK (role IN ('admin', 'designer', 'creator', 'agency'));
 END $$;
 
 CREATE TABLE IF NOT EXISTS designers (
@@ -229,9 +230,91 @@ CREATE TABLE IF NOT EXISTS creator_accounts (
   platform text NOT NULL DEFAULT '',
   market text NOT NULL DEFAULT '',
   categories jsonb NOT NULL DEFAULT '[]'::jsonb,
+  onboarding_source TEXT NOT NULL DEFAULT 'self_registered' CHECK (onboarding_source IN ('self_registered', 'admin')),
+  claim_state TEXT NOT NULL DEFAULT 'claimed' CHECK (claim_state IN ('unclaimed', 'claimed')),
+  created_by_admin_id text REFERENCES users(id) ON DELETE SET NULL,
+  profile_image_url text,
+  specialty text,
+  bio text,
+  instagram_handle text,
+  instagram_url text,
+  instagram_followers BIGINT NOT NULL DEFAULT 0 CHECK (instagram_followers >= 0),
+  tiktok_handle text,
+  tiktok_url text,
+  tiktok_followers BIGINT NOT NULL DEFAULT 0 CHECK (tiktok_followers >= 0),
+  followers_verified_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Creator management fields are added separately so existing installations
+-- receive the same columns as fresh databases.
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS onboarding_source TEXT NOT NULL DEFAULT 'self_registered'
+  CHECK (onboarding_source IN ('self_registered', 'admin'));
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS claim_state TEXT NOT NULL DEFAULT 'claimed'
+  CHECK (claim_state IN ('unclaimed', 'claimed'));
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS created_by_admin_id text REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS profile_image_url text;
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS specialty text;
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS bio text;
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS instagram_handle text;
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS instagram_url text;
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS instagram_followers BIGINT NOT NULL DEFAULT 0 CHECK (instagram_followers >= 0);
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS tiktok_handle text;
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS tiktok_url text;
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS tiktok_followers BIGINT NOT NULL DEFAULT 0 CHECK (tiktok_followers >= 0);
+ALTER TABLE creator_accounts ADD COLUMN IF NOT EXISTS followers_verified_at timestamptz;
+
+CREATE TABLE IF NOT EXISTS creator_management_groups (
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  name text NOT NULL,
+  agency_name text,
+  notes text,
+  status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+  created_by text NOT NULL REFERENCES users(id),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS creator_management_group_members (
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  group_id text NOT NULL REFERENCES creator_management_groups(id) ON DELETE CASCADE,
+  creator_account_id text NOT NULL REFERENCES creator_accounts(id) ON DELETE CASCADE,
+  assigned_by text NOT NULL REFERENCES users(id),
+  assigned_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (creator_account_id)
+);
+
+CREATE TABLE IF NOT EXISTS creator_management_group_users (
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  group_id text NOT NULL REFERENCES creator_management_groups(id) ON DELETE CASCADE,
+  invited_email text NOT NULL,
+  user_id text REFERENCES users(id) ON DELETE SET NULL,
+  invite_status text NOT NULL DEFAULT 'invited' CHECK (invite_status IN ('invited', 'active', 'revoked')),
+  invited_by text NOT NULL REFERENCES users(id),
+  invited_at timestamptz NOT NULL DEFAULT now(),
+  activated_at timestamptz,
+  UNIQUE (group_id, invited_email)
+);
+
+CREATE TABLE IF NOT EXISTS creator_management_audit_logs (
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  actor_user_id text NOT NULL REFERENCES users(id),
+  action text NOT NULL,
+  group_id text REFERENCES creator_management_groups(id) ON DELETE SET NULL,
+  creator_account_id text REFERENCES creator_accounts(id) ON DELETE SET NULL,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS creator_management_group_members_group_idx
+  ON creator_management_group_members(group_id, assigned_at DESC);
+
+CREATE INDEX IF NOT EXISTS creator_management_group_users_email_lower_idx
+  ON creator_management_group_users(group_id, lower(invited_email));
+
+CREATE INDEX IF NOT EXISTS creator_management_audit_logs_group_created_idx
+  ON creator_management_audit_logs(group_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS campaigns (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
