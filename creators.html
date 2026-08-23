@@ -145,9 +145,6 @@
         </div>
 
         <div class="filter-body" id="filterBody">
-          <div class="filter-search">
-            <input id="creatorSearch" type="search" placeholder="이름 · 도시 · 스타일 검색" aria-label="크리에이터 검색" />
-          </div>
           <div class="filter-group filter-sort">
             <h2>정렬</h2>
             <select id="sortSelect" aria-label="크리에이터 정렬">
@@ -214,6 +211,17 @@
             <strong><span id="creatorRegisteredKpi" data-kpi-value="0">0</span></strong>
             <small>브랜드 협업이 가능한 가입 크리에이터</small>
           </article>
+        </div>
+
+        <div class="creator-search-row" aria-label="크리에이터 목록 도구">
+          <span class="creator-result-count" id="resultCount" aria-live="polite">전체 0명</span>
+          <label class="creator-search-control">
+            <span class="creator-search-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+            </span>
+            <input id="creatorSearch" type="search" placeholder="이름 · 핸들 · 스타일 검색" aria-label="크리에이터 검색" />
+            <button class="creator-search-clear" id="clearCreatorSearch" type="button" aria-label="검색어 지우기" hidden>✕</button>
+          </label>
         </div>
 
         <div class="creator-grid" id="creatorGrid">
@@ -355,6 +363,7 @@
     </footer>
   </main>
 
+  <script src="data/malaysia-meeting-creators.js"></script>
   <script>
     const grid = document.getElementById('creatorGrid');
     const creatorCardSizes = '(max-width: 900px) calc(50vw - 26px), calc((100vw - clamp(40px, 6.8vw, 128px) - 64px) / 5)';
@@ -369,6 +378,12 @@
         data-profile-src="${source}" alt="${alt}"
         loading="lazy" decoding="async" fetchpriority="low" />`;
     const fmtSeedK = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K' : String(n));
+
+    // 2026-08 말레이시아 추가 미팅 크리에이터 24명. 공개 Instagram/TikTok 프로필 기준.
+    grid.insertAdjacentHTML('beforeend', globalThis.KMODU_RENDER_MALAYSIA_MEETING_CREATORS(
+      globalThis.KMODU_MALAYSIA_MEETING_CREATORS,
+      { formatFollowers: fmtSeedK, imageMarkup: creatorCardImageMarkup },
+    ));
 
     // 베트남 K-뷰티 크리에이터 30명. 2026-07-23 공개 TikTok 프로필의 이름, 핸들, 팔로워를 대조했다.
     // 폴더에 섞여 있던 이미지들은 카드에 인쇄된 크리에이터명과 공개 프로필을 기준으로 재매칭했다.
@@ -493,6 +508,7 @@
     const filterClose = document.getElementById('filterClose');
     const filterApply = document.getElementById('filterApply');
     const searchInput = document.getElementById('creatorSearch');
+    const clearSearch = document.getElementById('clearCreatorSearch');
     const sortSelect = document.getElementById('sortSelect');
     const resultCount = document.getElementById('resultCount');
     const resetFilters = document.getElementById('resetFilters');
@@ -755,13 +771,23 @@
     filterApply.addEventListener('click', closeFilter);
 
     filterInputs.forEach((input) => input.addEventListener('change', updateBoard));
-    searchInput.addEventListener('input', updateBoard);
+    searchInput.addEventListener('input', () => {
+      clearSearch.hidden = searchInput.value === '';
+      updateBoard();
+    });
+    clearSearch.addEventListener('click', () => {
+      searchInput.value = '';
+      clearSearch.hidden = true;
+      searchInput.focus();
+      updateBoard();
+    });
     sortSelect.addEventListener('change', updateBoard);
     resetFilters.addEventListener('click', () => {
       filterInputs.forEach((input) => {
         input.checked = false;
       });
       searchInput.value = '';
+      clearSearch.hidden = true;
       activeCategory = 'all';
       mobileCategorySelect.value = activeCategory;
       categoryButtons.forEach((item) => item.classList.toggle('is-active', item.dataset.filter === 'all'));

@@ -23,6 +23,7 @@ const legacyFiles = new Set([
   "designer-brief.html",
   "designer-match.html",
   "designers.html",
+  "data/malaysia-meeting-creators.js",
   "index.html",
   "site-i18n.js",
   "platform.css",
