@@ -1711,15 +1711,20 @@ export async function upsertCreatorAccountLink(input: {
   }
 }
 
-export async function linkCreatorAccountToUser(creatorId: string, userId: string, email: string): Promise<CreatorAccount | null> {
+export type LinkedCreatorAccount = {
+  creator: CreatorAccount;
+  user: User;
+};
+
+export async function linkCreatorAccountToUser(creatorId: string, userId: string, email: string): Promise<LinkedCreatorAccount | null> {
   if (!hasDatabase()) {
     requireDatabaseForProduction();
     return null;
   }
   const normalizedEmail = email.trim().toLowerCase();
   return withDatabaseTransaction(async (client) => {
-    const userResult = await client.query<Pick<User, "id" | "role">>(
-      "SELECT id, role FROM users WHERE id = $1 FOR UPDATE",
+    const userResult = await client.query<User>(
+      "SELECT id, email, role, created_at, updated_at FROM users WHERE id = $1 FOR UPDATE",
       [userId],
     );
     const user = userResult.rows[0];
@@ -1751,11 +1756,16 @@ export async function linkCreatorAccountToUser(creatorId: string, userId: string
     const linked = linkedResult.rows[0];
     if (!linked) return null;
 
+    let sessionUser = user;
     if (user.role !== "admin" && user.role !== "creator") {
-      await client.query(
-        "UPDATE users SET role = $2, updated_at = now() WHERE id = $1 AND role <> 'admin'",
+      const promoted = await client.query<User>(
+        `UPDATE users
+            SET role = $2, updated_at = now()
+          WHERE id = $1 AND role NOT IN ('admin', 'creator')
+          RETURNING id, email, role, created_at, updated_at`,
         [userId, "creator"],
       );
+      sessionUser = promoted.rows[0] ?? user;
     }
     if (before.user_id !== userId || before.claim_state !== "claimed") {
       await client.query(
@@ -1765,7 +1775,7 @@ export async function linkCreatorAccountToUser(creatorId: string, userId: string
         [userId, "creator_claimed", null, creatorId, JSON.stringify({ email: normalizedEmail })],
       );
     }
-    return linked;
+    return { creator: linked, user: sessionUser };
   });
 }
 

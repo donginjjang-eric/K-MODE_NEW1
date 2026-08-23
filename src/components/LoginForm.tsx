@@ -136,10 +136,8 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
         setMessage("이메일 또는 비밀번호가 올바르지 않아요.");
         return;
       }
-      // 입구(next)가 없으면 역할에 맞는 대시보드로 바로 보낸다.
-      const role = data.user?.role;
-      const roleHome = role === "creator" ? "/dashboard/creator" : role === "designer" ? "/dashboard/designer/brand" : role === "admin" ? "/dashboard/admin" : "";
-      window.location.assign(nextPath || !roleHome ? String(data.redirectTo || "/") : roleHome);
+      // 서버가 안전한 next 또는 역할별 기본 대시보드를 단일 계약으로 결정한다.
+      window.location.assign(String(data.redirectTo || "/"));
     } catch {
       setMessage("로그인 요청에 실패했어요. 잠시 후 다시 시도해주세요.");
     } finally {

@@ -26,7 +26,8 @@ test("approved creator authentication exposes guarded, email-linked Google login
 
   assert.match(callback, /getCreatorAccountByEmail\(email\)/);
   assert.match(callback, /linkCreatorAccountToUser\(creator\.id, user\.id, email\)/);
-  assert.match(callback, /updateUserRole\(user\.id, "creator"\)/);
+  assert.doesNotMatch(callback, /updateUserRole\(user\.id, "creator"\)/);
+  assert.match(callback, /sessionUser = linkedCreator\.user/);
   assert.match(callback, /dest \|\| "\/dashboard\/creator"/);
 });
 

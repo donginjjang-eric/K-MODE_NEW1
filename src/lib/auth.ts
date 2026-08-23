@@ -81,6 +81,12 @@ export function loginEntryUrl(value: Role | Pick<User, "role">) {
   return "/dashboard/designer/brand";
 }
 
+export function passwordLoginDestination(value: Role | Pick<User, "role">, requestedNext: unknown) {
+  const next = String(requestedNext || "");
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "";
+  return safeNext || loginEntryUrl(value);
+}
+
 // 입구별 로그인 후 복귀 목적지. 로그인 자체는 메인으로 돌아가고, 입구로 들어온 경우만 그 목적지로 보낸다.
 function loginPromptUrl(role: Role) {
   return `/login?notice=${role}_login&next=${encodeURIComponent(loginEntryUrl(role))}`;

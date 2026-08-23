@@ -1,7 +1,7 @@
 // 구글 로그인 콜백: state 검증 → 토큰 교환 → 사용자 조회/자동 등록 → 세션 발급
 import { cookies } from "next/headers";
 import { createSessionToken, sessionCookieName, sessionMaxAgeSeconds } from "@/lib/auth";
-import { findOrCreateGoogleUser, getCreatorAccountByEmail, linkCreatorAccountToUser, updateUserRole } from "@/lib/db";
+import { findOrCreateGoogleUser, getCreatorAccountByEmail, linkCreatorAccountToUser } from "@/lib/db";
 import { activateAgencyInvitationsForLogin } from "@/lib/creator-management";
 import {
   exchangeGoogleCode,
@@ -58,18 +58,15 @@ export async function GET(request: Request) {
       if (creator?.approval_status === "approved") {
         const linkedCreator = await linkCreatorAccountToUser(creator.id, user.id, email);
         if (linkedCreator) {
-          const creatorUser = await updateUserRole(user.id, "creator");
-          if (creatorUser) {
-            sessionUser = creatorUser;
-            approvedCreator = true;
-          }
+          sessionUser = linkedCreator.user;
+          approvedCreator = linkedCreator.user.role === "creator";
         }
       }
 
-      if (!approvedCreator && user.role !== "creator") {
+      if (!approvedCreator && sessionUser.role !== "admin" && sessionUser.role !== "creator") {
         const agencyActivation = await activateAgencyInvitationsForLogin(user.id, email);
         if (agencyActivation.hasActiveGroup && agencyActivation.role === "agency") {
-          sessionUser = { ...user, role: "agency" };
+          sessionUser = { ...sessionUser, role: "agency" };
           activeAgency = true;
         }
       }
@@ -95,7 +92,7 @@ export async function GET(request: Request) {
     if (approvedCreator) {
       return Response.redirect(withWelcome(dest || "/dashboard/creator"), 302);
     }
-    if (user.role === "admin") {
+    if (sessionUser.role === "admin") {
       return Response.redirect(withWelcome(dest || "/"), 302);
     }
     if (activeAgency) {

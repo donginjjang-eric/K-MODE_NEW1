@@ -37,7 +37,7 @@ await mock.module("next/navigation", {
 
 process.env.DATABASE_URL = "postgres://test:test@localhost:5432/kmodu_test";
 
-const { createSessionToken, loginEntryUrl, requireAgencyUser } = await import("../src/lib/auth.ts");
+const { createSessionToken, loginEntryUrl, passwordLoginDestination, requireAgencyUser } = await import("../src/lib/auth.ts");
 const {
   activateAgencyInvitationsForLogin,
   hasActiveAgencyGroupRelationship,
@@ -100,6 +100,23 @@ test("agency dashboard entry and email matching are canonical", () => {
   assert.equal(loginEntryUrl({ role: "creator" }), "/dashboard/creator");
   assert.equal(loginEntryUrl({ role: "designer" }), "/dashboard/designer/brand");
   assert.equal(normalizeEmail(" Agency@Example.com "), "agency@example.com");
+});
+
+test("password login defaults every role to its canonical dashboard, including agency", async () => {
+  assert.equal(passwordLoginDestination({ role: "agency" }, ""), "/dashboard/agency");
+  assert.equal(passwordLoginDestination({ role: "admin" }, ""), "/dashboard/admin");
+  assert.equal(passwordLoginDestination({ role: "creator" }, ""), "/dashboard/creator");
+  assert.equal(passwordLoginDestination({ role: "designer" }, ""), "/dashboard/designer/brand");
+  assert.equal(passwordLoginDestination({ role: "agency" }, "/dashboard/agency?tab=deals"), "/dashboard/agency?tab=deals");
+  assert.equal(passwordLoginDestination({ role: "agency" }, "//evil.example"), "/dashboard/agency");
+
+  const [route, form] = await Promise.all([
+    readFile(new URL("../src/app/api/auth/login/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/LoginForm.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(route, /passwordLoginDestination\(user, body\.next\)/);
+  assert.doesNotMatch(form, /const roleHome\s*=/);
+  assert.match(form, /window\.location\.assign\(String\(data\.redirectTo \|\| "\/"\)\)/);
 });
 
 test("login activates invited relationships case-insensitively and promotes only an eligible designer", async () => {
@@ -174,13 +191,36 @@ test("creator claim links, marks claimed, promotes, and writes its audit in one 
 
   const claimed = await linkCreatorAccountToUser("creator-1", "user-1", " Creator@Example.com ");
 
-  assert.equal(claimed?.claim_state, "claimed");
+  assert.equal(claimed?.creator.claim_state, "claimed");
+  assert.equal(claimed?.user.role, "creator");
   assert.equal(client.statements[0].text, "BEGIN");
   const creatorRead = client.statements.find(({ text }) => text.includes("FROM creator_accounts") && text.includes("FOR UPDATE"));
   assert.deepEqual(creatorRead.params, ["creator-1", "user-1", "creator@example.com"]);
   assert.match(client.statements.find(({ text }) => text.includes("UPDATE creator_accounts")).text, /claim_state = 'claimed'/);
   const audit = client.statements.find(({ text }) => text.includes("INSERT INTO creator_management_audit_logs"));
   assert.deepEqual(audit.params.slice(0, 4), ["user-1", "creator_claimed", null, "creator-1"]);
+  assert.equal(client.statements.at(-1).text, "COMMIT");
+});
+
+test("creator claim returns the locked admin role and never issues a creator downgrade", async () => {
+  const client = new RecordingClient({
+    // The callback may have read designer earlier; this is the role observed after the
+    // transaction acquires the user lock, representing a concurrent admin promotion.
+    role: "admin",
+    creator: {
+      id: "creator-1",
+      user_id: null,
+      google_email: "creator@example.com",
+      approval_status: "approved",
+      claim_state: "unclaimed",
+    },
+  });
+  activeClient = client;
+
+  const claimed = await linkCreatorAccountToUser("creator-1", "user-1", "creator@example.com");
+
+  assert.equal(claimed?.user.role, "admin");
+  assert.equal(client.statements.some(({ text }) => text.includes("UPDATE users") && text.includes("role = $2")), false);
   assert.equal(client.statements.at(-1).text, "COMMIT");
 });
 
@@ -195,4 +235,6 @@ test("Google callback keeps admin, creator claim, agency invitation, and designe
   assert.ok(creatorIndex < agencyIndex, "creator claims must be resolved before agency invitations");
   assert.ok(agencyIndex < designerIndex, "agency invitations must be resolved before designer fallback");
   assert.match(callback, /dest \|\| "\/dashboard\/agency"/);
+  assert.doesNotMatch(callback, /updateUserRole\(user\.id, "creator"\)/);
+  assert.match(callback, /sessionUser = linkedCreator\.user/);
 });

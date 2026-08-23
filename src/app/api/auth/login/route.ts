@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createSessionToken, loginUser, sessionCookieName, sessionMaxAgeSeconds } from "@/lib/auth";
+import { createSessionToken, loginUser, passwordLoginDestination, sessionCookieName, sessionMaxAgeSeconds } from "@/lib/auth";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -24,10 +24,8 @@ export async function POST(request: Request) {
     maxAge: sessionMaxAgeSeconds,
   });
 
-  // 로그인은 원래 보던 곳(기본: 메인)으로. 입구로 들어온 경우만 next 목적지로 보낸다.
-  const next = String(body.next || "");
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "";
-  const dest = safeNext || "/";
+  // 명시적인 안전한 복귀 경로가 없으면 역할별 대시보드로 이동한다.
+  const dest = passwordLoginDestination(user, body.next);
 
   return Response.json({
     ok: true,
