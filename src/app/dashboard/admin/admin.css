@@ -1,3 +1,5 @@
+.site-shell:has(.admin-studio) + .quick-link-stack { display: none !important; }
+
 .admin-studio .admin-creator-account-list {
   display: grid;
   gap: 12px;
