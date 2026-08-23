@@ -37,6 +37,11 @@ export type CreatorManagementGroupSummary = {
   status: CreatorManagementGroupStatus;
   creatorCount: number;
   followerTotal: number;
+  campaignCount: number;
+  dealCount: number;
+  settledCount: number;
+  pendingSettlementCount: number;
+  rewardTextCount: number;
 };
 
 export type CreatorManagementGroupDetail = CreatorManagementGroupSummary & {
@@ -98,6 +103,11 @@ type ManagementGroupRow = {
   status: CreatorManagementGroupStatus;
   creator_count: string | number;
   follower_total: string | number;
+  campaign_count: string | number;
+  deal_count: string | number;
+  settled_count: string | number;
+  pending_settlement_count: string | number;
+  reward_text_count: string | number;
 };
 
 type GroupMembership = {
@@ -233,6 +243,11 @@ function toGroupSummary(row: ManagementGroupRow): CreatorManagementGroupSummary 
     status: row.status,
     creatorCount: asNumber(row.creator_count),
     followerTotal: asNumber(row.follower_total),
+    campaignCount: asNumber(row.campaign_count),
+    dealCount: asNumber(row.deal_count),
+    settledCount: asNumber(row.settled_count),
+    pendingSettlementCount: asNumber(row.pending_settlement_count),
+    rewardTextCount: asNumber(row.reward_text_count),
   };
 }
 
@@ -327,16 +342,37 @@ export async function getManagedCreatorDetail(creatorKey: string): Promise<Admin
 }
 
 const groupSummarySql = `SELECT group_row.id, group_row.name, group_row.agency_name, group_row.notes, group_row.status,
-  COUNT(member.creator_account_id)::text AS creator_count,
-  COALESCE(SUM(COALESCE(account.instagram_followers, 0) + COALESCE(account.tiktok_followers, 0)), 0)::text AS follower_total
+  COALESCE(member_stats.creator_count, 0)::text AS creator_count,
+  COALESCE(member_stats.follower_total, 0)::text AS follower_total,
+  COALESCE(activity_stats.campaign_count, 0)::text AS campaign_count,
+  COALESCE(activity_stats.deal_count, 0)::text AS deal_count,
+  COALESCE(activity_stats.settled_count, 0)::text AS settled_count,
+  COALESCE(activity_stats.pending_settlement_count, 0)::text AS pending_settlement_count,
+  COALESCE(activity_stats.reward_text_count, 0)::text AS reward_text_count
  FROM creator_management_groups group_row
- LEFT JOIN creator_management_group_members member ON member.group_id = group_row.id
- LEFT JOIN creator_accounts account ON account.id = member.creator_account_id`;
+ LEFT JOIN (
+   SELECT member.group_id,
+          COUNT(member.creator_account_id) AS creator_count,
+          COALESCE(SUM(COALESCE(account.instagram_followers, 0) + COALESCE(account.tiktok_followers, 0)), 0) AS follower_total
+     FROM creator_management_group_members member
+     JOIN creator_accounts account ON account.id = member.creator_account_id
+    GROUP BY member.group_id
+ ) member_stats ON member_stats.group_id = group_row.id
+ LEFT JOIN (
+   SELECT member.group_id,
+          COUNT(DISTINCT participation.campaign_id) AS campaign_count,
+          COUNT(participation.id) AS deal_count,
+          COUNT(participation.id) FILTER (WHERE participation.settlement_status = 'paid') AS settled_count,
+          COUNT(participation.id) FILTER (WHERE participation.settlement_status IN ('pending', 'confirmed')) AS pending_settlement_count,
+          COUNT(participation.id) FILTER (WHERE NULLIF(BTRIM(participation.expected_reward), '') IS NOT NULL) AS reward_text_count
+     FROM creator_management_group_members member
+     JOIN campaign_participations participation ON participation.creator_account_id = member.creator_account_id
+    GROUP BY member.group_id
+ ) activity_stats ON activity_stats.group_id = group_row.id`;
 
 export async function listCreatorManagementGroups(): Promise<CreatorManagementGroupSummary[]> {
   const rows = await query<ManagementGroupRow>(
     `${groupSummarySql}
-     GROUP BY group_row.id
      ORDER BY group_row.created_at DESC, group_row.id ASC`,
   );
   return rows.map(toGroupSummary);
@@ -346,8 +382,7 @@ export async function getCreatorManagementGroup(groupId: string): Promise<Creato
   const normalizedGroupId = normalizeId(groupId, "GROUP_ID_REQUIRED", "관리 그룹 ID를 입력해 주세요.");
   const group = await one<ManagementGroupRow>(
     `${groupSummarySql}
-      WHERE group_row.id = $1
-      GROUP BY group_row.id`,
+      WHERE group_row.id = $1`,
     [normalizedGroupId],
   );
   if (!group) return null;

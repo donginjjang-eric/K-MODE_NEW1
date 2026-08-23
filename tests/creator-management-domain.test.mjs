@@ -87,10 +87,10 @@ class RecordingClient {
       return { rows: [{ campaign_id: "campaign-1", campaign_title: "Beauty Launch", participation_status: "completed", expected_reward: "RM 420", settlement_status: "paid", revenue: "1250.50", currency: "MYR" }] };
     }
     if (text.includes("FROM creator_management_groups group_row") && text.includes("WHERE group_row.id = $1")) {
-      return { rows: [{ id: "group-blue", name: "Blue Group", agency_name: "Blue Agency", status: "active", creator_count: "1", follower_total: "579", notes: "Priority creators" }] };
+      return { rows: [{ id: "group-blue", name: "Blue Group", agency_name: "Blue Agency", status: "active", creator_count: "1", follower_total: "579", campaign_count: "2", deal_count: "3", settled_count: "1", pending_settlement_count: "2", reward_text_count: "3", notes: "Priority creators" }] };
     }
     if (text.includes("FROM creator_management_groups group_row")) {
-      return { rows: [{ id: "group-blue", name: "Blue Group", agency_name: "Blue Agency", status: "active", creator_count: "1", follower_total: "579" }] };
+      return { rows: [{ id: "group-blue", name: "Blue Group", agency_name: "Blue Agency", status: "active", creator_count: "1", follower_total: "579", campaign_count: "2", deal_count: "3", settled_count: "1", pending_settlement_count: "2", reward_text_count: "3" }] };
     }
     if (text.includes("FROM creator_management_group_users") && text.includes("ORDER BY invited_at")) {
       return { rows: [{ email: "agency@example.com", status: "active" }] };
@@ -178,11 +178,14 @@ test("reads management group summaries and detail from persisted relations", asy
   const groups = await listCreatorManagementGroups();
   const detail = await getCreatorManagementGroup(" group-blue ");
 
-  assert.deepEqual(groups, [{ id: "group-blue", name: "Blue Group", agencyName: "Blue Agency", status: "active", creatorCount: 1, followerTotal: 579 }]);
+  assert.deepEqual(groups, [{ id: "group-blue", name: "Blue Group", agencyName: "Blue Agency", status: "active", creatorCount: 1, followerTotal: 579, campaignCount: 2, dealCount: 3, settledCount: 1, pendingSettlementCount: 2, rewardTextCount: 3 }]);
   assert.equal(detail?.notes, "Priority creators");
   assert.equal(detail?.creators[0]?.id, "creator-db-only");
   assert.deepEqual(detail?.agencyUsers, [{ email: "agency@example.com", status: "active" }]);
   assert.deepEqual(detail?.auditEvents[0]?.metadata, { creatorAccountId: "creator-db-only" });
+  const summarySql = client.statements.find(({ text }) => text.includes("FROM creator_management_groups group_row"))?.text ?? "";
+  assert.match(summarySql, /COUNT\(DISTINCT participation\.campaign_id\)/);
+  assert.match(summarySql, /activity_stats/);
 });
 
 test("creates a group and assigns deduplicated text creator IDs in one audited transaction", async () => {

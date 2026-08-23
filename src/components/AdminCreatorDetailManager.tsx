@@ -34,7 +34,8 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
   const [tiktokFollowers, setTiktokFollowers] = useState(String(creator.tiktok_followers));
   const [targetGroup, setTargetGroup] = useState(creator.managementGroupId ?? "");
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
+  const [profileMessage, setProfileMessage] = useState("");
+  const [creatorGroupMessage, setCreatorGroupMessage] = useState("");
 
   async function api(url: string, init: RequestInit) {
     const response = await fetch(url, { ...init, headers: { "content-type": "application/json", ...init.headers } });
@@ -45,8 +46,11 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
 
   async function saveProfile() {
     setBusy(true);
-    setMessage("");
+    setProfileMessage("");
     try {
+      const instagramFollowerCount = Number(instagramFollowers);
+      const tiktokFollowerCount = Number(tiktokFollowers);
+      const followersChanged = instagramFollowerCount !== creator.instagram_followers || tiktokFollowerCount !== creator.tiktok_followers;
       const body: Record<string, unknown> = durable ? {
         displayName,
         approvalStatus,
@@ -55,19 +59,19 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
         bio: bio || null,
         instagramHandle: instagramHandle || null,
         instagramUrl: instagramUrl || null,
-        instagramFollowers: Number(instagramFollowers),
+        instagramFollowers: instagramFollowerCount,
         tiktokHandle: tiktokHandle || null,
         tiktokUrl: tiktokUrl || null,
-        tiktokFollowers: Number(tiktokFollowers),
-        followersVerifiedAt: new Date().toISOString(),
+        tiktokFollowers: tiktokFollowerCount,
       } : {};
+      if (followersChanged) body.followersVerifiedAt = new Date().toISOString();
       if (email.trim() && approvalStatus !== "pending") Object.assign(body, { email: email.trim(), status: approvalStatus });
       if (!Object.keys(body).length) throw new Error("회원 연결 이메일과 승인 상태를 입력해 주세요.");
       await api(`/api/admin/creators/${encodeURIComponent(creator.creator_key)}`, { method: "PATCH", body: JSON.stringify(body) });
-      setMessage(durable ? "크리에이터 정보를 저장했습니다." : "회원 레코드를 만들고 이메일을 연결했습니다.");
+      setProfileMessage(durable ? "크리에이터 정보를 저장했습니다." : "회원 레코드를 만들고 이메일을 연결했습니다.");
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "크리에이터 정보를 저장하지 못했습니다.");
+      setProfileMessage(error instanceof Error ? error.message : "크리에이터 정보를 저장하지 못했습니다.");
     } finally {
       setBusy(false);
     }
@@ -77,16 +81,16 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
     const groupId = action === "assign" ? targetGroup : creator.managementGroupId;
     if (!groupId) return;
     setBusy(true);
-    setMessage("");
+    setCreatorGroupMessage("");
     try {
       await api(`/api/admin/creator-groups/${encodeURIComponent(groupId)}/members`, {
         method: "PATCH",
         body: JSON.stringify({ action, creatorAccountIds: [creator.id] }),
       });
-      setMessage(action === "assign" ? "관리 그룹을 지정했습니다." : "관리 그룹에서 제거했습니다.");
+      setCreatorGroupMessage(action === "assign" ? "관리 그룹을 지정했습니다." : "관리 그룹에서 제거했습니다.");
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "관리 그룹을 변경하지 못했습니다.");
+      setCreatorGroupMessage(error instanceof Error ? error.message : "관리 그룹을 변경하지 못했습니다.");
     } finally {
       setBusy(false);
     }
@@ -117,13 +121,14 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
           <div><h3>Instagram</h3><label><span>핸들</span><input value={instagramHandle} onChange={(event) => setInstagramHandle(event.target.value)} disabled={!durable || busy} /></label><label><span>URL</span><input value={instagramUrl} onChange={(event) => setInstagramUrl(event.target.value)} disabled={!durable || busy} /></label><label><span>팔로워</span><input type="number" min="0" value={instagramFollowers} onChange={(event) => setInstagramFollowers(event.target.value)} disabled={!durable || busy} /></label></div>
           <div><h3>TikTok</h3><label><span>핸들</span><input value={tiktokHandle} onChange={(event) => setTiktokHandle(event.target.value)} disabled={!durable || busy} /></label><label><span>URL</span><input value={tiktokUrl} onChange={(event) => setTiktokUrl(event.target.value)} disabled={!durable || busy} /></label><label><span>팔로워</span><input type="number" min="0" value={tiktokFollowers} onChange={(event) => setTiktokFollowers(event.target.value)} disabled={!durable || busy} /></label></div>
         </div>
-        <div className="admin-detail-actions"><button className="st-btn dark" type="button" disabled={busy} onClick={saveProfile}>정보 저장</button>{message ? <p role="status">{message}</p> : null}</div>
+        <div className="admin-detail-actions"><button className="st-btn dark" type="button" disabled={busy} onClick={saveProfile}>정보 저장</button>{profileMessage ? <p role="status">{profileMessage}</p> : null}</div>
       </section>
 
       <section className="admin-detail-section" aria-labelledby="creator-internal-heading">
         <div className="admin-section-heading"><div><p>INTERNAL</p><h2 id="creator-internal-heading">회원·관리 상태</h2></div></div>
         <dl className="admin-detail-facts"><div><dt>가입 경로</dt><dd>{creator.onboarding_source === "admin" ? "관리자 등록" : "직접 가입"}</dd></div><div><dt>계정 상태</dt><dd>{creator.user_id ? "회원 연결" : "미연결"}</dd></div><div><dt>귀속 상태</dt><dd>{creator.claim_state === "claimed" ? "귀속 완료" : "미귀속"}</dd></div><div><dt>현재 관리 그룹</dt><dd>{creator.managementGroupName || "미지정"}</dd></div></dl>
         <div className="admin-group-inline-action"><select aria-label="관리 그룹 선택" value={targetGroup} onChange={(event) => setTargetGroup(event.target.value)} disabled={!durable || busy}><option value="">관리 그룹 선택</option>{groups.filter((group) => group.status === "active").map((group) => <option value={group.id} key={group.id}>{group.name}</option>)}</select><button className="st-btn" type="button" disabled={!durable || busy || !targetGroup} onClick={() => changeGroup("assign")}>그룹 지정·이동</button><button className="st-btn light" type="button" disabled={!durable || busy || !creator.managementGroupId} onClick={() => changeGroup("remove")}>그룹에서 제거</button></div>
+        {creatorGroupMessage ? <p className="admin-operation-message" role="status">{creatorGroupMessage}</p> : null}
       </section>
 
       <section className="admin-detail-section" aria-labelledby="creator-campaign-heading">

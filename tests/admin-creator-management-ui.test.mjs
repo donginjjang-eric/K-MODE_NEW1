@@ -51,7 +51,11 @@ test("creator detail and group administration pages expose the approved manageme
   assert.match(detailManager, /캠페인 이력/);
   assert.match(detailManager, /정산 요약/);
   assert.match(groupsPage, /listCreatorManagementGroups/);
-  assert.match(groupsPage, /캠페인 · 거래 · 정산/);
+  assert.match(groupsPage, /group\.campaignCount/);
+  assert.match(groupsPage, /group\.dealCount/);
+  assert.match(groupsPage, /group\.settledCount/);
+  assert.match(groupsPage, /group\.pendingSettlementCount/);
+  assert.match(groupsPage, /group\.rewardTextCount/);
   assert.match(groupPage, /getCreatorManagementGroup/);
   assert.match(groupManager, /그룹 정보 수정/);
   assert.match(groupManager, /비활성화/);
@@ -61,8 +65,27 @@ test("creator detail and group administration pages expose the approved manageme
   assert.match(groupManager, /대행사 이메일 초대/);
   assert.match(groupManager, /대행사 연결 해제/);
   assert.match(groupManager, /감사 이력/);
+  assert.match(groupManager, /memberMessage/);
+  assert.match(groupManager, /agencyMessage/);
+  assert.match(detailManager, /creatorGroupMessage/);
   assert.match(nav, /크리에이터 관리/);
   assert.match(nav, /관리 그룹/);
+});
+
+test("creator operations preserve verification truth, reconcile partial removals, and prevent empty group creation", async () => {
+  const [table, detailManager] = await Promise.all([
+    source("../src/components/AdminCreatorManagementTable.tsx"),
+    source("../src/components/AdminCreatorDetailManager.tsx"),
+  ]);
+
+  assert.match(detailManager, /followersChanged/);
+  assert.match(detailManager, /if \(followersChanged\)/);
+  assert.doesNotMatch(detailManager, /followersVerifiedAt:\s*new Date\(\)\.toISOString\(\),/);
+  assert.match(table, /Promise\.allSettled/);
+  assert.match(table, /router\.refresh\(\)/);
+  assert.match(table, /일부/);
+  assert.match(table, /선택한 크리에이터로 새 관리 그룹을 만듭니다/);
+  assert.match(table, /disabled=\{busy \|\| !selected\.size\}/);
 });
 
 test("creator management styling keeps bulk tools inline and table scrolling contained on mobile", async () => {

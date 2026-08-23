@@ -149,10 +149,12 @@
 
 .admin-studio .admin-creator-bulk-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; border: 1px solid #d8d1c7; padding: 10px; background: #f5f1ea; }
 .admin-studio .admin-creator-bulk-tools strong { min-width: 64px; color: #171411; font-size: 12px; }
+.admin-studio .admin-bulk-help { color: #706a61; font-size: 11px; }
 .admin-studio .admin-creator-bulk-tools select { width: auto; min-width: 160px; }
 .admin-studio .admin-creator-bulk-tools .st-btn { min-height: 40px; padding: 8px 11px; }
 .admin-studio .admin-creator-bulk-tools p,
 .admin-studio .admin-detail-actions p { flex-basis: 100%; margin: 2px 0 0; color: #28645a; font-size: 12px; }
+.admin-studio .admin-operation-message { margin: 0; border-left: 3px solid #83b898; padding: 8px 10px; background: #f3f8f5; color: #28645a; font-size: 12px; }
 .admin-studio .admin-creator-result-line { display: flex; justify-content: space-between; gap: 12px; color: #706a61; font-size: 11px; }
 .admin-studio .admin-creator-result-line strong { color: #171411; }
 

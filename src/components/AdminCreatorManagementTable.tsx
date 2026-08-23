@@ -123,16 +123,20 @@ export default function AdminCreatorManagementTable({ creators, groups }: {
     setBusy(true);
     setMessage("");
     try {
-      await Promise.all([...grouped].map(([currentGroupId, creatorAccountIds]) => request(
+      const results = await Promise.allSettled([...grouped].map(([currentGroupId, creatorAccountIds]) => request(
         `/api/admin/creator-groups/${encodeURIComponent(currentGroupId)}/members`,
         { method: "PATCH", body: JSON.stringify({ action: "remove", creatorAccountIds }) },
       )));
-      setMessage("선택한 크리에이터를 그룹에서 제거했습니다.");
+      const succeeded = results.filter((result) => result.status === "fulfilled").length;
+      const failed = results.length - succeeded;
+      if (!failed) setMessage("선택한 크리에이터를 그룹에서 제거했습니다.");
+      else if (!succeeded) setMessage(`그룹 ${failed}곳의 제거 요청이 모두 실패했습니다. 실제 상태를 다시 불러왔습니다.`);
+      else setMessage(`일부 제거만 완료됐습니다. 성공 ${succeeded}개 그룹 · 실패 ${failed}개 그룹의 실제 상태를 다시 불러왔습니다.`);
       setSelected(new Set());
-      router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "그룹에서 제거하지 못했습니다.");
     } finally {
+      router.refresh();
       setBusy(false);
     }
   }
@@ -171,7 +175,8 @@ export default function AdminCreatorManagementTable({ creators, groups }: {
 
       <div className="admin-creator-bulk-tools" aria-label="선택 크리에이터 일괄 작업">
         <strong>{selected.size}명 선택</strong>
-        <button className="st-btn" type="button" disabled={busy} onClick={createGroup}>새 관리 그룹 만들기</button>
+        <span className="admin-bulk-help">선택한 크리에이터로 새 관리 그룹을 만듭니다.</span>
+        <button className="st-btn" type="button" disabled={busy || !selected.size} onClick={createGroup}>새 관리 그룹 만들기</button>
         <select aria-label="대상 관리 그룹" value={targetGroup} onChange={(event) => setTargetGroup(event.target.value)} disabled={busy}>
           <option value="">관리 그룹 선택</option>{groups.filter((group) => group.status === "active").map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
         </select>

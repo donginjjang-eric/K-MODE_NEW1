@@ -12,7 +12,7 @@ export default async function AdminCreatorGroupsPage() {
       {groups.length ? <section className="admin-group-grid" aria-label="크리에이터 관리 그룹 목록">{groups.map((group) => <Link className="admin-group-card" href={`/dashboard/admin/creator-groups/${group.id}`} key={group.id}>
         <header><span className={`admin-group-status is-${group.status}`}>{group.status === "active" ? "운영 중" : "비활성"}</span><span>상세 관리 →</span></header>
         <h2>{group.name}</h2><p>{group.agencyName || "대행사 미지정"}</p>
-        <dl><div><dt>소속 크리에이터</dt><dd>{group.creatorCount}명</dd></div><div><dt>총 팔로워</dt><dd>{numberFormat.format(group.followerTotal)}</dd></div><div className="is-wide"><dt>캠페인 · 거래 · 정산</dt><dd>소속 크리에이터별 실제 이력 조회</dd></div></dl>
+        <dl><div><dt>소속 크리에이터</dt><dd>{group.creatorCount}명</dd></div><div><dt>총 팔로워</dt><dd>{numberFormat.format(group.followerTotal)}</dd></div><div><dt>캠페인 · 거래</dt><dd>{group.campaignCount}개 · {group.dealCount}건</dd></div><div><dt>정산</dt><dd>완료 {group.settledCount}건 · 진행 {group.pendingSettlementCount}건</dd></div><div className="is-wide"><dt>리워드</dt><dd>금액 텍스트 확인 가능 {group.rewardTextCount}건 · 통화 혼합 합산 안 함</dd></div></dl>
       </Link>)}</section> : <div className="st-empty"><p>아직 관리 그룹이 없습니다. 크리에이터를 선택해 첫 그룹을 만들어 주세요.</p><Link className="st-btn primary" href="/dashboard/admin/creators">크리에이터 관리로 이동</Link></div>}
     </>
   );
