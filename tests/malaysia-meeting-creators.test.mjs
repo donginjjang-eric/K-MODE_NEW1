@@ -10,6 +10,7 @@ test("the August Malaysia meeting roster exposes 24 public creator cards without
 
   const creators = globalThis.KMODU_MALAYSIA_MEETING_CREATORS;
   assert.equal(creators.length, 24);
+  assert.equal(creators.reduce((total, creator) => total + creator.totalFollowers, 0), 5_031_738);
   assert.deepEqual(
     creators.map((creator) => creator.name),
     [

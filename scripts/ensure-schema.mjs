@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { syncMalaysiaMeetingCreators } from "./sync-malaysia-meeting-creators.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -41,6 +42,15 @@ try {
     );
     console.log(`[schema] backup admin ensured: ${email}`);
   }
+
+  const { rows: [adminUser] } = email
+    ? await pool.query(
+      "SELECT id FROM users WHERE lower(email) = $1 AND role = 'admin' LIMIT 1",
+      [email],
+    )
+    : { rows: [] };
+  await syncMalaysiaMeetingCreators(pool, adminUser?.id ?? null);
+  console.log("[schema] Malaysia meeting creators synchronized");
 
   // 테스트 계정 시드 (구글 로그인 없이 디자이너/크리에이터 동선을 확인하기 위한 비밀번호 계정).
   // TEST_ACCOUNT_PASSWORD가 설정된 경우에만 만들고, 매 부팅마다 비밀번호·승인 상태를 다시 맞춘다.
