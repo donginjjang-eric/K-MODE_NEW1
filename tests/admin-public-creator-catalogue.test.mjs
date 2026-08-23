@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { getCreatorAccountsForAdmin } from "../src/lib/db.ts";
 import { isOperationalCreatorKey } from "../src/lib/creator-management.ts";
+import { publicMediaUrl } from "../src/lib/public-media-url.ts";
 
 test("admin catalogue includes every public runtime creator with thumbnail and follower facts", async () => {
   const previousDatabaseUrl = process.env.DATABASE_URL;
@@ -31,4 +32,11 @@ test("admin management excludes preview identities from real creator operations"
   assert.equal(isOperationalCreatorKey("syamimi"), true);
   assert.equal(isOperationalCreatorKey("test-creator"), false);
   assert.equal(isOperationalCreatorKey("admin-operator-admin-id"), false);
+});
+
+test("relative creator image paths resolve from the site root", () => {
+  assert.equal(publicMediaUrl("assets/creator.webp"), "/assets/creator.webp");
+  assert.equal(publicMediaUrl("/assets/creator.webp"), "/assets/creator.webp");
+  assert.equal(publicMediaUrl("https://cdn.example/creator.webp"), "https://cdn.example/creator.webp");
+  assert.equal(publicMediaUrl(null), null);
 });

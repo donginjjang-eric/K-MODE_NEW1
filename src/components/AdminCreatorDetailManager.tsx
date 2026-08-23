@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminManagedCreatorDetail, CreatorManagementGroupSummary } from "@/lib/creator-management";
+import { publicMediaUrl } from "@/lib/public-media-url";
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
 const dateFormat = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short" });
@@ -100,7 +101,7 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
     <div className="admin-creator-detail">
       <header className="admin-detail-head">
         <div><Link href="/dashboard/admin/creators">← 크리에이터 관리</Link><p className="st-eyebrow">CREATOR PROFILE</p><h1 className="st-title">{creator.display_name}</h1><p className="st-sub">공개 정보와 내부 회원·그룹 상태를 한 화면에서 관리합니다.</p></div>
-        <div className="admin-creator-detail-image">{profileImageUrl ? <img src={profileImageUrl} alt={`${creator.display_name} 프로필`} /> : creator.display_name.slice(0, 1)}</div>
+        <div className="admin-creator-detail-image">{publicMediaUrl(profileImageUrl) ? <img src={publicMediaUrl(profileImageUrl) || ""} alt={`${creator.display_name} 프로필`} /> : creator.display_name.slice(0, 1)}</div>
       </header>
 
       <section className="admin-detail-section" aria-labelledby="creator-profile-heading">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAgencyUser } from "@/lib/auth";
 import { getAgencyGroupOverview } from "@/lib/creator-management";
+import { publicMediaUrl } from "@/lib/public-media-url";
 
 const count = new Intl.NumberFormat("ko-KR");
 const participationLabels: Record<string, string> = { matched: "매칭 확정", shipping: "제품 배송", creating: "콘텐츠 제작", review: "검수", published: "게시 완료", settlement: "정산 중", completed: "완료" };
@@ -25,7 +26,7 @@ export default async function AgencyGroupPage({ params }: { params: Promise<{ gr
         <div className="agency-section-head"><div><p>CREATORS</p><h2 id="agency-creators-heading">소속 크리에이터</h2></div><span>{group.creators.length}명</span></div>
         {group.creators.length ? <div className="agency-creator-grid">{group.creators.map((creator) => (
           <article key={creator.creatorKey}>
-            <span className="agency-creator-thumb">{creator.profileImageUrl ? <img src={creator.profileImageUrl} alt="" /> : creator.displayName.charAt(0)}</span>
+            <span className="agency-creator-thumb">{publicMediaUrl(creator.profileImageUrl) ? <img src={publicMediaUrl(creator.profileImageUrl) || ""} alt="" /> : creator.displayName.charAt(0)}</span>
             <div><h3>{creator.displayName}</h3><p>@{creator.creatorKey}</p><strong>팔로워 {count.format(creator.followerTotal)}</strong></div>
           </article>
         ))}</div> : <p className="agency-empty">소속 크리에이터가 없습니다.</p>}

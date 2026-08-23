@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminManagedCreator, CreatorManagementGroupSummary } from "@/lib/creator-management";
+import { publicMediaUrl } from "@/lib/public-media-url";
 
 export type AdminCreatorManagementRow = AdminManagedCreator & { durable: boolean };
 
@@ -192,7 +193,7 @@ export default function AdminCreatorManagementTable({ creators, groups }: {
           <thead><tr><th><input type="checkbox" aria-label="전체 크리에이터 선택" checked={allSelected} onChange={toggleAll} disabled={!selectableIds.length} /></th><th>크리에이터</th><th>SNS · 팔로워</th><th>가입 경로</th><th>계정 상태</th><th>귀속 상태</th><th>승인 상태</th><th>관리 그룹</th></tr></thead>
           <tbody>{filtered.map((creator) => <tr key={creator.creator_key}>
             <td><input type="checkbox" aria-label={`${creator.display_name} 선택`} checked={selected.has(creator.id)} onChange={() => toggle(creator.id)} disabled={!creator.durable} /></td>
-            <td><Link className="admin-creator-identity" href={`/dashboard/admin/creators/${encodeURIComponent(creator.creator_key)}`}><span className="admin-creator-thumb">{creator.profile_image_url ? <img src={creator.profile_image_url} alt="" /> : creator.display_name.slice(0, 1)}</span><span><strong>{creator.display_name}</strong><small>{creator.creator_key}</small></span></Link></td>
+            <td><Link className="admin-creator-identity" href={`/dashboard/admin/creators/${encodeURIComponent(creator.creator_key)}`}><span className="admin-creator-thumb">{publicMediaUrl(creator.profile_image_url) ? <img src={publicMediaUrl(creator.profile_image_url) || ""} alt="" /> : creator.display_name.slice(0, 1)}</span><span><strong>{creator.display_name}</strong><small>{creator.creator_key}</small></span></Link></td>
             <td><strong>{numberFormat.format(creator.followerTotal)}</strong><small>{creator.instagram_handle ? `IG @${creator.instagram_handle.replace(/^@/, "")}` : ""}{creator.instagram_handle && creator.tiktok_handle ? " · " : ""}{creator.tiktok_handle ? `TT @${creator.tiktok_handle.replace(/^@/, "")}` : ""}</small></td>
             <td>{onboardingLabel(creator.onboarding_source)}</td><td><span className={`admin-creator-state ${creator.durable ? "is-durable" : ""}`}>{accountLabel(creator)}</span></td><td>{claimLabel(creator.claim_state)}</td><td>{approvalLabel(creator.approval_status)}</td><td>{creator.managementGroupName || "미지정"}</td>
           </tr>)}</tbody>
