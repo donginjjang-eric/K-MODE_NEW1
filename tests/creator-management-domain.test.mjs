@@ -29,11 +29,21 @@ const {
   inviteAgencyGroupUser,
   listCreatorManagementGroups,
   listManagedCreators,
+  participationCountsAsConfirmedDeal,
   removeCreatorsFromManagementGroup,
   revokeAgencyGroupUser,
   updateCreatorManagementGroup,
   updateManagedCreatorPublicProfile,
 } = await import("../src/lib/creator-management.ts");
+
+test("counts only canonical matched lifecycle states as confirmed deals", () => {
+  for (const status of ["matched", "shipping", "creating", "review", "published", "settlement", "completed"]) {
+    assert.equal(participationCountsAsConfirmedDeal(status), true, `${status} must count as a confirmed deal`);
+  }
+  for (const status of ["applied", "invited", "cancelled", "declined", "withdrawn", "rejected"]) {
+    assert.equal(participationCountsAsConfirmedDeal(status), false, `${status} must not count as a confirmed deal`);
+  }
+});
 
 function creator(overrides = {}) {
   return {
@@ -186,6 +196,11 @@ test("reads management group summaries and detail from persisted relations", asy
   const summarySql = client.statements.find(({ text }) => text.includes("FROM creator_management_groups group_row"))?.text ?? "";
   assert.match(summarySql, /COUNT\(DISTINCT participation\.campaign_id\)/);
   assert.match(summarySql, /activity_stats/);
+  const confirmedStatuses = "'matched', 'shipping', 'creating', 'review', 'published', 'settlement', 'completed'";
+  const dealExpression = summarySql.match(/COUNT\(participation\.id\) FILTER \(WHERE participation\.status IN \([^)]*\)\) AS deal_count/)?.[0] ?? "";
+  assert.match(dealExpression, new RegExp(confirmedStatuses.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.doesNotMatch(dealExpression, /applied|invited|cancelled|declined|withdrawn/);
+  assert.match(summarySql, /COUNT\(participation\.id\) FILTER \(WHERE participation\.status IN \([^)]*\) AND NULLIF\(BTRIM\(participation\.expected_reward\), ''\) IS NOT NULL\) AS reward_text_count/);
 });
 
 test("creates a group and assigns deduplicated text creator IDs in one audited transaction", async () => {

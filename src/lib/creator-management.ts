@@ -1,8 +1,15 @@
 import { one, query, withDatabaseTransaction } from "./db";
 import type { DatabaseTransactionClient } from "./db";
-import type { AgencyInviteStatus, CreatorAccount, CreatorClaimState, CreatorManagementGroupStatus, CreatorOnboardingSource, SettlementStatus } from "./types";
+import { CAPACITY_OCCUPYING_PARTICIPATION_STATUSES } from "./creator-campaigns";
+import type { AgencyInviteStatus, CreatorAccount, CreatorClaimState, CreatorManagementGroupStatus, CreatorOnboardingSource, ParticipationStatus, SettlementStatus } from "./types";
 
 type CreatorApprovalStatus = "pending" | "approved" | "disabled";
+
+export function participationCountsAsConfirmedDeal(status: string) {
+  return CAPACITY_OCCUPYING_PARTICIPATION_STATUSES.includes(status as ParticipationStatus);
+}
+
+const confirmedDealStatusSql = CAPACITY_OCCUPYING_PARTICIPATION_STATUSES.map((status) => `'${status}'`).join(", ");
 
 export type CreatorCampaignAdminSummary = {
   campaignId: string;
@@ -361,10 +368,10 @@ const groupSummarySql = `SELECT group_row.id, group_row.name, group_row.agency_n
  LEFT JOIN (
    SELECT member.group_id,
           COUNT(DISTINCT participation.campaign_id) AS campaign_count,
-          COUNT(participation.id) AS deal_count,
-          COUNT(participation.id) FILTER (WHERE participation.settlement_status = 'paid') AS settled_count,
-          COUNT(participation.id) FILTER (WHERE participation.settlement_status IN ('pending', 'confirmed')) AS pending_settlement_count,
-          COUNT(participation.id) FILTER (WHERE NULLIF(BTRIM(participation.expected_reward), '') IS NOT NULL) AS reward_text_count
+          COUNT(participation.id) FILTER (WHERE participation.status IN (${confirmedDealStatusSql})) AS deal_count,
+          COUNT(participation.id) FILTER (WHERE participation.status IN (${confirmedDealStatusSql}) AND participation.settlement_status = 'paid') AS settled_count,
+          COUNT(participation.id) FILTER (WHERE participation.status IN (${confirmedDealStatusSql}) AND participation.settlement_status IN ('pending', 'confirmed')) AS pending_settlement_count,
+          COUNT(participation.id) FILTER (WHERE participation.status IN (${confirmedDealStatusSql}) AND NULLIF(BTRIM(participation.expected_reward), '') IS NOT NULL) AS reward_text_count
      FROM creator_management_group_members member
      JOIN campaign_participations participation ON participation.creator_account_id = member.creator_account_id
     GROUP BY member.group_id
