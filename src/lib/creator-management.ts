@@ -58,6 +58,47 @@ export type CreatorManagementGroupDetail = CreatorManagementGroupSummary & {
   auditEvents: Array<{ action: string; createdAt: string; metadata: Record<string, unknown> }>;
 };
 
+export type AgencyGroupSummary = {
+  id: string;
+  name: string;
+  agencyName: string | null;
+  creatorCount: number;
+  activeCampaignCount: number;
+  dealCount: number;
+  pendingSettlementCount: number;
+};
+
+export type AgencyCampaignFact = {
+  campaignId: string;
+  campaignTitle: string;
+  campaignStatus: string;
+  creatorKey: string;
+  creatorName: string;
+  participationStatus: string;
+  expectedReward: string;
+  settlementStatus: SettlementStatus;
+  performance: {
+    views: number;
+    likes: number;
+    comments: number;
+    orders: number;
+  } | null;
+  revenue: number | null;
+  performanceCurrency: string | null;
+};
+
+export type AgencyGroupOverview = AgencyGroupSummary & {
+  creators: Array<{
+    creatorKey: string;
+    displayName: string;
+    profileImageUrl: string | null;
+    followerTotal: number;
+  }>;
+  campaigns: AgencyCampaignFact[];
+  rewardEntries: Array<{ text: string; count: number }>;
+  revenueByCurrency: Array<{ currency: string; amount: number }>;
+};
+
 export type CreateCreatorManagementGroupInput = {
   name: string;
   agencyName?: string;
@@ -115,6 +156,33 @@ type ManagementGroupRow = {
   settled_count: string | number;
   pending_settlement_count: string | number;
   reward_text_count: string | number;
+};
+
+type AgencyGroupRow = {
+  id: string;
+  name: string;
+  agency_name: string | null;
+  creator_count: string | number;
+  active_campaign_count: string | number;
+  deal_count: string | number;
+  pending_settlement_count: string | number;
+};
+
+type AgencyCampaignRow = {
+  campaign_id: string;
+  campaign_title: string;
+  campaign_status: string;
+  creator_key: string;
+  creator_name: string;
+  participation_status: string;
+  expected_reward: string;
+  settlement_status: SettlementStatus;
+  views: string | number | null;
+  likes: string | number | null;
+  comments: string | number | null;
+  orders: string | number | null;
+  revenue: string | number | null;
+  performance_currency: string | null;
 };
 
 type GroupMembership = {
@@ -365,6 +433,169 @@ function toGroupSummary(row: ManagementGroupRow): CreatorManagementGroupSummary 
     settledCount: asNumber(row.settled_count),
     pendingSettlementCount: asNumber(row.pending_settlement_count),
     rewardTextCount: asNumber(row.reward_text_count),
+  };
+}
+
+function toAgencyGroupSummary(row: AgencyGroupRow): AgencyGroupSummary {
+  return {
+    id: row.id,
+    name: row.name,
+    agencyName: row.agency_name,
+    creatorCount: asNumber(row.creator_count),
+    activeCampaignCount: asNumber(row.active_campaign_count),
+    dealCount: asNumber(row.deal_count),
+    pendingSettlementCount: asNumber(row.pending_settlement_count),
+  };
+}
+
+const agencyGroupSummarySql = `/* agency_group_summary */
+SELECT group_row.id, group_row.name, group_row.agency_name,
+       COUNT(DISTINCT member.creator_account_id)::text AS creator_count,
+       COUNT(DISTINCT participation.campaign_id) FILTER (
+         WHERE campaign.status = 'active'
+           AND participation.status IN (${confirmedDealStatusSql})
+       )::text AS active_campaign_count,
+       COUNT(DISTINCT participation.id) FILTER (
+         WHERE participation.status IN (${confirmedDealStatusSql})
+       )::text AS deal_count,
+       COUNT(DISTINCT participation.id) FILTER (
+         WHERE participation.status IN (${confirmedDealStatusSql})
+           AND participation.settlement_status IN ('pending', 'confirmed')
+       )::text AS pending_settlement_count
+  FROM creator_management_group_users group_user
+  JOIN creator_management_groups group_row ON group_row.id = group_user.group_id
+  LEFT JOIN creator_management_group_members member ON member.group_id = group_row.id
+  LEFT JOIN campaign_participations participation ON participation.creator_account_id = member.creator_account_id
+  LEFT JOIN campaigns campaign ON campaign.id = participation.campaign_id
+ WHERE group_user.user_id = $1
+   AND group_user.invite_status = 'active'
+   AND group_row.status = 'active'
+   /* agency_group_filter */
+ GROUP BY group_row.id, group_row.name, group_row.agency_name
+ ORDER BY group_row.name ASC, group_row.id ASC`;
+
+async function readAgencyGroupSummaries(userId: string, groupId?: string): Promise<AgencyGroupSummary[]> {
+  const params = groupId ? [userId, groupId] : [userId];
+  const sql = agencyGroupSummarySql.replace(
+    "/* agency_group_filter */",
+    groupId ? "AND group_row.id = $2" : "",
+  );
+  const rows = await query<AgencyGroupRow>(sql, params);
+  return rows.map(toAgencyGroupSummary);
+}
+
+export async function listAgencyManagementGroups(userId: string): Promise<AgencyGroupSummary[]> {
+  const normalizedUserId = normalizeId(userId, "USER_ID_REQUIRED", "사용자 ID를 입력해 주세요.");
+  return readAgencyGroupSummaries(normalizedUserId);
+}
+
+function toAgencyCampaignFact(row: AgencyCampaignRow): AgencyCampaignFact {
+  const hasPerformance = row.revenue !== null || row.views !== null || row.likes !== null || row.comments !== null || row.orders !== null;
+  return {
+    campaignId: row.campaign_id,
+    campaignTitle: row.campaign_title,
+    campaignStatus: row.campaign_status,
+    creatorKey: row.creator_key,
+    creatorName: row.creator_name,
+    participationStatus: row.participation_status,
+    expectedReward: row.expected_reward,
+    settlementStatus: row.settlement_status,
+    performance: hasPerformance ? {
+      views: asNumber(row.views),
+      likes: asNumber(row.likes),
+      comments: asNumber(row.comments),
+      orders: asNumber(row.orders),
+    } : null,
+    revenue: row.revenue === null ? null : asNumber(row.revenue),
+    performanceCurrency: row.performance_currency,
+  };
+}
+
+function summarizeRewardEntries(campaigns: AgencyCampaignFact[]) {
+  const counts = new Map<string, number>();
+  for (const campaign of campaigns) {
+    const text = campaign.expectedReward.trim();
+    if (text) counts.set(text, (counts.get(text) ?? 0) + 1);
+  }
+  return [...counts].map(([text, count]) => ({ text, count }));
+}
+
+function summarizeRevenueByCurrency(campaigns: AgencyCampaignFact[]) {
+  const totals = new Map<string, number>();
+  for (const campaign of campaigns) {
+    if (campaign.revenue === null || !campaign.performanceCurrency) continue;
+    const currency = campaign.performanceCurrency.trim().toUpperCase();
+    if (!currency) continue;
+    totals.set(currency, (totals.get(currency) ?? 0) + campaign.revenue);
+  }
+  return [...totals].map(([currency, amount]) => ({ currency, amount }));
+}
+
+export async function getAgencyGroupOverview(userId: string, groupId: string): Promise<AgencyGroupOverview | null> {
+  const normalizedUserId = normalizeId(userId, "USER_ID_REQUIRED", "사용자 ID를 입력해 주세요.");
+  const normalizedGroupId = normalizeId(groupId, "GROUP_ID_REQUIRED", "관리 그룹 ID를 입력해 주세요.");
+  const group = (await readAgencyGroupSummaries(normalizedUserId, normalizedGroupId))[0];
+  if (!group) return null;
+
+  const [creatorRows, campaignRows] = await Promise.all([
+    query<{
+      creator_key: string;
+      display_name: string;
+      profile_image_url: string | null;
+      instagram_followers: string | number;
+      tiktok_followers: string | number;
+    }>(
+      `/* agency_group_creators */
+       SELECT DISTINCT account.creator_key, account.display_name, account.profile_image_url,
+              account.instagram_followers, account.tiktok_followers
+         FROM creator_management_group_users group_user
+         JOIN creator_management_groups group_row ON group_row.id = group_user.group_id
+         JOIN creator_management_group_members member ON member.group_id = group_row.id
+         JOIN creator_accounts account ON account.id = member.creator_account_id
+        WHERE group_user.user_id = $1
+          AND group_row.id = $2
+          AND group_user.invite_status = 'active'
+          AND group_row.status = 'active'
+        ORDER BY account.display_name ASC, account.creator_key ASC`,
+      [normalizedUserId, normalizedGroupId],
+    ),
+    query<AgencyCampaignRow>(
+      `/* agency_group_campaign_facts */
+       SELECT campaign.id AS campaign_id, campaign.title AS campaign_title, campaign.status AS campaign_status,
+              account.creator_key, account.display_name AS creator_name,
+              participation.status AS participation_status, participation.expected_reward,
+              participation.settlement_status, performance.views, performance.likes,
+              performance.comments, performance.orders, performance.revenue,
+              performance.currency AS performance_currency
+         FROM creator_management_group_users group_user
+         JOIN creator_management_groups group_row ON group_row.id = group_user.group_id
+         JOIN creator_management_group_members member ON member.group_id = group_row.id
+         JOIN creator_accounts account ON account.id = member.creator_account_id
+         JOIN campaign_participations participation ON participation.creator_account_id = account.id
+         JOIN campaigns campaign ON campaign.id = participation.campaign_id
+         LEFT JOIN campaign_performance performance ON performance.participation_id = participation.id
+        WHERE group_user.user_id = $1
+          AND group_row.id = $2
+          AND group_user.invite_status = 'active'
+          AND group_row.status = 'active'
+          AND participation.status IN (${confirmedDealStatusSql})
+        ORDER BY participation.updated_at DESC, participation.id DESC`,
+      [normalizedUserId, normalizedGroupId],
+    ),
+  ]);
+
+  const campaigns = campaignRows.map(toAgencyCampaignFact);
+  return {
+    ...group,
+    creators: creatorRows.map((creator) => ({
+      creatorKey: creator.creator_key,
+      displayName: creator.display_name,
+      profileImageUrl: creator.profile_image_url,
+      followerTotal: asNumber(creator.instagram_followers) + asNumber(creator.tiktok_followers),
+    })),
+    campaigns,
+    rewardEntries: summarizeRewardEntries(campaigns),
+    revenueByCurrency: summarizeRevenueByCurrency(campaigns),
   };
 }
 
