@@ -32,6 +32,7 @@ const {
   removeCreatorsFromManagementGroup,
   revokeAgencyGroupUser,
   updateCreatorManagementGroup,
+  updateManagedCreatorPublicProfile,
 } = await import("../src/lib/creator-management.ts");
 
 function creator(overrides = {}) {
@@ -301,4 +302,54 @@ test("invites and revokes agency users under locks with actor audit metadata", a
   assert.ok(indexOf(revokeClient, "lower(invited_email)") < indexOf(revokeClient, "UPDATE creator_management_group_users"));
   assert.deepEqual(audits(revokeClient).at(-1)?.params.slice(0, 2), ["admin-text-id", "agency_user_revoked"]);
   assert.equal(revokeClient.statements.at(-1).text, "COMMIT");
+});
+
+test("updates only allowed imported creator public fields under actor and creator locks with an audit trail", async () => {
+  const client = new RecordingClient();
+  const originalQuery = client.query.bind(client);
+  client.query = async (text, params = []) => {
+    if (text.includes("FROM creator_accounts") && text.includes("creator_key = $1 OR id = $1") && text.includes("FOR UPDATE")) {
+      client.statements.push({ text, params });
+      return { rows: [creator({ display_name: "Before", approval_status: "pending", instagram_followers: 10, tiktok_followers: 20 })], rowCount: 1 };
+    }
+    if (text.includes("UPDATE creator_accounts") && text.includes("followers_verified_at")) {
+      client.statements.push({ text, params });
+      return { rows: [], rowCount: 1 };
+    }
+    return originalQuery(text, params);
+  };
+  activeClient = client;
+
+  await updateManagedCreatorPublicProfile("admin-text-id", "db-only-import", {
+    displayName: " After ",
+    approvalStatus: "approved",
+    instagramFollowers: 1200,
+    followersVerifiedAt: "2026-08-24T01:02:03.000Z",
+  });
+
+  const update = client.statements.find(({ text }) => text.includes("UPDATE creator_accounts"));
+  assert.match(update.text, /display_name/);
+  assert.match(update.text, /instagram_followers/);
+  assert.doesNotMatch(update.text, /user_id|onboarding_source|claim_state|google_email|creator_key|created_by_admin_id/);
+  assert.ok(indexOf(client, "FROM users") < indexOf(client, "creator_key = $1 OR id = $1"));
+  assert.ok(indexOf(client, "creator_key = $1 OR id = $1") < indexOf(client, "UPDATE creator_accounts"));
+  const audit = audits(client).at(-1);
+  assert.deepEqual(audit.params.slice(0, 2), ["admin-text-id", "creator_profile_updated"]);
+  assert.match(audit.params.at(-1), /"before"/);
+  assert.match(audit.params.at(-1), /"after"/);
+});
+
+test("rejects invalid profile patches and negative follower counts before opening a transaction", async () => {
+  const client = new RecordingClient();
+  activeClient = client;
+
+  await assert.rejects(
+    updateManagedCreatorPublicProfile("admin-text-id", "db-only-import", { instagramFollowers: -1 }),
+    (error) => error.code === "FOLLOWER_COUNT_INVALID",
+  );
+  await assert.rejects(
+    updateManagedCreatorPublicProfile("admin-text-id", "db-only-import", {}),
+    (error) => error.code === "CREATOR_PROFILE_UPDATE_REQUIRED",
+  );
+  assert.deepEqual(client.statements, []);
 });

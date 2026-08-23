@@ -60,6 +60,21 @@ export type UpdateCreatorManagementGroupInput = {
   status?: CreatorManagementGroupStatus;
 };
 
+export type UpdateManagedCreatorPublicProfileInput = {
+  displayName?: string;
+  approvalStatus?: CreatorApprovalStatus;
+  profileImageUrl?: string | null;
+  specialty?: string | null;
+  bio?: string | null;
+  instagramHandle?: string | null;
+  instagramUrl?: string | null;
+  instagramFollowers?: number;
+  tiktokHandle?: string | null;
+  tiktokUrl?: string | null;
+  tiktokFollowers?: number;
+  followersVerifiedAt?: string | null;
+};
+
 export type ManagedCreatorFilters = {
   search?: string;
   market?: string;
@@ -90,6 +105,12 @@ type GroupMembership = {
   group_id: string;
 };
 
+type LockedCreatorPublicProfile = Pick<CreatorAccount,
+  "id" | "display_name" | "approval_status" | "profile_image_url" | "specialty" | "bio"
+  | "instagram_handle" | "instagram_url" | "instagram_followers" | "tiktok_handle" | "tiktok_url"
+  | "tiktok_followers" | "followers_verified_at"
+>;
+
 export class CreatorManagementDomainError extends Error {
   constructor(public readonly code: string, message: string) {
     super(message);
@@ -112,6 +133,61 @@ function normalizeOptionalText(value: unknown) {
   if (value === undefined || value === null) return value;
   if (typeof value !== "string") domainError("INVALID_INPUT", "입력값 형식이 올바르지 않습니다.");
   return value.trim() || null;
+}
+
+function normalizeOptionalPublicText(value: unknown) {
+  if (value === null) return null;
+  if (typeof value !== "string") domainError("INVALID_INPUT", "입력값 형식이 올바르지 않습니다.");
+  return value.trim() || null;
+}
+
+function normalizeFollowerCount(value: unknown) {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
+    domainError("FOLLOWER_COUNT_INVALID", "팔로워 수는 0 이상의 정수여야 합니다.");
+  }
+  return value;
+}
+
+function normalizeFollowersVerifiedAt(value: unknown) {
+  if (value === null) return null;
+  if (typeof value !== "string" || !value.trim()) {
+    domainError("FOLLOWERS_VERIFIED_AT_INVALID", "팔로워 확인 시각 형식이 올바르지 않습니다.");
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    domainError("FOLLOWERS_VERIFIED_AT_INVALID", "팔로워 확인 시각 형식이 올바르지 않습니다.");
+  }
+  return parsed.toISOString();
+}
+
+function hasOwn(value: object, key: string) {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function normalizeManagedCreatorPublicProfilePatch(input: UpdateManagedCreatorPublicProfileInput) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    domainError("INVALID_INPUT", "입력값 형식이 올바르지 않습니다.");
+  }
+  const patch: Partial<UpdateManagedCreatorPublicProfileInput> = {};
+  if (hasOwn(input, "displayName")) patch.displayName = normalizeText(input.displayName, "DISPLAY_NAME_REQUIRED", "크리에이터 이름을 입력해 주세요.");
+  if (hasOwn(input, "approvalStatus")) {
+    if (input.approvalStatus !== "pending" && input.approvalStatus !== "approved" && input.approvalStatus !== "disabled") {
+      domainError("CREATOR_APPROVAL_STATUS_INVALID", "크리에이터 승인 상태가 올바르지 않습니다.");
+    }
+    patch.approvalStatus = input.approvalStatus;
+  }
+  if (hasOwn(input, "profileImageUrl")) patch.profileImageUrl = normalizeOptionalPublicText(input.profileImageUrl);
+  if (hasOwn(input, "specialty")) patch.specialty = normalizeOptionalPublicText(input.specialty);
+  if (hasOwn(input, "bio")) patch.bio = normalizeOptionalPublicText(input.bio);
+  if (hasOwn(input, "instagramHandle")) patch.instagramHandle = normalizeOptionalPublicText(input.instagramHandle);
+  if (hasOwn(input, "instagramUrl")) patch.instagramUrl = normalizeOptionalPublicText(input.instagramUrl);
+  if (hasOwn(input, "instagramFollowers")) patch.instagramFollowers = normalizeFollowerCount(input.instagramFollowers);
+  if (hasOwn(input, "tiktokHandle")) patch.tiktokHandle = normalizeOptionalPublicText(input.tiktokHandle);
+  if (hasOwn(input, "tiktokUrl")) patch.tiktokUrl = normalizeOptionalPublicText(input.tiktokUrl);
+  if (hasOwn(input, "tiktokFollowers")) patch.tiktokFollowers = normalizeFollowerCount(input.tiktokFollowers);
+  if (hasOwn(input, "followersVerifiedAt")) patch.followersVerifiedAt = normalizeFollowersVerifiedAt(input.followersVerifiedAt);
+  if (!Object.keys(patch).length) domainError("CREATOR_PROFILE_UPDATE_REQUIRED", "변경할 크리에이터 정보를 입력해 주세요.");
+  return patch;
 }
 
 function normalizeId(value: unknown, code: string, message: string) {
@@ -335,6 +411,20 @@ async function lockCreators(client: DatabaseTransactionClient, creatorAccountIds
   }
 }
 
+async function lockManagedCreatorPublicProfile(client: DatabaseTransactionClient, creatorKey: string) {
+  const result = await client.query<LockedCreatorPublicProfile>(
+    `SELECT id, display_name, approval_status, profile_image_url, specialty, bio,
+            instagram_handle, instagram_url, instagram_followers,
+            tiktok_handle, tiktok_url, tiktok_followers, followers_verified_at
+       FROM creator_accounts
+      WHERE creator_key = $1 OR id = $1
+      FOR UPDATE`,
+    [creatorKey],
+  );
+  if (!result.rows[0]) domainError("CREATOR_NOT_FOUND", "저장된 크리에이터 계정을 찾을 수 없습니다.");
+  return result.rows[0];
+}
+
 async function writeAudit(client: DatabaseTransactionClient, actorUserId: string, action: string, groupId: string | null, creatorAccountId: string | null, metadata: Record<string, unknown>) {
   await client.query(
     `INSERT INTO creator_management_audit_logs
@@ -342,6 +432,51 @@ async function writeAudit(client: DatabaseTransactionClient, actorUserId: string
      VALUES ($1, $2, $3, $4, $5::jsonb)`,
     [actorUserId, action, groupId, creatorAccountId, JSON.stringify(metadata)],
   );
+}
+
+export async function updateManagedCreatorPublicProfile(actorUserId: string, creatorKey: string, input: UpdateManagedCreatorPublicProfileInput): Promise<void> {
+  const actorId = normalizeId(actorUserId, "ACTOR_ID_REQUIRED", "작업자 ID를 입력해 주세요.");
+  const normalizedCreatorKey = normalizeId(creatorKey, "CREATOR_KEY_REQUIRED", "크리에이터 키를 입력해 주세요.");
+  const patch = normalizeManagedCreatorPublicProfilePatch(input);
+
+  await withDatabaseTransaction(async (client) => {
+    await lockActor(client, actorId);
+    const before = await lockManagedCreatorPublicProfile(client, normalizedCreatorKey);
+    const after = {
+      displayName: patch.displayName ?? before.display_name,
+      approvalStatus: patch.approvalStatus ?? before.approval_status,
+      profileImageUrl: patch.profileImageUrl === undefined ? before.profile_image_url : patch.profileImageUrl,
+      specialty: patch.specialty === undefined ? before.specialty : patch.specialty,
+      bio: patch.bio === undefined ? before.bio : patch.bio,
+      instagramHandle: patch.instagramHandle === undefined ? before.instagram_handle : patch.instagramHandle,
+      instagramUrl: patch.instagramUrl === undefined ? before.instagram_url : patch.instagramUrl,
+      instagramFollowers: patch.instagramFollowers ?? before.instagram_followers,
+      tiktokHandle: patch.tiktokHandle === undefined ? before.tiktok_handle : patch.tiktokHandle,
+      tiktokUrl: patch.tiktokUrl === undefined ? before.tiktok_url : patch.tiktokUrl,
+      tiktokFollowers: patch.tiktokFollowers ?? before.tiktok_followers,
+      followersVerifiedAt: patch.followersVerifiedAt === undefined ? before.followers_verified_at : patch.followersVerifiedAt,
+    };
+    await client.query(
+      `UPDATE creator_accounts
+          SET display_name = $2, approval_status = $3, profile_image_url = $4, specialty = $5, bio = $6,
+              instagram_handle = $7, instagram_url = $8, instagram_followers = $9,
+              tiktok_handle = $10, tiktok_url = $11, tiktok_followers = $12, followers_verified_at = $13,
+              updated_at = now()
+        WHERE id = $1`,
+      [before.id, after.displayName, after.approvalStatus, after.profileImageUrl, after.specialty, after.bio,
+        after.instagramHandle, after.instagramUrl, after.instagramFollowers, after.tiktokHandle, after.tiktokUrl,
+        after.tiktokFollowers, after.followersVerifiedAt],
+    );
+    await writeAudit(client, actorId, "creator_profile_updated", null, before.id, {
+      before: {
+        displayName: before.display_name, approvalStatus: before.approval_status, profileImageUrl: before.profile_image_url,
+        specialty: before.specialty, bio: before.bio, instagramHandle: before.instagram_handle, instagramUrl: before.instagram_url,
+        instagramFollowers: before.instagram_followers, tiktokHandle: before.tiktok_handle, tiktokUrl: before.tiktok_url,
+        tiktokFollowers: before.tiktok_followers, followersVerifiedAt: before.followers_verified_at,
+      },
+      after,
+    });
+  });
 }
 
 async function replaceMemberships(client: DatabaseTransactionClient, actorUserId: string, groupId: string, creatorAccountIds: string[]) {
