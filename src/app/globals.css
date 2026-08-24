@@ -205,10 +205,11 @@ body:has(.login-page) .kakao-quick-banner { display: none !important; }
   margin: 0;
   color: #14110b;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(36px, 4vw, 56px);
+  font-size: clamp(34px, 3.1vw, 48px);
   font-weight: 500;
   letter-spacing: -.045em;
   line-height: 1;
+  word-break: keep-all;
 }
 
 .login-auth-intro p:not(.login-auth-brand) {
@@ -751,6 +752,15 @@ p {
 .login-steps li div { display: grid; gap: 2px; min-width: 0; }
 .login-steps li b { font-size: 14px; font-weight: 900; color: #14110b; }
 .login-steps li small { font-size: 12.5px; color: #6f6b62; font-weight: 600; line-height: 1.45; }
+.login-role-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.login-role-options button { min-height: 132px; padding: 20px; border: 1px solid #d8d0c2; border-radius: 16px; background: #fff; text-align: left; cursor: pointer; display: grid; align-content: center; gap: 8px; transition: .2s ease; }
+.login-role-options button:hover { border-color: #14110b; transform: translateY(-2px); box-shadow: 0 12px 25px rgba(43,35,22,.09); }
+.login-role-options strong { font-size: 17px; color: #14110b; }
+.login-role-options span { font-size: 12.5px; line-height: 1.5; color: #6f6b62; }
+.creator-application-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.creator-application-grid .is-wide { grid-column: 1 / -1; }
+.creator-application-grid textarea { min-height: 78px; resize: vertical; padding: 12px; border: 1px solid #d8d0c2; border-radius: 10px; font: inherit; }
+.login-back-button { border: 0; padding: 0; margin: 0 0 10px; background: none; color: #6f6b62; cursor: pointer; font-weight: 700; }
 
 .login-form-card .login-status-cta {
   display: inline-flex;
@@ -1129,6 +1139,11 @@ p {
     width: 100%;
     padding: 22px;
   }
+
+  .login-role-options,
+  .creator-application-grid { grid-template-columns: 1fr; }
+
+  .creator-application-grid .is-wide { grid-column: auto; }
 
   .hero-media,
   .look-frame {

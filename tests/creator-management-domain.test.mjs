@@ -111,6 +111,7 @@ class RecordingClient {
     if (text.startsWith("SELECT c.*, membership.group_id")) return { rows: [creator()] };
 
     if (text.includes("FROM users") && text.includes("FOR UPDATE")) return { rows: [{ id: params[0] }], rowCount: 1 };
+    if (text.includes("UPDATE users") && text.includes("role = 'creator'")) return { rows: [], rowCount: 1 };
     if (text.includes("INSERT INTO creator_management_groups")) return { rows: [{ id: "group-new" }], rowCount: 1 };
     if (text.includes("FROM creator_management_groups") && text.includes("FOR UPDATE")) {
       return { rows: [{ id: params[0], name: "Blue Group", agency_name: null, notes: null, status: this.groupStatus }], rowCount: 1 };
@@ -328,7 +329,7 @@ test("updates only allowed imported creator public fields under actor and creato
   client.query = async (text, params = []) => {
     if (text.includes("FROM creator_accounts") && text.includes("creator_key = $1 OR id = $1") && text.includes("FOR UPDATE")) {
       client.statements.push({ text, params });
-      return { rows: [creator({ display_name: "Before", approval_status: "pending", instagram_followers: 10, tiktok_followers: 20 })], rowCount: 1 };
+      return { rows: [creator({ user_id: "creator-user", display_name: "Before", approval_status: "pending", instagram_followers: 10, tiktok_followers: 20 })], rowCount: 1 };
     }
     if (text.includes("UPDATE creator_accounts") && text.includes("followers_verified_at")) {
       client.statements.push({ text, params });
@@ -349,6 +350,8 @@ test("updates only allowed imported creator public fields under actor and creato
   assert.match(update.text, /display_name/);
   assert.match(update.text, /instagram_followers/);
   assert.doesNotMatch(update.text, /user_id|onboarding_source|claim_state|google_email|creator_key|created_by_admin_id/);
+  const roleUpdate = client.statements.find(({ text }) => text.includes("UPDATE users") && text.includes("role = 'creator'"));
+  assert.deepEqual(roleUpdate?.params, ["creator-user"]);
   assert.ok(indexOf(client, "FROM users") < indexOf(client, "creator_key = $1 OR id = $1"));
   assert.ok(indexOf(client, "creator_key = $1 OR id = $1") < indexOf(client, "UPDATE creator_accounts"));
   const audit = audits(client).at(-1);

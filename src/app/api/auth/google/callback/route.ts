@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createSessionToken, sessionCookieName, sessionMaxAgeSeconds } from "@/lib/auth";
 import { findOrCreateGoogleUser, getCreatorAccountByEmail, linkCreatorAccountToUser } from "@/lib/db";
 import { activateAgencyInvitationsForLogin } from "@/lib/creator-management";
+import { creatorOnboardingDestination } from "@/lib/creator-onboarding";
 import {
   exchangeGoogleCode,
   fetchGoogleProfile,
@@ -49,12 +50,13 @@ export async function GET(request: Request) {
     let sessionUser = user;
     let approvedCreator = false;
     let activeAgency = false;
+    let creator: Awaited<ReturnType<typeof getCreatorAccountByEmail>> = null;
 
     // 계정 우선순위: 기존 관리자 → 승인 크리에이터 귀속 → 활성 대행사 초대 → 디자이너 기본 흐름.
     if (user.role === "admin") {
       sessionUser = user;
     } else {
-      const creator = await getCreatorAccountByEmail(email);
+      creator = await getCreatorAccountByEmail(email);
       if (creator?.approval_status === "approved") {
         const linkedCreator = await linkCreatorAccountToUser(creator.id, user.id, email);
         if (linkedCreator) {
@@ -105,8 +107,9 @@ export async function GET(request: Request) {
       // 신청서는 있으나 아직 승인 전
       return Response.redirect(`${origin}/login?notice=approval_pending`, 302);
     }
-    // 신청 내역이 없는 구글 계정: 신청 페이지로 가던 길이면 그대로, 아니면 신청 안내
-    return Response.redirect(dest ? withWelcome(dest) : `${origin}/login?notice=apply_required`, 302);
+    if (creator) return Response.redirect(`${origin}${creatorOnboardingDestination(creator)}`, 302);
+    // 신청 내역이 없는 신규 계정은 크리에이터/디자이너 유형을 먼저 선택한다.
+    return Response.redirect(dest ? withWelcome(dest) : `${origin}${creatorOnboardingDestination(null)}`, 302);
   } catch (error) {
     console.error("[google-login] callback failed:", error);
     return Response.redirect(`${origin}/login?error=google_failed`, 302);

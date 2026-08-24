@@ -7,6 +7,9 @@ const PARAM_MESSAGES: Record<string, string> = {
   approval_required: "승인된 디자이너 계정만 사용할 수 있어요. 승인 완료 후 다시 로그인해주세요.",
   approval_pending: "디자이너 신청이 접수되어 있어요. 관리자 승인이 끝나면 같은 구글 계정으로 바로 이용할 수 있어요.",
   apply_required: "이 구글 계정으로 접수된 디자이너 신청이 없어요. 디자이너 등록 신청을 먼저 완료해주세요.",
+  choose_role: "로그인이 완료됐어요. 시작할 활동 유형을 선택해 주세요.",
+  creator_approval_pending: "크리에이터 신청이 접수되어 있어요. 관리자 승인 후 크리에이터 센터를 이용할 수 있어요.",
+  creator_disabled: "현재 크리에이터 계정이 비활성 상태예요. K-MODU 운영팀에 문의해 주세요.",
   login_required: "디자이너 등록 신청은 구글 로그인 후 진행돼요. 로그인하면 신청 페이지로 바로 이동해요.",
   designer_required: "디자이너 계정으로 로그인해야 이용할 수 있는 페이지예요.",
   admin_login: "관리자 콘솔은 로그인 후 이용할 수 있어요. 관리자 권한이 있는 구글 계정으로 로그인해주세요.",
@@ -19,6 +22,7 @@ const PARAM_MESSAGES: Record<string, string> = {
 type Me = {
   user: { id: string; email: string; role: string } | null;
   designer: { id: string; brandName: string; approvalStatus: string } | null;
+  creator: { id: string; displayName: string; approvalStatus: string } | null;
 };
 
 declare global {
@@ -45,9 +49,13 @@ const loadLoginAuthState = () => {
   return request;
 };
 
-export default function LoginForm({ googleEnabled = false }: { googleEnabled?: boolean }) {
+export default function LoginForm({ googleEnabled = false, previewRoleSelection = false }: { googleEnabled?: boolean; previewRoleSelection?: boolean }) {
   const [message, setMessage] = useState("");
-  const [me, setMe] = useState<Me>({ user: null, designer: null });
+  const [me, setMe] = useState<Me>(previewRoleSelection
+    ? { user: { id: "preview", email: "new.creator@example.com", role: "designer" }, designer: null, creator: null }
+    : { user: null, designer: null, creator: null });
+  const [onboardingType, setOnboardingType] = useState<"" | "creator" | "designer">("");
+  const [creatorForm, setCreatorForm] = useState({ displayName: "", market: "", category: "", instagramUrl: "", tiktokUrl: "", bio: "" });
   // 하이드레이션 직후 CTA를 열되, URL의 next 경로를 읽기 전 클릭되는 것은 막는다.
   const [loginReady, setLoginReady] = useState(false);
   // 로그인 후 복귀할 사이트 내 경로 (예: /apply에서 유도된 경우)
@@ -99,12 +107,13 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
     if (next) setNextPath(next);
     setLoginReady(true);
 
+    if (previewRoleSelection) return;
     loadLoginAuthState()
       .then((data) => {
-        if (data && data.user) setMe({ user: data.user, designer: data.designer || null });
+        if (data && data.user) setMe({ user: data.user, designer: data.designer || null, creator: data.creator || null });
       })
       .catch(() => {});
-  }, []);
+  }, [previewRoleSelection]);
 
   const startGoogleLogin = (event: MouseEvent<HTMLAnchorElement>) => {
     if (googleLoginStarted.current) {
@@ -152,6 +161,28 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
     window.location.href = "/login";
   };
 
+  const submitCreatorApplication = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/creator/applications", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(creatorForm),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "신청을 접수하지 못했습니다.");
+      setMe((current) => ({ ...current, creator: { id: body.creator.id, displayName: creatorForm.displayName.trim(), approvalStatus: "pending" } }));
+      setMessage("크리에이터 신청이 접수됐어요. 관리자 승인 후 센터가 열립니다.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "신청을 접수하지 못했습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (inAppBrowser) {
     return (
       <div className="generate-box login-form-card">
@@ -180,9 +211,11 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
   // 이미 로그인된 상태: 로그인 폼 대신 상태 카드
   if (me.user) {
     const isAdmin = me.user.role === "admin";
+    const isAgency = me.user.role === "agency";
+    const isCreator = me.user.role === "creator" && me.creator?.approvalStatus === "approved";
+    const isCreatorPending = me.creator?.approvalStatus === "pending";
     const isApproved = me.designer?.approvalStatus === "approved";
     const isPending = !isApproved && Boolean(me.designer);
-    const notApplied = !isAdmin && !isApproved && !me.designer;
     return (
       <div className="generate-box login-form-card">
         <div className="login-status-head">
@@ -211,6 +244,12 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
               <a className="login-email-toggle" href="/apply">내 브랜드 등록하고 스튜디오 열기</a>
             )}
           </>
+        ) : isAgency ? (
+          <><p className="login-google-hint">관리 대행사 계정으로 로그인되어 있어요.</p><a className="generate-button login-status-cta" href="/dashboard/agency">대행사 조회 화면 열기</a></>
+        ) : isCreator ? (
+          <><p className="login-google-hint">{me.creator?.displayName || "크리에이터"} 계정으로 로그인되어 있어요.</p><a className="generate-button login-status-cta" href="/dashboard/creator">크리에이터 센터 열기</a></>
+        ) : isCreatorPending ? (
+          <div className="login-onboard"><p className="login-onboard-title">크리에이터 신청 검토 중</p><p className="login-google-hint"><b>{me.creator?.displayName}</b>님의 SNS와 프로필을 운영팀이 확인하고 있어요. 승인 후 같은 Google 계정으로 로그인하면 크리에이터 센터가 열립니다.</p><ol className="login-steps"><li className="is-done"><span>✓</span><div><b>크리에이터 신청</b><small>접수 완료</small></div></li><li className="is-active"><span>2</span><div><b>관리자 승인</b><small>프로필·SNS 확인 중</small></div></li><li><span>3</span><div><b>크리에이터 센터 오픈</b><small>캠페인·거래·정산 관리</small></div></li></ol></div>
         ) : isApproved ? (
           <>
             <p className="login-google-hint">{me.designer?.brandName || "디자이너"} 계정으로 로그인되어 있어요.</p>
@@ -228,7 +267,21 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
               <li><span>3</span><div><b>스튜디오 오픈</b><small>룩북·상품 등록, 크리에이터 매칭</small></div></li>
             </ol>
           </div>
-        ) : (
+        ) : onboardingType === "creator" ? (
+          <form className="login-onboard creator-application-form" onSubmit={submitCreatorApplication}>
+            <div><button className="login-back-button" type="button" onClick={() => setOnboardingType("")}>← 유형 다시 선택</button><p className="login-onboard-title">크리에이터 등록 신청</p><p className="login-google-hint">공개 프로필과 SNS를 입력하면 운영팀 확인 후 크리에이터 센터가 열립니다.</p></div>
+            <div className="creator-application-grid">
+              <label className="login-field"><span>활동명 *</span><input required value={creatorForm.displayName} onChange={(e) => setCreatorForm({ ...creatorForm, displayName: e.target.value })} /></label>
+              <label className="login-field"><span>활동 국가 *</span><input required placeholder="예: Malaysia" value={creatorForm.market} onChange={(e) => setCreatorForm({ ...creatorForm, market: e.target.value })} /></label>
+              <label className="login-field"><span>주요 분야 *</span><input required placeholder="예: Beauty, Fashion" value={creatorForm.category} onChange={(e) => setCreatorForm({ ...creatorForm, category: e.target.value })} /></label>
+              <label className="login-field"><span>Instagram URL</span><input type="url" placeholder="https://instagram.com/..." value={creatorForm.instagramUrl} onChange={(e) => setCreatorForm({ ...creatorForm, instagramUrl: e.target.value })} /></label>
+              <label className="login-field"><span>TikTok URL</span><input type="url" placeholder="https://tiktok.com/@..." value={creatorForm.tiktokUrl} onChange={(e) => setCreatorForm({ ...creatorForm, tiktokUrl: e.target.value })} /></label>
+              <label className="login-field is-wide"><span>소개</span><textarea value={creatorForm.bio} onChange={(e) => setCreatorForm({ ...creatorForm, bio: e.target.value })} /></label>
+            </div>
+            <p className="login-google-hint">Instagram 또는 TikTok 주소를 하나 이상 입력해 주세요.</p>
+            <button className="generate-button login-status-cta" type="submit" disabled={submitting}>{submitting ? "접수 중…" : "크리에이터 신청하기"}</button>
+          </form>
+        ) : onboardingType === "designer" ? (
           <div className="login-onboard">
             <p className="login-onboard-title">환영해요! K&#8209;MODU 디자이너로 시작해볼까요?</p>
             <p className="login-google-hint">브랜드 등록 신청만 하면 <b>바로 스튜디오가 열려요</b>(승인 대기 없음). 상품·룩북을 올리고 AI 룩·숏폼을 만들어 글로벌 크리에이터와 매칭돼요.</p>
@@ -237,11 +290,21 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
               <li><span>2</span><div><b>신청 즉시 스튜디오 오픈</b><small>상품·룩북 등록 · AI 룩 생성 · 크리에이터 매칭</small></div></li>
             </ol>
             <a className="generate-button login-status-cta" href="/apply">디자이너 등록 신청하기</a>
+            <button className="login-email-toggle" type="button" onClick={() => setOnboardingType("")}>유형 다시 선택</button>
+          </div>
+        ) : (
+          <div className="login-onboard">
+            <p className="login-onboard-title">어떤 유형으로 K-MODU를 시작하시겠어요?</p>
+            <p className="login-google-hint">가입 목적에 맞는 전용 화면과 관리 기능을 제공합니다.</p>
+            <div className="login-role-options">
+              <button type="button" onClick={() => setOnboardingType("creator")}><strong>크리에이터로 시작</strong><span>프로필·SNS 등록 후 캠페인과 거래를 관리해요.</span></button>
+              <button type="button" onClick={() => setOnboardingType("designer")}><strong>디자이너로 시작</strong><span>브랜드·상품을 등록하고 크리에이터와 협업해요.</span></button>
+            </div>
           </div>
         )}
 
         <button className="login-email-toggle" type="button" onClick={logout}>로그아웃</button>
-        {message && !notApplied ? <p className="notice">{message}</p> : null}
+        {message ? <p className="notice">{message}</p> : null}
       </div>
     );
   }
@@ -262,8 +325,7 @@ export default function LoginForm({ googleEnabled = false }: { googleEnabled?: b
             Google로 시작하기
           </a>
           <p className="login-google-hint">
-            처음이라면 로그인 후 디자이너 등록 신청으로 바로 이어져요.
-            승인되면 같은 계정으로 스튜디오가 열립니다.
+            처음이라면 로그인 후 크리에이터 또는 디자이너 유형을 선택할 수 있어요.
           </p>
         </>
       ) : (

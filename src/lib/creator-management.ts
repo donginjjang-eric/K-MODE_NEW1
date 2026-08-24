@@ -195,7 +195,7 @@ type GroupMembership = {
 };
 
 type LockedCreatorPublicProfile = Pick<CreatorAccount,
-  "id" | "display_name" | "approval_status" | "profile_image_url" | "specialty" | "bio"
+  "id" | "user_id" | "display_name" | "approval_status" | "profile_image_url" | "specialty" | "bio"
   | "instagram_handle" | "instagram_url" | "instagram_followers" | "tiktok_handle" | "tiktok_url"
   | "tiktok_followers" | "followers_verified_at"
 >;
@@ -800,7 +800,7 @@ async function lockCreators(client: DatabaseTransactionClient, creatorAccountIds
 
 async function lockManagedCreatorPublicProfile(client: DatabaseTransactionClient, creatorKey: string) {
   const result = await client.query<LockedCreatorPublicProfile>(
-    `SELECT id, display_name, approval_status, profile_image_url, specialty, bio,
+    `SELECT id, user_id, display_name, approval_status, profile_image_url, specialty, bio,
             instagram_handle, instagram_url, instagram_followers,
             tiktok_handle, tiktok_url, tiktok_followers, followers_verified_at
        FROM creator_accounts
@@ -854,6 +854,14 @@ export async function updateManagedCreatorPublicProfile(actorUserId: string, cre
         after.instagramHandle, after.instagramUrl, after.instagramFollowers, after.tiktokHandle, after.tiktokUrl,
         after.tiktokFollowers, after.followersVerifiedAt],
     );
+    if (after.approvalStatus === "approved" && before.user_id) {
+      await client.query(
+        `UPDATE users
+            SET role = 'creator', updated_at = now()
+          WHERE id = $1 AND role = 'designer'`,
+        [before.user_id],
+      );
+    }
     await writeAudit(client, actorId, "creator_profile_updated", null, before.id, {
       before: {
         displayName: before.display_name, approvalStatus: before.approval_status, profileImageUrl: before.profile_image_url,

@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
-import { createDesignerApplication, getDesignerLinkUserId, getUserById } from "@/lib/db";
+import { createDesignerApplication, getCreatorAccountForUser, getDesignerLinkUserId, getUserById } from "@/lib/db";
+import { designerApplicationRoleGuard } from "@/lib/creator-onboarding";
 
 function requiredText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -16,6 +17,8 @@ export async function POST(request: Request) {
   if (!accountUser) {
     return Response.json({ ok: false, error: "로그인이 만료됐어요. 로그아웃 후 다시 로그인해 신청해주세요." }, { status: 401 });
   }
+  const roleConflict = await designerApplicationRoleGuard(accountUser.id, getCreatorAccountForUser);
+  if (roleConflict) return roleConflict;
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {

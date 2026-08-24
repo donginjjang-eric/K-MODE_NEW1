@@ -1539,6 +1539,29 @@ function creatorKeyFromSnapshot(displayName: string, detail: string) {
   return (handle || displayName).toLowerCase().replace(/\s+/g, "-").slice(0, 120);
 }
 
+export async function createCreatorApplication(input: import("./creator-onboarding").CreatorApplicationInput): Promise<CreatorAccount> {
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    throw new Error("Database is required for creator applications.");
+  }
+  const instagramHandle = input.instagramUrl.match(/instagram\.com\/([^/?#]+)/i)?.[1] || null;
+  const tiktokHandle = input.tiktokUrl.match(/tiktok\.com\/@?([^/?#]+)/i)?.[1] || null;
+  const platform = [input.instagramUrl && "Instagram", input.tiktokUrl && "TikTok"].filter(Boolean).join(" · ");
+  const creatorKey = `self-${input.userId}`;
+  const creator = await one<CreatorAccount>(
+    `INSERT INTO creator_accounts
+       (user_id, creator_key, display_name, google_email, approval_status, platform, market, categories,
+        onboarding_source, claim_state, bio, instagram_handle, instagram_url, tiktok_handle, tiktok_url)
+     VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7::jsonb,
+             'self_registered', 'claimed', $8, $9, $10, $11, $12)
+     RETURNING *`,
+    [input.userId, creatorKey, input.displayName, input.email, platform, input.market, JSON.stringify([input.category]),
+      input.bio || null, instagramHandle, input.instagramUrl || null, tiktokHandle, input.tiktokUrl || null],
+  );
+  if (!creator) throw new Error("Failed to create creator application.");
+  return creator;
+}
+
 function inlineCreatorArray(source: string, variableName: string) {
   const escapedName = variableName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const body = source.match(new RegExp(`const\\s+${escapedName}\\s*=\\s*\\[([\\s\\S]*?)\\n\\s*\\];`))?.[1] || "";
