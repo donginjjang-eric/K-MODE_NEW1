@@ -641,6 +641,30 @@ p {
   box-shadow: 0 0 0 3px rgba(17, 17, 17, .08);
 }
 
+.login-field input[aria-invalid="true"] {
+  border-color: #b42318;
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, .1);
+}
+
+.creator-field-error,
+.creator-social-requirement.is-error {
+  color: #b42318;
+  font-weight: 700;
+}
+
+.creator-field-error {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.creator-social-requirement {
+  margin: 0;
+  color: #665f54;
+  font-size: 13px;
+  line-height: 1.55;
+  text-align: center;
+}
+
 .login-form-card .generate-button {
   min-height: 54px;
   margin-top: 4px;

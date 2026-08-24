@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { creatorOnboardingDestination, designerApplicationRoleGuard, handleCreatorApplication } from "../src/lib/creator-onboarding.ts";
+import { creatorOnboardingDestination, designerApplicationRoleGuard, handleCreatorApplication, validateCreatorSocialUrls } from "../src/lib/creator-onboarding.ts";
 
 const sessionUser = {
   id: "user-1",
@@ -43,7 +43,20 @@ test("creator application validates profile and at least one SNS URL", async () 
   });
 
   assert.equal(response.status, 400);
-  assert.match((await response.json()).error, /SNS/);
+  assert.match((await response.json()).error, /Instagram.*TikTok/);
+});
+
+test("creator social validation accepts either Instagram or TikTok alone", () => {
+  assert.deepEqual(validateCreatorSocialUrls("https://www.instagram.com/syamimifzain/", ""), {});
+  assert.deepEqual(validateCreatorSocialUrls("", "https://www.tiktok.com/@syamimi"), {});
+});
+
+test("creator social validation returns clear field errors", () => {
+  assert.deepEqual(validateCreatorSocialUrls("", ""), {
+    form: "Instagram 또는 TikTok 주소를 하나 이상 입력해 주세요.",
+  });
+  assert.match(validateCreatorSocialUrls("https://instagram.cor/test", "").instagramUrl, /Instagram 프로필 주소/);
+  assert.match(validateCreatorSocialUrls("", "1").tiktokUrl, /TikTok 프로필 주소/);
 });
 
 test("creator application creates a pending self-registered creator linked to the Google user", async () => {

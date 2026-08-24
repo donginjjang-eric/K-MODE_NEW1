@@ -48,6 +48,29 @@ function socialUrl(value: string, host: "instagram.com" | "tiktok.com") {
   }
 }
 
+export type CreatorSocialErrors = {
+  form?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+};
+
+export function validateCreatorSocialUrls(instagramValue: string, tiktokValue: string): CreatorSocialErrors {
+  const instagramUrl = text(instagramValue);
+  const tiktokUrl = text(tiktokValue);
+  if (!instagramUrl && !tiktokUrl) {
+    return { form: "Instagram 또는 TikTok 주소를 하나 이상 입력해 주세요." };
+  }
+
+  const errors: CreatorSocialErrors = {};
+  if (instagramUrl && !socialUrl(instagramUrl, "instagram.com")) {
+    errors.instagramUrl = "Instagram 프로필 주소를 확인해 주세요. 예: https://www.instagram.com/아이디";
+  }
+  if (tiktokUrl && !socialUrl(tiktokUrl, "tiktok.com")) {
+    errors.tiktokUrl = "TikTok 프로필 주소를 확인해 주세요. 예: https://www.tiktok.com/@아이디";
+  }
+  return errors;
+}
+
 export async function handleCreatorApplication(request: Request, dependencies: Dependencies) {
   const user = await dependencies.getCurrentUser();
   if (!user) return Response.json({ ok: false, error: "로그인 후 신청할 수 있어요." }, { status: 401 });
@@ -73,11 +96,10 @@ export async function handleCreatorApplication(request: Request, dependencies: D
   if (!input.displayName || !input.market || !input.category) {
     return Response.json({ ok: false, error: "활동명, 활동 국가, 분야를 입력해 주세요." }, { status: 400 });
   }
-  if (!input.instagramUrl && !input.tiktokUrl) {
-    return Response.json({ ok: false, error: "Instagram 또는 TikTok SNS 주소를 하나 이상 입력해 주세요." }, { status: 400 });
-  }
-  if (!socialUrl(input.instagramUrl, "instagram.com") || !socialUrl(input.tiktokUrl, "tiktok.com")) {
-    return Response.json({ ok: false, error: "올바른 Instagram 또는 TikTok 주소를 입력해 주세요." }, { status: 400 });
+  const socialErrors = validateCreatorSocialUrls(input.instagramUrl, input.tiktokUrl);
+  const socialError = socialErrors.form || socialErrors.instagramUrl || socialErrors.tiktokUrl;
+  if (socialError) {
+    return Response.json({ ok: false, error: socialError, fieldErrors: socialErrors }, { status: 400 });
   }
 
   try {

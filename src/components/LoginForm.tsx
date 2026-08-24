@@ -2,6 +2,7 @@
 
 // 파트너 로그인: 구글 로그인 단일 방식. 로그인된 상태면 상태 카드(누구로 로그인됨 + 다음 행동)를 보여준다.
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { validateCreatorSocialUrls, type CreatorSocialErrors } from "@/lib/creator-onboarding";
 
 const PARAM_MESSAGES: Record<string, string> = {
   approval_required: "승인된 디자이너 계정만 사용할 수 있어요. 승인 완료 후 다시 로그인해주세요.",
@@ -56,6 +57,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
     : { user: null, designer: null, creator: null });
   const [onboardingType, setOnboardingType] = useState<"" | "creator" | "designer">("");
   const [creatorForm, setCreatorForm] = useState({ displayName: "", market: "", category: "", instagramUrl: "", tiktokUrl: "", bio: "" });
+  const [creatorSocialErrors, setCreatorSocialErrors] = useState<CreatorSocialErrors>({});
   // 하이드레이션 직후 CTA를 열되, URL의 next 경로를 읽기 전 클릭되는 것은 막는다.
   const [loginReady, setLoginReady] = useState(false);
   // 로그인 후 복귀할 사이트 내 경로 (예: /apply에서 유도된 경우)
@@ -164,6 +166,9 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
   const submitCreatorApplication = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitting) return;
+    const socialErrors = validateCreatorSocialUrls(creatorForm.instagramUrl, creatorForm.tiktokUrl);
+    setCreatorSocialErrors(socialErrors);
+    if (Object.keys(socialErrors).length) return;
     setSubmitting(true);
     setMessage("");
     try {
@@ -268,17 +273,18 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
             </ol>
           </div>
         ) : onboardingType === "creator" ? (
-          <form className="login-onboard creator-application-form" onSubmit={submitCreatorApplication}>
+          <form className="login-onboard creator-application-form" onSubmit={submitCreatorApplication} noValidate>
             <div><button className="login-back-button" type="button" onClick={() => setOnboardingType("")}>← 유형 다시 선택</button><p className="login-onboard-title">크리에이터 등록 신청</p><p className="login-google-hint">공개 프로필과 SNS를 입력하면 운영팀 확인 후 크리에이터 센터가 열립니다.</p></div>
             <div className="creator-application-grid">
               <label className="login-field"><span>활동명 *</span><input required value={creatorForm.displayName} onChange={(e) => setCreatorForm({ ...creatorForm, displayName: e.target.value })} /></label>
               <label className="login-field"><span>활동 국가 *</span><input required placeholder="예: Malaysia" value={creatorForm.market} onChange={(e) => setCreatorForm({ ...creatorForm, market: e.target.value })} /></label>
               <label className="login-field"><span>주요 분야 *</span><input required placeholder="예: Beauty, Fashion" value={creatorForm.category} onChange={(e) => setCreatorForm({ ...creatorForm, category: e.target.value })} /></label>
-              <label className="login-field"><span>Instagram URL</span><input type="url" placeholder="https://instagram.com/..." value={creatorForm.instagramUrl} onChange={(e) => setCreatorForm({ ...creatorForm, instagramUrl: e.target.value })} /></label>
-              <label className="login-field"><span>TikTok URL</span><input type="url" placeholder="https://tiktok.com/@..." value={creatorForm.tiktokUrl} onChange={(e) => setCreatorForm({ ...creatorForm, tiktokUrl: e.target.value })} /></label>
+              <label className="login-field"><span>Instagram URL</span><input type="url" inputMode="url" placeholder="https://instagram.com/..." value={creatorForm.instagramUrl} aria-invalid={Boolean(creatorSocialErrors.instagramUrl)} aria-describedby={creatorSocialErrors.instagramUrl ? "instagram-url-error" : undefined} onChange={(e) => { setCreatorForm({ ...creatorForm, instagramUrl: e.target.value }); setCreatorSocialErrors({}); }} />{creatorSocialErrors.instagramUrl ? <small className="creator-field-error" id="instagram-url-error">{creatorSocialErrors.instagramUrl}</small> : null}</label>
+              <label className="login-field"><span>TikTok URL</span><input type="url" inputMode="url" placeholder="https://tiktok.com/@..." value={creatorForm.tiktokUrl} aria-invalid={Boolean(creatorSocialErrors.tiktokUrl)} aria-describedby={creatorSocialErrors.tiktokUrl ? "tiktok-url-error" : undefined} onChange={(e) => { setCreatorForm({ ...creatorForm, tiktokUrl: e.target.value }); setCreatorSocialErrors({}); }} />{creatorSocialErrors.tiktokUrl ? <small className="creator-field-error" id="tiktok-url-error">{creatorSocialErrors.tiktokUrl}</small> : null}</label>
               <label className="login-field is-wide"><span>소개</span><textarea value={creatorForm.bio} onChange={(e) => setCreatorForm({ ...creatorForm, bio: e.target.value })} /></label>
             </div>
-            <p className="login-google-hint">Instagram 또는 TikTok 주소를 하나 이상 입력해 주세요.</p>
+            <p className="creator-social-requirement">Instagram 또는 TikTok 중 하나만 입력해도 신청할 수 있어요.</p>
+            {creatorSocialErrors.form ? <p className="creator-social-requirement is-error" role="alert">{creatorSocialErrors.form}</p> : null}
             <button className="generate-button login-status-cta" type="submit" disabled={submitting}>{submitting ? "접수 중…" : "크리에이터 신청하기"}</button>
           </form>
         ) : onboardingType === "designer" ? (
