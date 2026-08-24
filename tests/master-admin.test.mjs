@@ -5,6 +5,8 @@ import { isMasterAdminEmail, masterRoleDestinations } from "../src/lib/master-ad
 
 test("the designated owner account is recognized as master admin", () => {
   assert.equal(isMasterAdminEmail("DONGJINJJANG@gmail.com"), true);
+  assert.equal(isMasterAdminEmail("DONGJINJJANG@gmail.com", "existing.admin@example.com"), true);
+  assert.equal(isMasterAdminEmail("existing.admin@example.com", "existing.admin@example.com"), true);
   assert.equal(isMasterAdminEmail("other@example.com"), false);
 });
 

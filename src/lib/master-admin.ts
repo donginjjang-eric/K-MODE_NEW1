@@ -6,7 +6,7 @@ export const masterRoleDestinations = [
 
 const defaultMasterAdminEmails = "dongjinjjang@gmail.com";
 
-export function isMasterAdminEmail(email: string, configuredEmails = process.env.MASTER_ADMIN_EMAILS || defaultMasterAdminEmails) {
+export function isMasterAdminEmail(email: string, configuredEmails = process.env.MASTER_ADMIN_EMAILS || "") {
   const normalized = email.trim().toLowerCase();
-  return configuredEmails.split(",").some((candidate) => candidate.trim().toLowerCase() === normalized);
+  return `${defaultMasterAdminEmails},${configuredEmails}`.split(",").some((candidate) => candidate.trim().toLowerCase() === normalized);
 }
