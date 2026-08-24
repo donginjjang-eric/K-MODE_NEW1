@@ -131,6 +131,11 @@ body:has(.admin-studio) .quick-link-stack { display: none !important; }
 .admin-studio .admin-creator-page-count span { color: #706a61; font-size: 11px; font-weight: 800; }
 
 .admin-studio .admin-creator-management { display: grid; gap: 14px; }
+.admin-studio .admin-creator-pending-callout { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 10px; width: 100%; border: 1px solid #d8d1c7; padding: 15px 18px; background: #fff; color: #514a43; text-align: left; cursor: pointer; }
+.admin-studio .admin-creator-pending-callout span { font-size: 13px; font-weight: 900; }
+.admin-studio .admin-creator-pending-callout strong { font-size: 24px; }
+.admin-studio .admin-creator-pending-callout small { color: #706a61; }
+.admin-studio .admin-creator-pending-callout.has-pending { border: 2px solid #df8d16; background: #fff7e7; color: #7c4200; }
 .admin-studio .admin-creator-filters { display: grid; grid-template-columns: minmax(220px, 1.6fr) repeat(6, minmax(110px, 1fr)); gap: 8px; }
 .admin-studio .admin-creator-filters label,
 .admin-studio .admin-detail-form-grid label,
@@ -168,6 +173,13 @@ body:has(.admin-studio) .quick-link-stack { display: none !important; }
 .admin-studio .admin-creator-management-table-wrap td > strong,
 .admin-studio .admin-creator-management-table-wrap td > small { display: block; }
 .admin-studio .admin-creator-management-table-wrap td > small { margin-top: 4px; color: #918a80; }
+.admin-studio .admin-creator-management-table-wrap tr.is-approval-pending td { background: #fffaf0; }
+.admin-studio .admin-creator-management-table-wrap tr.is-approval-pending td:first-child { border-left: 4px solid #df8d16; }
+.admin-studio .admin-approval-list-badge { display: inline-block; border-radius: 999px; padding: 5px 9px; background: #f0eee9; font-weight: 900; white-space: nowrap; }
+.admin-studio .admin-approval-list-badge.is-pending { background: #ffe2ad; color: #7c4200; }
+.admin-studio .admin-approval-list-badge.is-approved { background: #dff4e8; color: #126a4b; }
+.admin-studio .admin-approval-review-link { display: inline-block; border: 1px solid #171411; padding: 8px 11px; background: #171411; color: #fff; font-weight: 900; white-space: nowrap; }
+.admin-studio .admin-approval-complete-text { color: #918a80; white-space: nowrap; }
 .admin-studio .admin-creator-management-table-wrap input[type="checkbox"],
 .admin-studio .admin-member-list input { width: 16px; height: 16px; accent-color: #171411; }
 .admin-studio .admin-creator-identity { display: flex; align-items: center; gap: 10px; color: #171411; }
@@ -423,6 +435,8 @@ body:has(.admin-studio) .quick-link-stack { display: none !important; }
 .admin-approval-readonly.is-disabled { border-color: #e4bbb7; background: #fff5f3; color: #8c332d; }
 
 @media (max-width: 760px) {
+  .admin-studio .admin-creator-pending-callout { grid-template-columns: auto auto; }
+  .admin-studio .admin-creator-pending-callout small { grid-column: 1 / -1; }
   .admin-creator-approval-panel { align-items: stretch; flex-direction: column; padding: 18px; }
   .admin-creator-approval-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .admin-approval-toast { top: 76px; right: 14px; left: 14px; min-width: 0; }

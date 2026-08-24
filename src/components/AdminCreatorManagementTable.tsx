@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminManagedCreator, CreatorManagementGroupSummary } from "@/lib/creator-management";
 import { publicMediaUrl } from "@/lib/public-media-url";
+import { prioritizePendingCreators } from "@/lib/creator-approval-queue";
 
 export type AdminCreatorManagementRow = AdminManagedCreator & { durable: boolean };
 
@@ -48,10 +49,11 @@ export default function AdminCreatorManagementTable({ creators, groups }: {
 
   const markets = useMemo(() => [...new Set(creators.map((creator) => creator.market).filter(Boolean))].sort(), [creators]);
   const platforms = useMemo(() => [...new Set(creators.map((creator) => creator.platform).filter(Boolean))].sort(), [creators]);
+  const pendingCreators = useMemo(() => creators.filter((creator) => creator.approval_status === "pending"), [creators]);
   const filtered = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
-    return creators.filter((creator) => {
-      const matchesSearch = !term || [creator.display_name, creator.creator_key, creator.instagram_handle, creator.tiktok_handle]
+    return prioritizePendingCreators(creators.filter((creator) => {
+      const matchesSearch = !term || [creator.display_name, creator.creator_key, creator.google_email, creator.instagram_handle, creator.tiktok_handle]
         .filter(Boolean).some((value) => value!.toLocaleLowerCase().includes(term));
       return matchesSearch
         && (market === ALL || creator.market === market)
@@ -60,7 +62,7 @@ export default function AdminCreatorManagementTable({ creators, groups }: {
         && (onboarding === ALL || creator.onboarding_source === onboarding)
         && (claim === ALL || creator.claim_state === claim)
         && (approval === ALL || creator.approval_status === approval);
-    });
+    }));
   }, [approval, claim, creators, groupId, market, onboarding, platform, search]);
   const selectableIds = filtered.filter((creator) => creator.durable).map((creator) => creator.id);
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
@@ -164,6 +166,9 @@ export default function AdminCreatorManagementTable({ creators, groups }: {
 
   return (
     <section className="admin-creator-management" aria-label="크리에이터 관리 목록">
+      <button className={`admin-creator-pending-callout ${pendingCreators.length ? "has-pending" : ""}`} type="button" onClick={() => { setApproval("pending"); setSearch(""); }}>
+        <span>승인 대기</span><strong>{pendingCreators.length}명</strong><small>{pendingCreators.length ? "지금 검토가 필요한 크리에이터 신청입니다. 클릭하면 대기자만 표시됩니다." : "현재 검토할 신청이 없습니다."}</small>
+      </button>
       <div className="admin-creator-filters">
         <label className="is-search"><span>이름 · 핸들 검색</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="이름 또는 @handle" /></label>
         <label><span>국가</span><select value={market} onChange={(event) => setMarket(event.target.value)}><option value={ALL}>전체</option>{markets.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -190,12 +195,12 @@ export default function AdminCreatorManagementTable({ creators, groups }: {
       <div className="admin-creator-result-line"><strong>{filtered.length}명</strong><span>저장된 회원 레코드만 선택·그룹 지정할 수 있습니다.</span></div>
       <div className="admin-creator-management-table-wrap">
         <table>
-          <thead><tr><th><input type="checkbox" aria-label="전체 크리에이터 선택" checked={allSelected} onChange={toggleAll} disabled={!selectableIds.length} /></th><th>크리에이터</th><th>SNS · 팔로워</th><th>가입 경로</th><th>계정 상태</th><th>귀속 상태</th><th>승인 상태</th><th>관리 그룹</th></tr></thead>
-          <tbody>{filtered.map((creator) => <tr key={creator.creator_key}>
+          <thead><tr><th><input type="checkbox" aria-label="전체 크리에이터 선택" checked={allSelected} onChange={toggleAll} disabled={!selectableIds.length} /></th><th>크리에이터</th><th>SNS · 팔로워</th><th>가입 경로</th><th>계정 상태</th><th>귀속 상태</th><th>승인 상태</th><th>승인 관리</th><th>관리 그룹</th></tr></thead>
+          <tbody>{filtered.map((creator) => <tr className={creator.approval_status === "pending" ? "is-approval-pending" : ""} key={creator.creator_key}>
             <td><input type="checkbox" aria-label={`${creator.display_name} 선택`} checked={selected.has(creator.id)} onChange={() => toggle(creator.id)} disabled={!creator.durable} /></td>
             <td><Link className="admin-creator-identity" href={`/dashboard/admin/creators/${encodeURIComponent(creator.creator_key)}`}><span className="admin-creator-thumb">{publicMediaUrl(creator.profile_image_url) ? <img src={publicMediaUrl(creator.profile_image_url) || ""} alt="" /> : creator.display_name.slice(0, 1)}</span><span><strong>{creator.display_name}</strong><small>{creator.creator_key}</small></span></Link></td>
             <td><strong>{numberFormat.format(creator.followerTotal)}</strong><small>{creator.instagram_handle ? `IG @${creator.instagram_handle.replace(/^@/, "")}` : ""}{creator.instagram_handle && creator.tiktok_handle ? " · " : ""}{creator.tiktok_handle ? `TT @${creator.tiktok_handle.replace(/^@/, "")}` : ""}</small></td>
-            <td>{onboardingLabel(creator.onboarding_source)}</td><td><span className={`admin-creator-state ${creator.durable ? "is-durable" : ""}`}>{accountLabel(creator)}</span></td><td>{claimLabel(creator.claim_state)}</td><td>{approvalLabel(creator.approval_status)}</td><td>{creator.managementGroupName || "미지정"}</td>
+            <td>{onboardingLabel(creator.onboarding_source)}</td><td><span className={`admin-creator-state ${creator.durable ? "is-durable" : ""}`}>{accountLabel(creator)}</span></td><td>{claimLabel(creator.claim_state)}</td><td><span className={`admin-approval-list-badge is-${creator.approval_status}`}>{approvalLabel(creator.approval_status)}</span></td><td>{creator.approval_status === "pending" ? <Link className="admin-approval-review-link" href={`/dashboard/admin/creators/${encodeURIComponent(creator.creator_key)}`}>승인 검토하기 →</Link> : <span className="admin-approval-complete-text">처리 완료</span>}</td><td>{creator.managementGroupName || "미지정"}</td>
           </tr>)}</tbody>
         </table>
         {!filtered.length ? <div className="st-empty"><p>조건에 맞는 크리에이터가 없습니다.</p></div> : null}

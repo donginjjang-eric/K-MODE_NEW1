@@ -23,6 +23,9 @@ test("admin creator management exposes every searchable, filterable, selectable 
   assert.match(table, /가입 경로/);
   assert.match(table, /귀속 상태/);
   assert.match(table, /승인 상태/);
+  assert.match(table, /승인 대기/);
+  assert.match(table, /승인 검토하기/);
+  assert.match(table, /prioritizePendingCreators/);
   assert.match(table, /aria-label="전체 크리에이터 선택"/);
   assert.match(table, /aria-label={`\$\{creator\.display_name\} 선택`}/);
   assert.match(table, /새 관리 그룹 만들기/);
