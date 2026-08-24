@@ -73,8 +73,10 @@ export async function getCurrentUser() {
   const cookieStore = await cookies();
   const session = parseSessionToken(cookieStore.get(sessionCookieName)?.value);
   if (!session || !isMasterAdminEmail(session.email)) return session;
-  const promoted = await ensureMasterAdminRole(session.id, session.email).catch(() => null);
-  return promoted ? { ...session, role: "admin" as const } : session;
+  await ensureMasterAdminRole(session.id, session.email).catch((error) => {
+    console.error("[master-admin] role persistence failed:", error instanceof Error ? error.message : error);
+  });
+  return { ...session, role: "admin" as const };
 }
 
 export function loginEntryUrl(value: Role | Pick<User, "role">) {
