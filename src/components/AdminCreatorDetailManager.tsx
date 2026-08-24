@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminManagedCreatorDetail, CreatorManagementGroupSummary } from "@/lib/creator-management";
 import { publicMediaUrl } from "@/lib/public-media-url";
+import { creatorApprovalPresentation } from "@/lib/creator-approval-presentation";
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
 const dateFormat = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short" });
@@ -37,6 +38,7 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
   const [busy, setBusy] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
   const [creatorGroupMessage, setCreatorGroupMessage] = useState("");
+  const approval = creatorApprovalPresentation(approvalStatus);
 
   async function api(url: string, init: RequestInit) {
     const response = await fetch(url, { ...init, headers: { "content-type": "application/json", ...init.headers } });
@@ -122,19 +124,21 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
         <div className="admin-creator-detail-image">{publicMediaUrl(profileImageUrl) ? <img src={publicMediaUrl(profileImageUrl) || ""} alt={`${creator.display_name} 프로필`} /> : creator.display_name.slice(0, 1)}</div>
       </header>
 
-      <section className={`admin-creator-approval-panel is-${approvalStatus}`} aria-label="크리에이터 신청 승인">
-        <div><span>APPLICATION STATUS</span><strong>{approvalStatus === "approved" ? "승인 완료" : approvalStatus === "disabled" ? "승인 보류" : "승인 대기"}</strong><p>{approvalStatus === "pending" ? "SNS와 프로필을 확인한 뒤 승인해 주세요." : "필요하면 상태를 다시 변경할 수 있습니다."}</p></div>
+      <section className={`admin-creator-approval-panel is-${approval.tone}`} aria-label="크리에이터 신청 승인" aria-live="polite">
+        <div className="admin-creator-approval-summary"><span>APPLICATION STATUS</span><strong><b aria-hidden="true">{approval.icon}</b>{approval.title}</strong><p>{approval.description}</p></div>
         <div className="admin-creator-approval-actions">
-          <button className="st-btn dark" type="button" disabled={busy || approvalStatus === "approved"} onClick={() => changeApprovalStatus("approved")}>승인하기</button>
+          <button className="st-btn dark" type="button" disabled={busy || approvalStatus === "approved"} onClick={() => changeApprovalStatus("approved")}>{approval.actionLabel}</button>
           <button className="st-btn light" type="button" disabled={busy || approvalStatus === "disabled"} onClick={() => changeApprovalStatus("disabled")}>승인 보류</button>
         </div>
       </section>
+
+      {profileMessage ? <div className={`admin-approval-toast is-${approval.tone}`} role="status"><b aria-hidden="true">{approval.icon}</b><div><strong>{approval.title}</strong><span>{profileMessage}</span></div></div> : null}
 
       <section className="admin-detail-section" aria-labelledby="creator-profile-heading">
         <div className="admin-section-heading"><div><p>PUBLIC</p><h2 id="creator-profile-heading">공개 프로필</h2></div><span>{durable ? "저장된 회원 레코드" : "회원 레코드 없음"}</span></div>
         <div className="admin-detail-form-grid">
           <label><span>표시 이름</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} disabled={!durable || busy} /></label>
-          <label><span>승인 상태</span><select value={approvalStatus} onChange={(event) => setApprovalStatus(event.target.value as typeof approvalStatus)} disabled={busy}><option value="pending">대기</option><option value="approved">승인</option><option value="disabled">비활성</option></select></label>
+          <label><span>승인 상태</span><output className={`admin-approval-readonly is-${approval.tone}`}>{approval.icon} {approval.title}</output></label>
           <label className="is-wide"><span>프로필 이미지 URL</span><input value={profileImageUrl} onChange={(event) => setProfileImageUrl(event.target.value)} disabled={!durable || busy} /></label>
           <label><span>전문 분야</span><input value={specialty} onChange={(event) => setSpecialty(event.target.value)} disabled={!durable || busy} /></label>
           <label><span>Google 이메일</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="creator@gmail.com" disabled={busy} /></label>
@@ -148,7 +152,7 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
           <div><h3>Instagram</h3><label><span>핸들</span><input value={instagramHandle} onChange={(event) => setInstagramHandle(event.target.value)} disabled={!durable || busy} /></label><label><span>URL</span><input value={instagramUrl} onChange={(event) => setInstagramUrl(event.target.value)} disabled={!durable || busy} /></label><label><span>팔로워</span><input type="number" min="0" value={instagramFollowers} onChange={(event) => setInstagramFollowers(event.target.value)} disabled={!durable || busy} /></label></div>
           <div><h3>TikTok</h3><label><span>핸들</span><input value={tiktokHandle} onChange={(event) => setTiktokHandle(event.target.value)} disabled={!durable || busy} /></label><label><span>URL</span><input value={tiktokUrl} onChange={(event) => setTiktokUrl(event.target.value)} disabled={!durable || busy} /></label><label><span>팔로워</span><input type="number" min="0" value={tiktokFollowers} onChange={(event) => setTiktokFollowers(event.target.value)} disabled={!durable || busy} /></label></div>
         </div>
-        <div className="admin-detail-actions"><button className="st-btn dark" type="button" disabled={busy} onClick={saveProfile}>정보 저장</button>{profileMessage ? <p role="status">{profileMessage}</p> : null}</div>
+        <div className="admin-detail-actions"><button className="st-btn dark" type="button" disabled={busy} onClick={saveProfile}>정보 저장</button></div>
       </section>
 
       <section className="admin-detail-section" aria-labelledby="creator-internal-heading">

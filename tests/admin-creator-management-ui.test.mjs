@@ -51,8 +51,9 @@ test("creator detail and group administration pages expose the approved manageme
   assert.match(detailManager, /계정 상태/);
   assert.match(detailManager, /캠페인 이력/);
   assert.match(detailManager, /정산 요약/);
-  assert.match(detailManager, /승인하기/);
+  assert.match(detailManager, /approval\.actionLabel/);
   assert.match(detailManager, /승인 보류/);
+  assert.doesNotMatch(detailManager, /<select value=\{approvalStatus\}[\s\S]{0,180}setApprovalStatus/);
   assert.match(detailManager, /changeApprovalStatus/);
   assert.match(detailManager, /durable \? \{ approvalStatus: nextStatus \} : \{ email: email\.trim\(\), status: nextStatus \}/);
   assert.match(groupsPage, /listCreatorManagementGroups/);
