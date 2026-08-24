@@ -4,18 +4,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { AdminUserRow } from "@/lib/db";
-import { getApprovalStatusLabel } from "@/lib/status-labels";
+import { adminUserPresentation, type AdminUserSegment } from "@/lib/admin-user-presentation";
 
-type Segment = "approved" | "pending" | "not_applied" | "admin" | "disabled";
-
-function segmentOf(u: AdminUserRow): Segment {
-  if (u.role === "admin") return "admin";
-  if (!u.designer_id) return "not_applied";
-  if (u.approval_status === "approved") return "approved";
-  // 반려는 '승인 대기'가 아니므로 비활성 세그먼트로 묶는다 (배지 라벨은 '반려'로 구분 표시)
-  if (u.approval_status === "disabled" || u.approval_status === "rejected") return "disabled";
-  return "pending";
-}
+type Segment = AdminUserSegment;
 
 function statusClass(status: string) {
   if (status === "approved") return "approved";
@@ -35,7 +26,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
   // 기본은 최신순(가장 최근 가입자가 1번으로 맨 위 — 신규 가입이 바로 보이게)
   const [sortAsc, setSortAsc] = useState(false);
 
-  const withSeg = useMemo(() => users.map((u) => ({ u, seg: segmentOf(u) })), [users]);
+  const withSeg = useMemo(() => users.map((u) => ({ u, presentation: adminUserPresentation(u) })), [users]);
 
   // 안정 회원번호: 가입 순서대로 1번(가장 먼저 가입)부터. 정렬·필터와 무관하게 회원마다 고정.
   const numberById = useMemo(() => {
@@ -46,16 +37,16 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
   }, [users]);
 
   const counts = useMemo(() => {
-    const c = { all: users.length, approved: 0, pending: 0, not_applied: 0, admin: 0, disabled: 0 };
-    withSeg.forEach(({ seg }) => { c[seg] += 1; });
+    const c = { all: users.length, creator_approved: 0, creator_pending: 0, designer_approved: 0, designer_pending: 0, not_applied: 0, admin: 0, disabled: 0 };
+    withSeg.forEach(({ presentation }) => { c[presentation.segment] += 1; });
     return c;
   }, [withSeg, users.length]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const rows = withSeg.filter(({ u, seg }) => {
-      if (filter !== "all" && seg !== filter) return false;
-      if (q && !(`${u.email} ${u.brand_name || ""}`.toLowerCase().includes(q))) return false;
+    const rows = withSeg.filter(({ u, presentation }) => {
+      if (filter !== "all" && presentation.segment !== filter) return false;
+      if (q && !(`${u.email} ${presentation.profileLabel}`.toLowerCase().includes(q))) return false;
       return true;
     });
     return rows.sort((a, b) => {
@@ -77,8 +68,10 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
       <div className="apm-bar">
         <div className="apm-chips">
           {chip("all", "전체", counts.all)}
-          {chip("approved", "승인 디자이너", counts.approved)}
-          {chip("pending", "승인 대기", counts.pending)}
+          {chip("creator_approved", "승인 크리에이터", counts.creator_approved)}
+          {chip("creator_pending", "크리에이터 승인 대기", counts.creator_pending)}
+          {chip("designer_approved", "승인 디자이너", counts.designer_approved)}
+          {chip("designer_pending", "디자이너 승인 대기", counts.designer_pending)}
           {chip("not_applied", "계정만 가입", counts.not_applied)}
           {chip("admin", "관리자", counts.admin)}
           {chip("disabled", "비활성", counts.disabled)}
@@ -109,11 +102,11 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
               <span>브랜드 / 상태</span>
               <span className="col-date">가입일</span>
             </div>
-            {visible.map(({ u }) => (
+            {visible.map(({ u, presentation }) => (
               <article className="admin-table-row" key={u.id}>
                 <span className="col-no">{numberById[u.id]}</span>
-                {u.designer_id ? (
-                  <Link className="acct-cell acct-link" href={`/dashboard/admin/designers/${u.designer_id}`} title="디자이너 상세 보기">
+                {presentation.href ? (
+                  <Link className="acct-cell acct-link" href={presentation.href} title={`${presentation.roleLabel} 상세 보기`}>
                     <span className="acct-avatar" aria-hidden="true">{(u.email[0] || "?").toUpperCase()}</span>
                     <b>{u.email}</b>
                   </Link>
@@ -123,21 +116,21 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
                     <b>{u.email}</b>
                   </div>
                 )}
-                <span><em className={`role-tag ${u.role === "admin" ? "is-admin" : ""}`}>{u.role === "admin" ? "관리자" : "디자이너"}</em></span>
+                <span><em className={`role-tag ${presentation.roleLabel === "관리자" ? "is-admin" : presentation.roleLabel === "크리에이터" ? "is-creator" : ""}`}>{presentation.roleLabel}</em></span>
                 <span className="brand-cell">
-                  {u.designer_id ? (
+                  {presentation.href ? (
                     <>
-                      <Link className="admin-title-link" href={`/dashboard/admin/designers/${u.designer_id}`}>
-                        {u.brand_name || "브랜드명 미입력"}
+                      <Link className="admin-title-link" href={presentation.href}>
+                        {presentation.profileLabel}
                       </Link>
-                      <em className={`status-badge ${statusClass(u.approval_status || "pending")}`}>
-                        {getApprovalStatusLabel(u.approval_status || "pending")}
+                      <em className={`status-badge ${statusClass(presentation.status || "pending")}`}>
+                        {presentation.statusLabel}
                       </em>
                     </>
                   ) : u.role === "admin" ? (
                     <em className="brand-empty">-</em>
                   ) : (
-                    <em className="status-badge pending">계정만 가입</em>
+                    <em className="status-badge pending">{presentation.statusLabel}</em>
                   )}
                 </span>
                 <span className="col-date">{formatDate(u.created_at)}</span>

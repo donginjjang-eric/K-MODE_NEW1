@@ -8,7 +8,7 @@ export default async function AdminUsersPage() {
   return (
     <>
       <h1 className="st-title">회원 관리</h1>
-      <p className="st-sub">가입한 모든 계정을 역할·상태별로 찾고, 디자이너 프로필로 바로 이동합니다.</p>
+      <p className="st-sub">가입한 모든 계정을 크리에이터·디자이너 역할과 승인 상태별로 찾고 전용 관리 화면으로 이동합니다.</p>
 
       {users.length ? (
         <AdminUsersManager users={users} />

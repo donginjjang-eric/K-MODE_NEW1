@@ -846,11 +846,15 @@ export async function getAdminPendingCounts() {
   };
 }
 
-// 관리자 회원 목록: 가입 계정 + 연결된 디자이너 프로필 (신청 전 가입자도 보이도록 LEFT JOIN)
+// 관리자 회원 목록: 가입 계정 + 연결된 크리에이터·디자이너 프로필
 export type AdminUserRow = Pick<User, "id" | "email" | "role" | "created_at"> & {
   designer_id: string | null;
   brand_name: string | null;
-  approval_status: ApprovalStatus | null;
+  designer_approval_status: ApprovalStatus | null;
+  creator_id: string | null;
+  creator_key: string | null;
+  creator_name: string | null;
+  creator_approval_status: ApprovalStatus | null;
 };
 
 export async function getAllUsersWithDesigner(): Promise<AdminUserRow[]> {
@@ -860,7 +864,11 @@ export async function getAllUsersWithDesigner(): Promise<AdminUserRow[]> {
   }
   return query<AdminUserRow>(
     `SELECT users.id, users.email, users.role, users.created_at,
-            designer_match.id AS designer_id, designer_match.brand_name, designer_match.approval_status
+            designer_match.id AS designer_id, designer_match.brand_name,
+            designer_match.approval_status AS designer_approval_status,
+            creator_match.id AS creator_id, creator_match.creator_key,
+            creator_match.display_name AS creator_name,
+            creator_match.approval_status AS creator_approval_status
        FROM users
        LEFT JOIN LATERAL (
          SELECT designers.id, designers.brand_name, designers.approval_status
@@ -872,6 +880,16 @@ export async function getAllUsersWithDesigner(): Promise<AdminUserRow[]> {
             designers.created_at DESC
           LIMIT 1
        ) designer_match ON true
+       LEFT JOIN LATERAL (
+         SELECT creator_accounts.id, creator_accounts.creator_key, creator_accounts.display_name, creator_accounts.approval_status
+           FROM creator_accounts
+          WHERE creator_accounts.user_id = users.id
+             OR lower(creator_accounts.google_email) = lower(users.email)
+          ORDER BY
+            CASE WHEN creator_accounts.user_id = users.id THEN 0 ELSE 1 END,
+            creator_accounts.created_at DESC
+          LIMIT 1
+       ) creator_match ON true
       ORDER BY users.created_at DESC`,
   );
 }
