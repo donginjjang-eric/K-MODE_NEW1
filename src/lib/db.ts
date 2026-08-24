@@ -1206,14 +1206,14 @@ export async function getUserByEmail(email: string): Promise<(User & { password_
   }
 }
 
-export async function ensureMasterAdminRole(userId: string, email: string): Promise<User | null> {
+export async function ensureMasterAdminRole(_userId: string, email: string): Promise<User | null> {
   if (!hasDatabase()) return null;
   return one<User>(
     `UPDATE users
         SET role = 'admin', updated_at = now()
-      WHERE id = $1 AND lower(email) = lower($2)
+      WHERE lower(email) = lower($1)
       RETURNING id, email, role, created_at, updated_at`,
-    [userId, email],
+    [email],
   );
 }
 
