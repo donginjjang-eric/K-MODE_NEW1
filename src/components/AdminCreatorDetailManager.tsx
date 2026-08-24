@@ -78,6 +78,24 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
     }
   }
 
+  async function changeApprovalStatus(nextStatus: "approved" | "disabled") {
+    setBusy(true);
+    setProfileMessage("");
+    try {
+      await api(`/api/admin/creators/${encodeURIComponent(creator.creator_key)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ approvalStatus: nextStatus }),
+      });
+      setApprovalStatus(nextStatus);
+      setProfileMessage(nextStatus === "approved" ? "크리에이터 신청을 승인했습니다." : "크리에이터 신청을 보류했습니다.");
+      router.refresh();
+    } catch (error) {
+      setProfileMessage(error instanceof Error ? error.message : "승인 상태를 변경하지 못했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function changeGroup(action: "assign" | "remove") {
     const groupId = action === "assign" ? targetGroup : creator.managementGroupId;
     if (!groupId) return;
@@ -103,6 +121,14 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
         <div><Link href="/dashboard/admin/creators">← 크리에이터 관리</Link><p className="st-eyebrow">CREATOR PROFILE</p><h1 className="st-title">{creator.display_name}</h1><p className="st-sub">공개 정보와 내부 회원·그룹 상태를 한 화면에서 관리합니다.</p></div>
         <div className="admin-creator-detail-image">{publicMediaUrl(profileImageUrl) ? <img src={publicMediaUrl(profileImageUrl) || ""} alt={`${creator.display_name} 프로필`} /> : creator.display_name.slice(0, 1)}</div>
       </header>
+
+      <section className={`admin-creator-approval-panel is-${approvalStatus}`} aria-label="크리에이터 신청 승인">
+        <div><span>APPLICATION STATUS</span><strong>{approvalStatus === "approved" ? "승인 완료" : approvalStatus === "disabled" ? "승인 보류" : "승인 대기"}</strong><p>{approvalStatus === "pending" ? "SNS와 프로필을 확인한 뒤 승인해 주세요." : "필요하면 상태를 다시 변경할 수 있습니다."}</p></div>
+        <div className="admin-creator-approval-actions">
+          <button className="st-btn dark" type="button" disabled={busy || approvalStatus === "approved"} onClick={() => changeApprovalStatus("approved")}>승인하기</button>
+          <button className="st-btn light" type="button" disabled={busy || approvalStatus === "disabled"} onClick={() => changeApprovalStatus("disabled")}>승인 보류</button>
+        </div>
+      </section>
 
       <section className="admin-detail-section" aria-labelledby="creator-profile-heading">
         <div className="admin-section-heading"><div><p>PUBLIC</p><h2 id="creator-profile-heading">공개 프로필</h2></div><span>{durable ? "저장된 회원 레코드" : "회원 레코드 없음"}</span></div>

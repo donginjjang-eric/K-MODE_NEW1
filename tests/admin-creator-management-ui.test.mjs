@@ -43,6 +43,7 @@ test("creator detail and group administration pages expose the approved manageme
   ]);
 
   assert.match(detailPage, /getManagedCreatorDetail/);
+  assert.match(detailPage, /decodeURIComponent\(creatorKey\)/);
   assert.match(detailManager, /공개 프로필/);
   assert.match(detailManager, /SNS 및 팔로워/);
   assert.match(detailManager, /확인 시각/);
@@ -50,6 +51,9 @@ test("creator detail and group administration pages expose the approved manageme
   assert.match(detailManager, /계정 상태/);
   assert.match(detailManager, /캠페인 이력/);
   assert.match(detailManager, /정산 요약/);
+  assert.match(detailManager, /승인하기/);
+  assert.match(detailManager, /승인 보류/);
+  assert.match(detailManager, /changeApprovalStatus/);
   assert.match(groupsPage, /listCreatorManagementGroups/);
   assert.match(groupsPage, /group\.campaignCount/);
   assert.match(groupsPage, /group\.dealCount/);

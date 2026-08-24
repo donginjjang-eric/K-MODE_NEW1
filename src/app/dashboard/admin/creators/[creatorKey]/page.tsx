@@ -5,13 +5,14 @@ import { getManagedCreatorDetail, listCreatorManagementGroups, type AdminManaged
 
 export default async function AdminCreatorDetailPage({ params }: { params: Promise<{ creatorKey: string }> }) {
   const { creatorKey } = await params;
+  const decodedCreatorKey = decodeURIComponent(creatorKey);
   const databaseReady = hasDatabase();
-  const detail = databaseReady ? await getManagedCreatorDetail(creatorKey) : null;
+  const detail = databaseReady ? await getManagedCreatorDetail(decodedCreatorKey) : null;
   const groups = databaseReady ? await listCreatorManagementGroups() : [];
   let creator: AdminManagedCreatorDetail | null = detail;
 
   if (!creator) {
-    const legacy = (await getCreatorAccountsForAdmin()).find((item) => item.creator_key === creatorKey);
+    const legacy = (await getCreatorAccountsForAdmin()).find((item) => item.creator_key === decodedCreatorKey);
     if (legacy) {
       creator = {
         ...legacy,

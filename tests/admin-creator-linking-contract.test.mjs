@@ -30,6 +30,7 @@ test("admin creator account linking keeps catalogue identity, normalizes email, 
 
   assert.match(route, /getAdminUserForApi/);
   assert.match(route, /creatorKey/);
+  assert.match(route, /decodeURIComponent\(creatorKey\)/);
   assert.match(route, /handleAdminCreatorPatch/);
   assert.match(route, /getManagedCreatorDetail/);
   assert.match(handlers, /toLowerCase\(\)/);

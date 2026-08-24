@@ -7,7 +7,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ cr
   const auth = await getAdminUserForApi();
   if (!auth.ok) return auth.response;
   const { creatorKey } = await params;
-  return handleAdminCreatorPatch(request, creatorKey, {
+  const decodedCreatorKey = decodeURIComponent(creatorKey);
+  return handleAdminCreatorPatch(request, decodedCreatorKey, {
     adminId: auth.user.id,
     getManagedCreator: async (key) => await getManagedCreatorDetail(key) as unknown as Record<string, unknown> | null,
     getLegacyCreator: async (key) => await getPublicCreatorForAdmin(key) as unknown as Record<string, unknown> | null,

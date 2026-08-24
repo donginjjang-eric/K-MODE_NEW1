@@ -385,3 +385,29 @@ body:has(.admin-studio) .quick-link-stack { display: none !important; }
     width: 100%;
   }
 }
+
+.admin-creator-approval-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px;
+  border: 1px solid #d8dee8;
+  border-left: 5px solid #d39b24;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fffdf7, #fff);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .07);
+}
+
+.admin-creator-approval-panel.is-approved { border-left-color: #16805b; background: linear-gradient(135deg, #f2fbf6, #fff); }
+.admin-creator-approval-panel.is-disabled { border-left-color: #9c3d35; background: linear-gradient(135deg, #fff7f5, #fff); }
+.admin-creator-approval-panel > div:first-child { display: grid; gap: 5px; }
+.admin-creator-approval-panel span { color: #8a6a2d; font-size: 10px; font-weight: 900; letter-spacing: .14em; }
+.admin-creator-approval-panel strong { font-size: 22px; }
+.admin-creator-approval-panel p { margin: 0; color: #657086; font-size: 13px; }
+.admin-creator-approval-actions { display: flex; gap: 8px; }
+
+@media (max-width: 760px) {
+  .admin-creator-approval-panel { align-items: stretch; flex-direction: column; padding: 18px; }
+  .admin-creator-approval-actions { display: grid; grid-template-columns: 1fr 1fr; }
+}
