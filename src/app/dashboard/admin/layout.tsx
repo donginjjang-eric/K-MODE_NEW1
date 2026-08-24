@@ -6,6 +6,7 @@ import { getAdminPendingCounts } from "@/lib/db";
 import { AdminSideNav, AdminTabBar } from "@/components/AdminNav";
 import LogoutButton from "@/components/LogoutButton";
 import ScrollResetOnLoad from "@/components/ScrollResetOnLoad";
+import MasterRoleSwitcher from "@/components/MasterRoleSwitcher";
 
 export default async function AdminStudioLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser("admin");
@@ -26,7 +27,7 @@ export default async function AdminStudioLayout({ children }: { children: React.
           <span className="role-chip admin">관리자 콘솔</span>
         </Link>
         <div className="top-context">
-          <Link className="top-link" href="/dashboard/designer">디자이너 화면</Link>
+          <MasterRoleSwitcher email={user.email} active="admin" />
           <div className="me compact">
             <span className="role-label">운영자</span>
             <span>{user.email}</span>

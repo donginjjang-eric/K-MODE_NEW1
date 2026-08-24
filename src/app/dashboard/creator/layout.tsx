@@ -4,6 +4,7 @@ import { requireApprovedCreator } from "@/lib/auth";
 import { CreatorSideNav, CreatorTabBar } from "@/components/CreatorNav";
 import { CreatorDemoControls } from "@/components/CreatorDemoControls";
 import { CreatorPersonaSwitch } from "@/components/CreatorPersonaSwitch";
+import MasterRoleSwitcher from "@/components/MasterRoleSwitcher";
 
 export default async function CreatorCenterLayout({ children }: { children: React.ReactNode }) {
   const { user, creator } = await requireApprovedCreator();
@@ -17,6 +18,7 @@ export default async function CreatorCenterLayout({ children }: { children: Reac
             <span>해외 크리에이터가 실제로 보는 화면입니다.</span>
             <Link href="/dashboard/admin/campaigns">캠페인 관리</Link>
           </div>
+          <MasterRoleSwitcher email={user.email} active="creator" />
           <CreatorPersonaSwitch />
           <CreatorDemoControls />
         </div>

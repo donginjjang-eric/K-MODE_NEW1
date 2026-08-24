@@ -4,6 +4,7 @@ import { requireApprovedDesigner } from "@/lib/auth";
 import { StudioSideNav, StudioTabBar } from "@/components/StudioNav";
 import LogoutButton from "@/components/LogoutButton";
 import ScrollResetOnLoad from "@/components/ScrollResetOnLoad";
+import MasterRoleSwitcher from "@/components/MasterRoleSwitcher";
 
 export default async function DesignerStudioLayout({ children }: { children: React.ReactNode }) {
   const { user, designer } = await requireApprovedDesigner();
@@ -19,6 +20,7 @@ export default async function DesignerStudioLayout({ children }: { children: Rea
           <span className="role-chip designer">디자이너 스튜디오</span>
         </Link>
         <div className="top-context">
+          <MasterRoleSwitcher email={user.email} active="designer" />
           <Link className="mobile-home-link" href="/" aria-label="메인 홈페이지로 이동">⌂</Link>
           <Link className="top-link" href={publicHref}>공개 페이지</Link>
           <div className="me compact">

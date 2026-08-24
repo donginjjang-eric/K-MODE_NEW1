@@ -1206,6 +1206,17 @@ export async function getUserByEmail(email: string): Promise<(User & { password_
   }
 }
 
+export async function ensureMasterAdminRole(userId: string, email: string): Promise<User | null> {
+  if (!hasDatabase()) return null;
+  return one<User>(
+    `UPDATE users
+        SET role = 'admin', updated_at = now()
+      WHERE id = $1 AND lower(email) = lower($2)
+      RETURNING id, email, role, created_at, updated_at`,
+    [userId, email],
+  );
+}
+
 // 같은 이메일로 제출된 미연결 디자이너 신청서를 이 사용자에 연결한다.
 // (스키마는 부팅 시 scripts/ensure-schema.mjs가 보장한다)
 export async function getCreatorAccountForUser(userId: string): Promise<CreatorAccount | null> {
@@ -1267,6 +1278,29 @@ export async function getOrCreateAdminCreatorAccount(userId: string, email: stri
     if (!canUseDemoData()) throw error;
     return null;
   }
+}
+
+export async function getOrCreateAdminDesignerAccount(userId: string, email: string): Promise<Designer | null> {
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    return toDemoDesigner();
+  }
+  return one<Designer>(
+    `WITH existing AS (
+       SELECT * FROM designers WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1
+     ), inserted AS (
+       INSERT INTO designers
+         (user_id, brand_name, designer_name, contact_email, contact_phone, description, mood, country, approval_status)
+       SELECT $1, 'K-MODU MASTER STUDIO', 'K-MODU 운영자', $2, '', '마스터 관리자용 디자이너 스튜디오', 'K-Fashion', 'South Korea', 'approved'
+        WHERE NOT EXISTS (SELECT 1 FROM existing)
+       RETURNING *
+     )
+     SELECT * FROM existing
+     UNION ALL
+     SELECT * FROM inserted
+     LIMIT 1`,
+    [userId, email.trim().toLowerCase()],
+  );
 }
 
 export async function getApprovedCreatorAccountForAdminPreview(): Promise<CreatorAccount | null> {

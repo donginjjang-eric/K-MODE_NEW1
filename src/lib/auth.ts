@@ -1,8 +1,9 @@
 import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getCreatorAccountForUser, getDesignerForUser, getOrCreateAdminCreatorAccount, getUserByEmail } from "./db";
+import { ensureMasterAdminRole, getCreatorAccountForUser, getDesignerForUser, getOrCreateAdminCreatorAccount, getOrCreateAdminDesignerAccount, getUserByEmail } from "./db";
 import { hasActiveAgencyGroupRelationship } from "./creator-management";
+import { isMasterAdminEmail } from "./master-admin";
 import type { CreatorAccount, Role, User } from "./types";
 
 export const sessionCookieName = "kmodu_session";
@@ -70,7 +71,10 @@ export function parseSessionToken(token?: string | null): SessionUser | null {
 
 export async function getCurrentUser() {
   const cookieStore = await cookies();
-  return parseSessionToken(cookieStore.get(sessionCookieName)?.value);
+  const session = parseSessionToken(cookieStore.get(sessionCookieName)?.value);
+  if (!session || !isMasterAdminEmail(session.email)) return session;
+  const promoted = await ensureMasterAdminRole(session.id, session.email).catch(() => null);
+  return promoted ? { ...session, role: "admin" as const } : session;
 }
 
 export function loginEntryUrl(value: Role | Pick<User, "role">) {
@@ -109,9 +113,9 @@ export async function requireApprovedDesigner() {
 
   const designer = await getDesignerForUser(user.id);
   if (user.role === "admin") {
-    // 관리자인데 연결된 디자이너 프로필이 없으면, 조용히 튕기지 말고 이유와 다음 행동을 안내한다.
-    if (!designer) redirect("/login?notice=studio_profile_required");
-    return { user, designer };
+    const adminDesigner = designer || await getOrCreateAdminDesignerAccount(user.id, user.email);
+    if (!adminDesigner) redirect("/login?notice=studio_profile_required");
+    return { user, designer: adminDesigner };
   }
   if (!designer || designer.approval_status !== "approved") redirect("/login?error=approval_required");
   return { user, designer };

@@ -665,6 +665,45 @@ p {
   text-align: center;
 }
 
+.master-role-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid rgba(17, 17, 17, .14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 8px 22px rgba(17, 17, 17, .08);
+}
+
+.master-role-switcher > span {
+  padding: 0 8px;
+  color: #9a7a3a;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.master-role-switcher a {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #4f4a42;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.master-role-switcher a.is-active {
+  background: #15130f;
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .master-role-switcher > span { display: none; }
+  .master-role-switcher a { padding: 6px 8px; font-size: 10px; }
+}
+
 .login-form-card .generate-button {
   min-height: 54px;
   margin-top: 4px;
