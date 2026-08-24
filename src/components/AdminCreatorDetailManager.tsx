@@ -84,7 +84,7 @@ export default function AdminCreatorDetailManager({ creator, groups, durable }: 
     try {
       await api(`/api/admin/creators/${encodeURIComponent(creator.creator_key)}`, {
         method: "PATCH",
-        body: JSON.stringify({ approvalStatus: nextStatus }),
+        body: JSON.stringify(durable ? { approvalStatus: nextStatus } : { email: email.trim(), status: nextStatus }),
       });
       setApprovalStatus(nextStatus);
       setProfileMessage(nextStatus === "approved" ? "크리에이터 신청을 승인했습니다." : "크리에이터 신청을 보류했습니다.");
