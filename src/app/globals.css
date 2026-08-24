@@ -822,6 +822,9 @@ p {
 .login-role-options span { font-size: 12.5px; line-height: 1.5; color: #6f6b62; }
 .creator-application-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .creator-application-grid .is-wide { grid-column: 1 / -1; }
+.login-account-switch-form { display: grid; gap: 7px; margin-top: 16px; }
+.login-account-switch-form small { color: #7d756a; font-size: 11px; text-align: center; }
+.login-account-switch-notice { margin: 16px 0 0; border-left: 4px solid #d68419; padding: 11px 12px; background: #fff5df; color: #734000; font-size: 12px; line-height: 1.55; }
 .creator-application-grid textarea { min-height: 78px; resize: vertical; padding: 12px; border: 1px solid #d8d0c2; border-radius: 10px; font: inherit; }
 .login-back-button { border: 0; padding: 0; margin: 0 0 10px; background: none; color: #6f6b62; cursor: pointer; font-weight: 700; }
 

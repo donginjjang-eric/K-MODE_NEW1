@@ -64,6 +64,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
   const [nextPath, setNextPath] = useState("");
   // 관리자 페이지 접근이 차단되어 온 경우: 계정 전환 안내를 최우선으로 보여준다.
   const [adminRequired, setAdminRequired] = useState(false);
+  const [accountSwitchFailed, setAccountSwitchFailed] = useState(false);
   // 카카오톡 등 인앱 브라우저: 구글이 OAuth를 차단하므로 외부 브라우저로 탈출시킨다.
   const [inAppBrowser, setInAppBrowser] = useState(false);
   const googleLoginStarted = useRef(false);
@@ -104,6 +105,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
     const params = new URLSearchParams(window.location.search);
     const key = params.get("notice") || params.get("error") || "";
     if (PARAM_MESSAGES[key]) setMessage(PARAM_MESSAGES[key]);
+    if (params.get("error") === "google_failed") setAccountSwitchFailed(true);
     if (params.get("error") === "admin_required") setAdminRequired(true);
     const next = safeNextPathFromLocation();
     if (next) setNextPath(next);
@@ -308,6 +310,14 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
             </div>
           </div>
         )}
+
+        {accountSwitchFailed ? <p className="login-account-switch-notice" role="alert">Google 계정 전환이 완료되지 않아 기존 K-MODU 로그인 계정을 유지하고 있습니다.</p> : null}
+        {googleEnabled ? (
+          <form action="/api/auth/google/switch" method="post" className="login-account-switch-form">
+            <button className="generate-button login-status-cta" type="submit">다른 Google 계정으로 전환</button>
+            <small>현재 K-MODU 세션을 종료하고 Google 계정을 다시 선택합니다.</small>
+          </form>
+        ) : null}
 
         <button className="login-email-toggle" type="button" onClick={logout}>로그아웃</button>
         {message ? <p className="notice">{message}</p> : null}
