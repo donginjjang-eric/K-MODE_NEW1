@@ -4,7 +4,7 @@ export const masterRoleDestinations = [
   { key: "designer", label: "디자이너", href: "/dashboard/designer/brand" },
 ] as const;
 
-const defaultMasterAdminEmails = "donginjjang@gmail.com";
+const defaultMasterAdminEmails = "donginjjang@gmail.com,clarako298@gmail.com";
 
 export function isMasterAdminEmail(email: string, configuredEmails = process.env.MASTER_ADMIN_EMAILS || "") {
   const normalized = email.trim().toLowerCase();
