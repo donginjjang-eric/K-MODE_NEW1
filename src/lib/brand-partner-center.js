@@ -1,10 +1,12 @@
 export const BEAUTY_PARTNER_NAV_ITEMS = [
   { href: "/dashboard/beauty", icon: "home", label: "홈", short: "홈", availability: "active" },
-  { href: "/dashboard/beauty/brand", icon: "badge", label: "브랜드 프로필", short: "프로필", availability: "active" },
-  { href: "/dashboard/beauty/products", icon: "package", label: "상품 관리", short: "상품", availability: "active" },
-  { href: "/dashboard/beauty/campaigns", icon: "file", label: "캠페인", short: "캠페인", availability: "upcoming" },
-  { href: "/dashboard/beauty/matching", icon: "users", label: "크리에이터 매칭", short: "매칭", availability: "upcoming" },
-  { href: "/dashboard/beauty/transactions", icon: "inbox", label: "거래 관리", short: "거래", availability: "upcoming" },
+  { href: "/dashboard/beauty/brand", icon: "badge", label: "브랜드", short: "브랜드", availability: "active" },
+  { href: "/dashboard/beauty/products", icon: "package", label: "상품", short: "상품", availability: "active" },
+  { href: "/dashboard/beauty/campaigns", icon: "users", label: "캠페인·매칭", short: "캠페인", availability: "active" },
+  { href: "/dashboard/beauty/proposals", icon: "inbox", label: "제안·거래", short: "제안", availability: "active" },
+  { href: "/dashboard/beauty/content", icon: "image", label: "콘텐츠 검수", short: "검수", availability: "active" },
+  { href: "/dashboard/beauty/orders", icon: "file", label: "성과·주문", short: "성과", availability: "active" },
+  { href: "/dashboard/beauty/settlements", icon: "book", label: "정산", short: "정산", availability: "active" },
 ];
 
 export function normalizeBrandCategory(value) {

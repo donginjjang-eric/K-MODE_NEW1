@@ -178,7 +178,7 @@ async function getCreatorForUpdate(client: DatabaseTransactionClient, creatorId:
   return result.rows[0];
 }
 
-function resolveAdminParticipationAction(fromStatus: ParticipationStatus, action: AdminParticipationAction): ParticipationStatus {
+export function resolveCampaignOperatorParticipationAction(fromStatus: ParticipationStatus, action: AdminParticipationAction): ParticipationStatus {
   if (action === "approve") {
     if (fromStatus === "invited") throw new Error("Creator must accept invitations themselves.");
     if (fromStatus !== "applied") throw new Error(`Cannot transition participation from ${fromStatus} with approve.`);
@@ -229,7 +229,7 @@ function assertHttpsImageUrls(imageUrls: string[]) {
   }
 }
 
-function assertValidAdminCampaignInput(input: Omit<AdminCampaignInput, "application_deadline" | "content_deadline"> & {
+export function assertValidCampaignInput(input: Omit<AdminCampaignInput, "application_deadline" | "content_deadline"> & {
   application_deadline: string | null | undefined;
   content_deadline: string | null | undefined;
 }) {
@@ -264,9 +264,19 @@ function assertAdminCampaignStatus(status: string): asserts status is AdminCampa
   if (!ADMIN_CAMPAIGN_STATUSES.includes(status as AdminCampaignStatus)) throw new Error("Campaign status is invalid.");
 }
 
+export function canTransitionCampaignStatus(fromStatus: AdminCampaignStatus, toStatus: AdminCampaignStatus) {
+  const allowed: Record<AdminCampaignStatus, AdminCampaignStatus[]> = {
+    draft: ["recruiting", "closed"],
+    recruiting: ["active", "closed"],
+    active: ["closed"],
+    closed: [],
+  };
+  return fromStatus === toStatus || allowed[fromStatus].includes(toStatus);
+}
+
 export async function listAdminCampaigns(filters: { status?: AdminCampaignStatus; category?: string; search?: string } = {}): Promise<AdminCampaignListItem[]> {
   if (!hasDatabase()) return [];
-  const conditions: string[] = [];
+  const conditions: string[] = ["c.owner_type = 'admin'"];
   const params: unknown[] = [];
   if (filters.status) {
     params.push(filters.status);
@@ -312,7 +322,7 @@ export type AdminCampaignDetail = Campaign & {
 
 export async function getAdminCampaign(id: string): Promise<AdminCampaignDetail | null> {
   if (!hasDatabase()) return null;
-  const campaign = await one<Campaign>("SELECT * FROM campaigns WHERE id = $1", [id]);
+  const campaign = await one<Campaign>("SELECT * FROM campaigns WHERE id = $1 AND owner_type = 'admin'", [id]);
   if (!campaign) return null;
 
   const participants = await query<Omit<AdminCampaignParticipant, "submissions" | "performance" | "events">>(
@@ -354,7 +364,7 @@ export async function getAdminCampaign(id: string): Promise<AdminCampaignDetail 
 }
 
 export async function createAdminCampaign(adminId: string, input: AdminCampaignInput): Promise<Campaign> {
-  assertValidAdminCampaignInput(input);
+  assertValidCampaignInput(input);
   const rewardText = normalizeCampaignRewardText(input.reward_text);
   return withDatabaseTransaction(async (client) => {
     await getAdminForUpdate(client, adminId);
@@ -373,14 +383,14 @@ export async function createAdminCampaign(adminId: string, input: AdminCampaignI
 export async function updateAdminCampaign(adminId: string, id: string, input: Partial<AdminCampaignInput>): Promise<Campaign> {
   return withDatabaseTransaction(async (client) => {
     await getAdminForUpdate(client, adminId);
-    const current = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [id]);
+    const current = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 AND owner_type = 'admin' FOR UPDATE", [id]);
     const campaign = current.rows[0];
     if (!campaign) throw new Error("Campaign was not found.");
     if (campaign.status !== "draft" && campaign.status !== "recruiting") {
       throw new Error("Only draft or recruiting campaigns can be edited.");
     }
     const next = { ...campaign, ...input, image_urls: input.image_urls ?? campaign.image_urls };
-    assertValidAdminCampaignInput(next);
+    assertValidCampaignInput(next);
     const rewardText = normalizeCampaignRewardText(next.reward_text);
     if (next.slots < campaign.slots) {
       const occupiedSlots = await getCampaignOccupiedSlots(client, id);
@@ -390,7 +400,7 @@ export async function updateAdminCampaign(adminId: string, id: string, input: Pa
       `UPDATE campaigns
           SET title = $2, category = $3, markets = $4::jsonb, platforms = $5::jsonb, brief = $6, reward_text = $7,
               application_deadline = $8, content_deadline = $9, slots = $10, image_urls = $11::jsonb, updated_at = now()
-        WHERE id = $1 RETURNING *`,
+        WHERE id = $1 AND owner_type = 'admin' RETURNING *`,
       [id, next.title.trim(), next.category.trim(), JSON.stringify(next.markets), JSON.stringify(next.platforms), next.brief.trim(), rewardText, next.application_deadline ?? null, next.content_deadline ?? null, next.slots, JSON.stringify(next.image_urls ?? [])],
     );
     const updated = result.rows[0];
@@ -403,19 +413,13 @@ export async function setAdminCampaignStatus(adminId: string, id: string, status
   assertAdminCampaignStatus(status);
   return withDatabaseTransaction(async (client) => {
     await getAdminForUpdate(client, adminId);
-    const current = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [id]);
+    const current = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 AND owner_type = 'admin' FOR UPDATE", [id]);
     const campaign = current.rows[0];
     if (!campaign) throw new Error("Campaign was not found.");
-    const allowed: Record<AdminCampaignStatus, AdminCampaignStatus[]> = {
-      draft: ["recruiting", "closed"],
-      recruiting: ["active", "closed"],
-      active: ["closed"],
-      closed: [],
-    };
-    if (campaign.status !== status && !allowed[campaign.status].includes(status)) {
+    if (!canTransitionCampaignStatus(campaign.status, status)) {
       throw new Error(`Cannot transition campaign from ${campaign.status} to ${status}.`);
     }
-    const result = await client.query<Campaign>("UPDATE campaigns SET status = $2, updated_at = now() WHERE id = $1 RETURNING *", [id, status]);
+    const result = await client.query<Campaign>("UPDATE campaigns SET status = $2, updated_at = now() WHERE id = $1 AND owner_type = 'admin' RETURNING *", [id, status]);
     const updated = result.rows[0];
     if (!updated) throw new Error("Campaign status could not be updated.");
     return updated;
@@ -425,13 +429,16 @@ export async function setAdminCampaignStatus(adminId: string, id: string, status
 export async function transitionParticipationAsAdmin(adminId: string, participationId: string, action: AdminParticipationAction, note?: string): Promise<CampaignParticipation> {
   return withDatabaseTransaction(async (client) => {
     await getAdminForUpdate(client, adminId);
-    const current = await client.query<CampaignParticipation>("SELECT * FROM campaign_participations WHERE id = $1 FOR UPDATE", [participationId]);
+    const current = await client.query<CampaignParticipation>(
+      "SELECT * FROM campaign_participations WHERE id = $1 AND EXISTS (SELECT 1 FROM campaigns WHERE campaigns.id = campaign_id AND owner_type = 'admin') FOR UPDATE",
+      [participationId],
+    );
     const participation = current.rows[0];
     if (!participation) throw new Error("Campaign participation was not found.");
-    const campaignResult = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [participation.campaign_id]);
+    const campaignResult = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 AND owner_type = 'admin' FOR UPDATE", [participation.campaign_id]);
     const campaign = campaignResult.rows[0];
     if (!campaign) throw new Error("Campaign was not found.");
-    const nextStatus = resolveAdminParticipationAction(participation.status, action);
+    const nextStatus = resolveCampaignOperatorParticipationAction(participation.status, action);
     assertTransition(participation.status, nextStatus);
     if (!participationConsumesCampaignCapacity(participation.status) && participationConsumesCampaignCapacity(nextStatus)) {
       assertCampaignHasCapacity(campaign, await getCampaignOccupiedSlots(client, participation.campaign_id));
@@ -583,7 +590,7 @@ export async function createCampaignInvitation(actorUserId: string, campaignId: 
     const creator = await getCreatorForUpdate(client, creatorId);
     if (creator.approval_status !== "approved") throw new Error("Creator account is not approved.");
 
-    const campaignResult = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 FOR UPDATE", [campaignId]);
+    const campaignResult = await client.query<Campaign>("SELECT * FROM campaigns WHERE id = $1 AND owner_type = 'admin' FOR UPDATE", [campaignId]);
     const campaign = campaignResult.rows[0];
     if (!campaign) throw new Error("Campaign was not found.");
     if (isDemoCampaign(campaign)) {

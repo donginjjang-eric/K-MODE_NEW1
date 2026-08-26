@@ -85,12 +85,12 @@ export default function BeautyPartnerHome({
       </section>
 
       <section className="beauty-coming-section">
-        <p className="beauty-eyebrow">COMING NEXT</p>
-        <h2>파트너 운영 기능</h2>
+        <p className="beauty-eyebrow">PARTNER OPERATIONS</p>
+        <h2>캠페인 운영 바로가기</h2>
         <div className="beauty-coming-grid">
-          <article><NavIcon name="file" /><strong>캠페인</strong><span>Task 4에서 제공 예정</span></article>
-          <article><NavIcon name="users" /><strong>크리에이터 매칭</strong><span>Task 4에서 제공 예정</span></article>
-          <article><NavIcon name="inbox" /><strong>거래 관리</strong><span>Task 4에서 제공 예정</span></article>
+          <Link href="/dashboard/beauty/campaigns"><NavIcon name="users" /><strong>캠페인·매칭</strong><span>상품 캠페인과 참여자 운영</span></Link>
+          <Link href="/dashboard/beauty/proposals"><NavIcon name="inbox" /><strong>제안·거래</strong><span>받은 샘플·협업 요청</span></Link>
+          <Link href="/dashboard/beauty/content"><NavIcon name="image" /><strong>콘텐츠 검수</strong><span>제출본 승인과 수정 요청</span></Link>
         </div>
       </section>
     </div>

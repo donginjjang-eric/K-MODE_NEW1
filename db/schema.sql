@@ -320,8 +320,10 @@ CREATE INDEX IF NOT EXISTS creator_management_audit_logs_group_created_idx
 
 CREATE TABLE IF NOT EXISTS campaigns (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  owner_type text NOT NULL DEFAULT 'admin' CHECK (owner_type IN ('admin')),
+  owner_type text NOT NULL DEFAULT 'admin' CHECK (owner_type IN ('admin', 'designer')),
   owner_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  designer_id text REFERENCES designers(id) ON DELETE RESTRICT,
+  product_id text REFERENCES products(id) ON DELETE SET NULL,
   title text NOT NULL,
   category text NOT NULL,
   markets jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -334,10 +336,66 @@ CREATE TABLE IF NOT EXISTS campaigns (
   image_urls jsonb NOT NULL DEFAULT '[]'::jsonb,
   status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'recruiting', 'active', 'closed')),
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT campaigns_designer_owner_check CHECK (
+    (owner_type = 'admin' AND designer_id IS NULL)
+    OR (owner_type = 'designer' AND designer_id IS NOT NULL)
+  )
 );
 
 ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_urls jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS designer_id text;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS product_id text;
+
+-- Existing installations only allow admin ownership. Keep owner_id's users FK
+-- intact for legacy/admin campaigns and add a dedicated designer FK for partner
+-- campaigns so polymorphic ownership never weakens the existing reference.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'campaigns_owner_type_check'
+      AND conrelid = 'campaigns'::regclass
+  ) THEN
+    ALTER TABLE campaigns DROP CONSTRAINT campaigns_owner_type_check;
+  END IF;
+
+  ALTER TABLE campaigns
+    ADD CONSTRAINT campaigns_owner_type_check
+    CHECK (owner_type IN ('admin', 'designer'));
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'campaigns_designer_id_fkey'
+      AND conrelid = 'campaigns'::regclass
+  ) THEN
+    ALTER TABLE campaigns
+      ADD CONSTRAINT campaigns_designer_id_fkey
+      FOREIGN KEY (designer_id) REFERENCES designers(id) ON DELETE RESTRICT;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'campaigns_product_id_fkey'
+      AND conrelid = 'campaigns'::regclass
+  ) THEN
+    ALTER TABLE campaigns
+      ADD CONSTRAINT campaigns_product_id_fkey
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'campaigns_designer_owner_check'
+      AND conrelid = 'campaigns'::regclass
+  ) THEN
+    ALTER TABLE campaigns
+      ADD CONSTRAINT campaigns_designer_owner_check CHECK (
+        (owner_type = 'admin' AND designer_id IS NULL)
+        OR (owner_type = 'designer' AND designer_id IS NOT NULL)
+      );
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS campaign_participations (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -397,6 +455,14 @@ CREATE INDEX IF NOT EXISTS creator_accounts_user_id_idx
 CREATE INDEX IF NOT EXISTS campaigns_recruiting_filters_idx
   ON campaigns(status, application_deadline, category)
   WHERE status = 'recruiting';
+
+CREATE INDEX IF NOT EXISTS campaigns_designer_owner_idx
+  ON campaigns(owner_type, designer_id, created_at DESC)
+  WHERE owner_type = 'designer';
+
+CREATE INDEX IF NOT EXISTS campaigns_product_idx
+  ON campaigns(product_id)
+  WHERE product_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS campaign_participations_creator_status_idx
   ON campaign_participations(creator_account_id, status, updated_at DESC);

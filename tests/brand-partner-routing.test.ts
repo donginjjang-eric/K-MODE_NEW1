@@ -36,16 +36,18 @@ test("routes beauty and hybrid partners to beauty while preserving fashion fallb
   assert.equal(passwordLoginDestination({ role: "designer", brand_category: "beauty" }, "//evil.example"), "/dashboard/beauty");
 });
 
-test("defines three active beauty destinations and reserves the Task 4 destinations", () => {
+test("defines all eight active beauty partner destinations", () => {
   assert.deepEqual(
     BEAUTY_PARTNER_NAV_ITEMS.map(({ label, href, availability }) => ({ label, href, availability })),
     [
       { label: "홈", href: "/dashboard/beauty", availability: "active" },
-      { label: "브랜드 프로필", href: "/dashboard/beauty/brand", availability: "active" },
-      { label: "상품 관리", href: "/dashboard/beauty/products", availability: "active" },
-      { label: "캠페인", href: "/dashboard/beauty/campaigns", availability: "upcoming" },
-      { label: "크리에이터 매칭", href: "/dashboard/beauty/matching", availability: "upcoming" },
-      { label: "거래 관리", href: "/dashboard/beauty/transactions", availability: "upcoming" },
+      { label: "브랜드", href: "/dashboard/beauty/brand", availability: "active" },
+      { label: "상품", href: "/dashboard/beauty/products", availability: "active" },
+      { label: "캠페인·매칭", href: "/dashboard/beauty/campaigns", availability: "active" },
+      { label: "제안·거래", href: "/dashboard/beauty/proposals", availability: "active" },
+      { label: "콘텐츠 검수", href: "/dashboard/beauty/content", availability: "active" },
+      { label: "성과·주문", href: "/dashboard/beauty/orders", availability: "active" },
+      { label: "정산", href: "/dashboard/beauty/settlements", availability: "active" },
     ],
   );
 });

@@ -2,7 +2,7 @@ export type NormalizedBrandCategory = "beauty" | "fashion" | "hybrid";
 
 export type BeautyPartnerNavItem = {
   href: string;
-  icon: "home" | "badge" | "package" | "file" | "users" | "inbox";
+  icon: "home" | "badge" | "package" | "file" | "users" | "inbox" | "image" | "book";
   label: string;
   short: string;
   availability: "active" | "upcoming";
