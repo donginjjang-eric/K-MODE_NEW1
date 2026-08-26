@@ -3,7 +3,10 @@
 // 관리자 상품 검수: 필터·검색·요약·일괄전환·브랜드그룹·목록뷰·호버 미리보기를 한 화면에서.
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import AdminImageWithFallback from "@/components/AdminImageWithFallback";
+import AdminPagination from "@/components/AdminPagination";
 import type { AdminProduct } from "@/lib/db";
+import { paginateAdminItems } from "@/lib/admin-list-utils";
 
 type Status = "active" | "draft" | "hidden";
 
@@ -29,6 +32,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [groupByBrand, setGroupByBrand] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -47,7 +51,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
     return c;
   }, [products, statusMap]);
 
-  const visible = useMemo(() => {
+  const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return products.filter((p) => {
       const st = statusMap[p.id];
@@ -58,16 +62,27 @@ export default function AdminProductsManager({ products }: { products: AdminProd
       return true;
     });
   }, [products, statusMap, statusFilter, brandFilter, categoryFilter, search]);
+  const pageProducts = useMemo(() => paginateAdminItems(filtered, currentPage), [currentPage, filtered]);
 
   const grouped = useMemo(() => {
-    if (!groupByBrand) return [{ brand: "", items: visible }];
+    if (!groupByBrand) return [{ brand: "", items: pageProducts }];
     const map = new Map<string, AdminProduct[]>();
-    visible.forEach((p) => {
+    pageProducts.forEach((p) => {
       const key = p.designer_brand_name || "Unknown";
       map.set(key, [...(map.get(key) || []), p]);
     });
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([brand, items]) => ({ brand, items }));
-  }, [visible, groupByBrand]);
+  }, [pageProducts, groupByBrand]);
+
+  const resetPage = () => {
+    setCurrentPage(1);
+    setSelected(new Set());
+  };
+
+  const changePage = (page: number) => {
+    setCurrentPage(page);
+    setSelected(new Set());
+  };
 
   const setStatus = async (ids: string[], next: Status) => {
     setBusy(true);
@@ -132,7 +147,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
     <button
       type="button"
       className={`apm-chip${statusFilter === key ? " is-active" : ""}`}
-      onClick={() => setStatusFilter(key)}
+      onClick={() => { setStatusFilter(key); resetPage(); }}
     >
       {label} <b>{n}</b>
     </button>
@@ -153,17 +168,17 @@ export default function AdminProductsManager({ products }: { products: AdminProd
             type="search"
             placeholder="상품명·브랜드 검색"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); resetPage(); }}
           />
-          <select value={brandFilter} onChange={(e) => setBrandFilter(e.target.value)} aria-label="브랜드 필터">
+          <select value={brandFilter} onChange={(e) => { setBrandFilter(e.target.value); resetPage(); }} aria-label="브랜드 필터">
             <option value="all">전체 브랜드</option>
             {brands.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="카테고리 필터">
+          <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); resetPage(); }} aria-label="카테고리 필터">
             <option value="all">전체 분류</option>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
-          <button type="button" className={`apm-toggle${groupByBrand ? " is-active" : ""}`} onClick={() => setGroupByBrand((v) => !v)}>
+          <button type="button" className={`apm-toggle${groupByBrand ? " is-active" : ""}`} onClick={() => { setGroupByBrand((v) => !v); resetPage(); }}>
             브랜드별 묶기
           </button>
           <button type="button" className="apm-toggle" onClick={() => setViewMode((v) => (v === "grid" ? "list" : "grid"))}>
@@ -172,10 +187,10 @@ export default function AdminProductsManager({ products }: { products: AdminProd
         </div>
       </div>
 
-      <p className="apm-result">{visible.length}개 표시 중</p>
+      <AdminPagination total={filtered.length} currentPage={currentPage} onPageChange={changePage} unit="개" />
       {notice ? <p className="apm-notice" role="alert">{notice}</p> : null}
 
-      {visible.length ? (
+      {filtered.length ? (
         grouped.map(({ brand, items }) => (
           <section key={brand || "all"} className="apm-group">
             {brand ? <h2 className="apm-group-head">{brand} <span>{items.length}</span></h2> : null}
@@ -192,15 +207,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
                       onMouseEnter={(e) => showHover(e, p.image_url)}
                       onMouseLeave={hideHover}
                     >
-                      <img
-                        className="st-card-media"
-                        src={p.image_url}
-                        alt={`${p.name} 상품 이미지`}
-                        width={600}
-                        height={800}
-                        loading="lazy"
-                        decoding="async"
-                      />
+                      <AdminImageWithFallback src={p.image_url} alt={`${p.name} 상품 이미지`} width={600} height={800} />
                       <span className={`badge ${isPublic ? "pub" : "priv"}`}>{STATUS_LABEL[st]}</span>
                     </div>
                     <div className="b">
@@ -226,15 +233,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
                   <div className={`apm-row${checked ? " is-checked" : ""}`} key={p.id}>
                     <label className="apm-check"><input type="checkbox" checked={checked} onChange={() => toggleSelect(p.id)} /></label>
                     <div className="apm-row-thumb" onMouseEnter={(e) => showHover(e, p.image_url)} onMouseLeave={hideHover}>
-                      <img
-                        className="st-card-media"
-                        src={p.image_url}
-                        alt={`${p.name} 상품 이미지`}
-                        width={96}
-                        height={96}
-                        loading="lazy"
-                        decoding="async"
-                      />
+                      <AdminImageWithFallback src={p.image_url} alt={`${p.name} 상품 이미지`} width={96} height={96} />
                     </div>
                     <div className="apm-row-name">{p.name}</div>
                     <div className="apm-row-brand">{p.designer_brand_name || "Unknown"}</div>

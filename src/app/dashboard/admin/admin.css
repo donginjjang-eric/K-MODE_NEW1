@@ -441,3 +441,75 @@ body:has(.admin-studio) .quick-link-stack { display: none !important; }
   .admin-creator-approval-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .admin-approval-toast { top: 76px; right: 14px; left: 14px; min-width: 0; }
 }
+
+/* Task 2: 운영 홈과 공용 목록 UX */
+.admin-studio .admin-action-center { display: grid; gap: 14px; margin-bottom: 26px; border: 1px solid #d8d1c7; padding: 20px; background: #fff; }
+.admin-studio .admin-action-center-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.admin-studio .admin-action-center-head span { color: #9a7d4d; font-size: 9px; font-weight: 900; letter-spacing: .18em; }
+.admin-studio .admin-action-center-head h2 { margin: 5px 0 0; color: #171411; font-size: 21px; }
+.admin-studio .admin-action-center-head p { margin: 0; color: #706a61; font-size: 12px; font-weight: 800; }
+.admin-studio .admin-action-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.admin-studio .admin-action-card { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; min-width: 0; border: 1px solid #e2ddd4; padding: 15px; background: #faf8f4; color: #514a43; }
+.admin-studio .admin-action-card.has-pending { border-color: #d6a65a; background: #fff8e9; }
+.admin-studio .admin-action-card span { font-size: 12px; font-weight: 900; }
+.admin-studio .admin-action-card strong { grid-row: span 2; color: #171411; font-size: 28px; line-height: 1; }
+.admin-studio .admin-action-card small { color: #918a80; font-size: 10px; }
+.admin-studio .admin-action-card em { grid-column: 1 / -1; margin-top: 8px; color: #6d5327; font-size: 10px; font-style: normal; font-weight: 900; }
+
+.admin-studio .admin-pagination { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 8px 0 14px; }
+.admin-studio .admin-pagination > p { display: flex; gap: 8px; margin: 0; color: #918a80; font-size: 11px; }
+.admin-studio .admin-pagination > p strong { color: #171411; }
+.admin-studio .admin-pagination nav,
+.admin-studio .admin-pagination-pages { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.admin-studio .admin-pagination button { min-width: 34px; min-height: 34px; border: 1px solid #d8d1c7; background: #fff; color: #514a43; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
+.admin-studio .admin-pagination button.is-current { border-color: #171411; background: #171411; color: #fff; }
+.admin-studio .admin-pagination button:disabled { opacity: .4; cursor: not-allowed; }
+
+.admin-studio .admin-image-fallback { box-sizing: border-box; width: 100%; height: 100%; min-height: 96px; place-content: center; place-items: center; gap: 6px; background: linear-gradient(135deg, #eee9e1, #f8f6f1); color: #918a80; text-align: center; }
+.admin-studio .admin-image-fallback span { font-size: 24px; }
+.admin-studio .admin-image-fallback small { font-size: 10px; font-weight: 900; }
+
+.admin-studio .admin-creator-management-table-wrap tr.is-catalogue td { background: #f6f7f8; }
+.admin-studio .admin-creator-origin { display: inline-block; border: 1px solid #d8d1c7; padding: 5px 7px; font-size: 10px; font-weight: 900; white-space: nowrap; }
+.admin-studio .admin-creator-origin.is-application { border-color: #d6a65a; background: #fff8e9; color: #7c4200; }
+.admin-studio .admin-creator-origin.is-catalogue,
+.admin-studio .admin-approval-list-badge.is-catalogue { border-color: #bdc5cf; background: #edf0f3; color: #4d5968; }
+
+.admin-studio .admin-brand-summary { margin: -12px 0 12px; color: #706a61; font-size: 12px; font-weight: 800; }
+.admin-studio .admin-brand-manager { padding-top: 14px; }
+.admin-studio .admin-brand-filters { position: static; justify-content: flex-start; }
+.admin-studio .admin-brand-filters select { min-height: 36px; border: 1px solid #d8d1c7; border-radius: 10px; padding: 0 10px; background: #fff; color: #171411; font: inherit; font-size: 13px; font-weight: 700; }
+.admin-studio .admin-brand-actions { min-width: 0; }
+.admin-studio .admin-brand-actions > div { margin-top: 0 !important; }
+
+@media (max-width: 980px) {
+  .admin-studio .admin-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .admin-studio .admin-action-center { padding: 15px; }
+  .admin-studio .admin-action-center-head { align-items: start; flex-direction: column; }
+  .admin-studio .admin-action-grid { grid-template-columns: 1fr; }
+  .admin-studio .admin-action-card { min-height: 84px; }
+  .admin-studio .admin-pagination { align-items: stretch; flex-direction: column; }
+  .admin-studio .admin-pagination nav { width: 100%; justify-content: space-between; }
+  .admin-studio .admin-pagination-pages { flex: 1; justify-content: center; }
+  .admin-studio .admin-pagination button { min-width: 40px; min-height: 40px; }
+  .admin-studio .admin-brand-filters { align-items: stretch; flex-direction: column; }
+  .admin-studio .admin-brand-filters .apm-search,
+  .admin-studio .admin-brand-filters select { box-sizing: border-box; width: 100%; }
+  .admin-studio .admin-brand-actions,
+  .admin-studio .admin-brand-actions > div,
+  .admin-studio .admin-brand-actions button { width: 100%; }
+  .admin-studio .admin-brand-actions > div { display: grid !important; grid-template-columns: 1fr; }
+  .admin-studio .admin-creator-management-table-wrap { overflow-x: visible; border: 0; background: transparent; }
+  .admin-studio .admin-creator-management-table-wrap table { display: block; min-width: 0; }
+  .admin-studio .admin-creator-management-table-wrap thead { display: none; }
+  .admin-studio .admin-creator-management-table-wrap tbody { display: grid; gap: 10px; }
+  .admin-studio .admin-creator-management-table-wrap tr { display: grid; gap: 8px; border: 1px solid #e2ddd4; padding: 14px; background: #fff; }
+  .admin-studio .admin-creator-management-table-wrap td { display: block; border: 0; padding: 0; background: transparent !important; }
+  .admin-studio .admin-creator-management-table-wrap tr.is-approval-pending { border-left: 4px solid #df8d16; }
+  .admin-studio .admin-approval-review-link { box-sizing: border-box; width: 100%; min-height: 42px; text-align: center; }
+  .admin-studio .admin-generated-manager .admin-actions { display: grid; grid-template-columns: 1fr; }
+  .admin-studio .admin-generated-manager .admin-actions button { width: 100%; min-height: 40px; }
+}
