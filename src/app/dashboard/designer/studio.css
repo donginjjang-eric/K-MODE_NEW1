@@ -744,6 +744,7 @@ a.st-stat:hover { border-color: #94a3b8; transform: translateY(-2px); box-shadow
   .st-top .brand b { font-size: 22px; white-space: nowrap; }
   .st-top .brand span { display: none; }
   .role-chip { display: inline-flex !important; }
+  .admin-studio .st-top .brand .role-chip { display: none !important; }
   .top-link, .st-top .me .role-label { display: none; }
   .top-context { gap: 9px; min-width: 0; }
   .mobile-home-link {
