@@ -41,3 +41,9 @@ test("master workspace switcher uses the same standalone top bar in every center
   const preview = creatorLayout.match(/<div className="creator-admin-preview">([\s\S]*?)<\/div>\s*\) : null\}/)?.[1] || "";
   assert.doesNotMatch(preview, /MasterRoleSwitcher/);
 });
+
+test("admin navigation identifies the operations console with a dedicated illustration", async () => {
+  const adminNav = await readFile(new URL("../src/components/AdminNav.tsx", import.meta.url), "utf8");
+  assert.match(adminNav, /admin-console-operator\.webp/);
+  assert.match(adminNav, /관리자 콘솔 운영 화면/);
+});

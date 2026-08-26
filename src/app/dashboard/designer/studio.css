@@ -625,6 +625,18 @@
 }
 .admin-studio .st-top { background: rgba(248,250,252,.94); border-bottom: 1px solid rgba(17,24,39,.15); }
 .admin-studio .st-side { background: rgba(255,255,255,.44); border-right: 1px solid rgba(17,24,39,.08); }
+.admin-console-identity {
+  flex: 0 0 auto;
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  margin: 0 0 16px;
+  border: 1px solid rgba(180, 148, 93, .48);
+  border-radius: 14px;
+  background: #071423;
+  box-shadow: 0 12px 26px rgba(17, 24, 39, .14);
+}
+.admin-console-identity img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.admin-studio .st-side > nav { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .admin-studio .st-side a { color: #344054; border-radius: 8px; }
 .admin-studio .st-side a:hover { background: #e8edf3; }
 .admin-studio .st-side a.is-active { background: #111827; color: #fff; }

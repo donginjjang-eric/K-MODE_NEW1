@@ -55,7 +55,7 @@ test("defines all eight active beauty partner destinations", () => {
 test("master workspace keeps three clear labels and selects the partner center by category", () => {
   assert.deepEqual(getMasterRoleDestinations("K-뷰티"), [
     { key: "admin", label: "관리자 콘솔", href: "/dashboard/admin" },
-    { key: "creator", label: "크리에이터 센터", href: "/dashboard/creator" },
+    { key: "creator", label: "크리에이터 화면", href: "/dashboard/creator" },
     { key: "designer", label: "브랜드 파트너 센터", href: "/dashboard/beauty" },
   ]);
   assert.equal(getMasterRoleDestinations("복합")[2].href, "/dashboard/beauty");

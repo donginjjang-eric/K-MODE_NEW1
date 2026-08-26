@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import NavIcon from "@/components/NavIcons";
@@ -21,6 +22,15 @@ export function AdminSideNav({ email, badges = {} }: { email: string; badges?: A
 
   return (
     <aside className="st-side">
+      <figure className="admin-console-identity">
+        <Image
+          alt="관리자 콘솔 운영 화면"
+          height={512}
+          priority
+          src="/images/admin-console-operator.webp"
+          width={768}
+        />
+      </figure>
       <nav>
         {ADMIN_NAV_GROUPS.map((group) => (
           <section className="admin-nav-group" key={group.label}>
