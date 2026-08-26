@@ -16,7 +16,7 @@ export default function LoginEditorialPanel() {
       <div className="login-editorial-copy">
         <p className="login-editorial-kicker">K-MODU / DESIGNER STUDIO</p>
         <h2>
-          K-beauty, K-fashion
+          <span className="login-editorial-line">K-beauty, K-fashion</span>
           <br />
           세계를 향합니다
         </h2>
