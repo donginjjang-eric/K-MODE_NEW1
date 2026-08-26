@@ -27,6 +27,13 @@ function approvalLabel(status: ApprovalStatus) {
   return "승인 대기";
 }
 
+export function formatAdminJoinDate(value: string) {
+  const instant = new Date(value);
+  if (Number.isNaN(instant.getTime())) return "-";
+  const korea = new Date(instant.getTime() + 9 * 60 * 60 * 1000);
+  return `${korea.getUTCFullYear()}.${String(korea.getUTCMonth() + 1).padStart(2, "0")}.${String(korea.getUTCDate()).padStart(2, "0")}`;
+}
+
 export function adminUserPresentation(user: AdminUserMembership) {
   if (user.role === "admin") return { roleLabel: "관리자", segment: "admin" as const, profileLabel: "-", status: null, statusLabel: "관리자", href: null };
   if (user.creator_id && user.creator_key) {

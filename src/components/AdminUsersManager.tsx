@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AdminUserRow } from "@/lib/db";
-import { adminUserPresentation, adminUserQuickApproval, type AdminUserSegment } from "@/lib/admin-user-presentation";
+import { adminUserPresentation, adminUserQuickApproval, formatAdminJoinDate, type AdminUserSegment } from "@/lib/admin-user-presentation";
 
 type Segment = AdminUserSegment;
 
@@ -13,12 +13,6 @@ function statusClass(status: string) {
   if (status === "approved") return "approved";
   if (status === "disabled" || status === "rejected") return "disabled";
   return "pending";
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")}`;
 }
 
 export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) {
@@ -220,7 +214,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
                     <Link className="aum-detail-link" href={presentation.href}>상세 보기</Link>
                   ) : <em className="brand-empty">-</em>}
                 </span>
-                <span className="col-date">{formatDate(u.created_at)}</span>
+                <span className="col-date">{formatAdminJoinDate(u.created_at)}</span>
               </article>
             ))}
           </div>
@@ -241,7 +235,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
             </section>
             <dl className="aum-review-facts">
               <div><dt>신청 유형</dt><dd>{quickApproval.kind === "creator" ? "크리에이터" : "디자이너"}</dd></div>
-              <div><dt>가입일</dt><dd>{formatDate(selected.u.created_at)}</dd></div>
+              <div><dt>가입일</dt><dd>{formatAdminJoinDate(selected.u.created_at)}</dd></div>
               {quickApproval.kind === "creator" ? <>
                 <div><dt>활동 국가</dt><dd>{selected.u.creator_market || "미입력"}</dd></div>
                 <div><dt>플랫폼</dt><dd>{selected.u.creator_platform || "미입력"}</dd></div>

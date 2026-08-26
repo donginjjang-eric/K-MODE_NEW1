@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { adminUserPresentation, adminUserQuickApproval } from "../src/lib/admin-user-presentation";
+import { adminUserPresentation, adminUserQuickApproval, formatAdminJoinDate } from "../src/lib/admin-user-presentation";
 
 test("linked creator application overrides the legacy designer default role", () => {
   assert.deepEqual(adminUserPresentation({
@@ -106,4 +106,9 @@ test("approved and account-only users do not expose quick approval", () => {
     brand_name: null,
     designer_approval_status: null,
   }), null);
+});
+
+test("join dates use a fixed Korea timezone across server and browser rendering", () => {
+  assert.equal(formatAdminJoinDate("2026-08-25T16:10:00.000Z"), "2026.08.26");
+  assert.equal(formatAdminJoinDate("invalid"), "-");
 });
