@@ -629,7 +629,7 @@
 .admin-studio .st-stat,
 .admin-studio .st-bigbtn,
 .admin-studio .st-pcard { border-color: rgba(17,24,39,.12); box-shadow: 0 10px 28px rgba(17,24,39,.04); }
-.admin-studio .st-shell { max-width: 1320px; }
+.admin-studio .st-shell { width: 100%; max-width: 1680px; }
 .admin-stats { grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); margin-bottom: 18px; }
 .st-stat.is-alert { border-color: #c9a227; background: #fffaf0; }
 .st-stat.is-alert .n { color: #946c00; }
