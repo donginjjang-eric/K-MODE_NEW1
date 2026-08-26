@@ -392,8 +392,8 @@
 
     // Login
     '디자이너 스튜디오': ['Studio nhà thiết kế', '設計師工作室', 'Designer Studio'],
-    '한국 패션을': ['Thời trang Hàn Quốc', '韓國時尚', 'Korean fashion'],
-    '세계와 연결합니다.': ['kết nối với thế giới.', '連結世界。', 'connects with the world.'],
+    'K-beauty, K-fashion': ['K-BEAUTY, K-FASHION.', 'K-BEAUTY, K-FASHION.', 'K-BEAUTY, K-FASHION.'],
+    '세계를 향합니다': ['HƯỚNG RA THẾ GIỚI.', '邁向世界。', 'TOWARD THE WORLD.'],
     '디자이너 브랜드의 룩북 제작부터 글로벌 크리에이터 협업까지.': ['Từ sản xuất lookbook cho thương hiệu thiết kế đến hợp tác với nhà sáng tạo toàn cầu.', '從設計師品牌型錄製作到全球創作者合作。', 'From designer-brand lookbooks to global creator collaborations.'],
     '당신의 브랜드를 세계에 소개하세요.': ['Giới thiệu thương hiệu của bạn với thế giới.', '向世界介紹您的品牌。', 'Introduce your brand to the world.'],
     '로그인 후 브랜드 등록과 AI 룩북 제작을 시작할 수 있습니다.': ['Đăng nhập để đăng ký thương hiệu và bắt đầu tạo AI lookbook.', '登入後即可註冊品牌並開始製作 AI 型錄。', 'Log in to register your brand and start creating AI lookbooks.'],
@@ -820,8 +820,8 @@
       "AI 룩·숏폼 만들기": "Cipta rupa AI · bentuk pendek",
       "홈으로 돌아가기": "Balik rumah",
       "디자이너 스튜디오": "Studio Pereka",
-      "한국 패션을": "fesyen Korea",
-      "세계와 연결합니다.": "menghubungkan dengan dunia.",
+      "K-beauty, K-fashion": "K-BEAUTY, K-FASHION.",
+      "세계를 향합니다": "MENUJU DUNIA.",
       "디자이너 브랜드의 룩북 제작부터 글로벌 크리에이터 협업까지.": "Daripada buku tinjauan jenama pereka kepada kerjasama pencipta global.",
       "당신의 브랜드를 세계에 소개하세요.": "Perkenalkan jenama anda kepada dunia.",
       "로그인 후 브랜드 등록과 AI 룩북 제작을 시작할 수 있습니다.": "Log masuk untuk mendaftarkan jenama anda dan mula mencipta buku pandang AI.",

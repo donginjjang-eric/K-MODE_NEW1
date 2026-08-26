@@ -16,9 +16,9 @@ export default function LoginEditorialPanel() {
       <div className="login-editorial-copy">
         <p className="login-editorial-kicker">K-MODU / DESIGNER STUDIO</p>
         <h2>
-          한국 패션을
+          K-beauty, K-fashion
           <br />
-          세계와 연결합니다.
+          세계를 향합니다
         </h2>
         <p>디자이너 브랜드의 룩북 제작부터 글로벌 크리에이터 협업까지.</p>
         <div className="login-editorial-tags">
