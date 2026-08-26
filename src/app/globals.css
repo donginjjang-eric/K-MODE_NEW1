@@ -667,7 +667,25 @@ p {
   text-align: center;
 }
 
-.master-role-switcher {
+.master-access-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.master-access-badge {
+  padding: 5px 8px;
+  border: 1px solid rgba(154, 122, 58, .28);
+  border-radius: 999px;
+  background: #fffaf0;
+  color: #8a671f;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.master-workspace-switcher {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -678,15 +696,15 @@ p {
   box-shadow: 0 8px 22px rgba(17, 17, 17, .08);
 }
 
-.master-role-switcher > span {
+.master-workspace-label {
   padding: 0 8px;
-  color: #9a7a3a;
+  color: #777067;
   font-size: 9px;
   font-weight: 900;
-  letter-spacing: .12em;
+  letter-spacing: .04em;
 }
 
-.master-role-switcher a {
+.master-workspace-switcher a {
   padding: 7px 10px;
   border-radius: 999px;
   color: #4f4a42;
@@ -696,14 +714,15 @@ p {
   white-space: nowrap;
 }
 
-.master-role-switcher a.is-active {
+.master-workspace-switcher a.is-active {
   background: #15130f;
   color: #fff;
 }
 
 @media (max-width: 760px) {
-  .master-role-switcher > span { display: none; }
-  .master-role-switcher a { padding: 6px 8px; font-size: 10px; }
+  .master-access-badge, .master-workspace-label { display: none; }
+  .master-access-control { gap: 0; min-width: 0; }
+  .master-workspace-switcher a { padding: 6px 7px; font-size: 9px; }
 }
 
 .login-form-card .generate-button {
