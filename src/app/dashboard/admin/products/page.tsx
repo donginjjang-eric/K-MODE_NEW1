@@ -8,7 +8,7 @@ export default async function AdminProductsPage() {
   return (
     <>
       <h1 className="st-title">상품 전체 관리</h1>
-      <p className="st-sub">디자이너가 올린 상품을 브랜드·상태별로 찾고, 한 번에 공개 상태를 조정합니다.</p>
+      <p className="st-sub">K-뷰티·K-패션 브랜드 파트너가 올린 상품을 분야·브랜드·상태별로 확인하고 공개 상태를 조정합니다.</p>
 
       {products.length ? (
         <AdminProductsManager products={products} />

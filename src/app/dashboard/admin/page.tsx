@@ -8,7 +8,7 @@ export default async function AdminDashboardPage() {
   const totals = [
     { n: stats.creatorProposalsNew, l: "신규 협업 제안", href: "/dashboard/admin/creator-proposals", alert: stats.creatorProposalsNew > 0 },
     { n: stats.usersTotal, l: "가입 회원", href: "/dashboard/admin/users" },
-    { n: stats.designersTotal, l: "전체 디자이너", href: "/dashboard/admin/designers" },
+    { n: stats.designersTotal, l: "브랜드 파트너", href: "/dashboard/admin/designers" },
     { n: stats.pendingDesigners, l: "승인 대기", href: "/dashboard/admin/designers", alert: stats.pendingDesigners > 0 },
     { n: stats.productsTotal, l: "공개 상품", href: "/dashboard/admin/products" },
     { n: stats.generatedLooksTotal, l: "AI 생성 이미지", href: "/dashboard/admin/generated-looks" },

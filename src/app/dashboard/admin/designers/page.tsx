@@ -25,8 +25,8 @@ export default async function AdminDesignersPage() {
 
   return (
     <>
-      <h1 className="st-title">디자이너 승인 관리</h1>
-      <p className="st-sub">브랜드 접수 상태와 연락 정보를 확인하고 승인 여부를 관리합니다.</p>
+      <h1 className="st-title">브랜드 파트너 관리</h1>
+      <p className="st-sub">K-뷰티·K-패션 브랜드의 접수 정보와 분야를 확인하고 승인 상태를 관리합니다.</p>
 
       <section className="st-card">
         <div className="st-sec-head">
@@ -39,7 +39,7 @@ export default async function AdminDesignersPage() {
           <div className="admin-table">
             <div className="admin-table-head">
               <span>브랜드</span>
-              <span>국가</span>
+            <span>국가·분야</span>
               <span>상태</span>
               <span>관리</span>
             </div>
@@ -56,7 +56,7 @@ export default async function AdminDesignersPage() {
                     <p>{contact || "연락 정보 미입력"}</p>
                     {designer.description || designer.mood ? <p>{designer.description || designer.mood}</p> : null}
                   </div>
-                  <span>{designer.country || "-"}</span>
+                  <span>{[designer.country, designer.brand_category].filter(Boolean).join(" · ") || "-"}</span>
                   <span>
                     <em className={`status-badge ${statusClass(designer.approval_status)}`}>
                       {getApprovalStatusLabel(designer.approval_status)}
@@ -68,7 +68,7 @@ export default async function AdminDesignersPage() {
             })}
           </div>
         ) : (
-          <div className="st-empty compact"><p>등록된 디자이너가 없습니다.</p></div>
+          <div className="st-empty compact"><p>등록된 브랜드 파트너가 없습니다.</p></div>
         )}
       </section>
 
@@ -76,7 +76,7 @@ export default async function AdminDesignersPage() {
         <div className="st-sec-head">
           <div>
             <h2>AI 생성 사용량 · 일일 한도</h2>
-            <p className="st-sub tight">공개 화면에서 발생하는 실제 AI 생성(비용)을 디자이너별로 보고 한도를 조정합니다. 캐시 재사용은 비용이 없어요. 오늘 합계 {totalToday}건.</p>
+            <p className="st-sub tight">공개 화면에서 발생하는 실제 AI 생성(비용)을 브랜드 파트너별로 보고 한도를 조정합니다. 캐시 재사용은 비용이 없어요. 오늘 합계 {totalToday}건.</p>
           </div>
         </div>
         {usage.length ? (
@@ -103,7 +103,7 @@ export default async function AdminDesignersPage() {
             })}
           </div>
         ) : (
-          <div className="st-empty compact"><p>승인된 디자이너가 없습니다.</p></div>
+          <div className="st-empty compact"><p>승인된 브랜드 파트너가 없습니다.</p></div>
         )}
       </section>
     </>

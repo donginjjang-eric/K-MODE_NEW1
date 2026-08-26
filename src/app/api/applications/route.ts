@@ -32,8 +32,8 @@ export async function POST(request: Request) {
   const headline = requiredText((body as { headline?: unknown }).headline);
   const category = requiredText((body as { category?: unknown }).category);
 
-  if (!brandName || !designerName || !email || !phone) {
-    return Response.json({ ok: false, error: "Brand, designer, email, and phone are required." }, { status: 400 });
+  if (!brandName || !designerName || !email || !phone || !["K-뷰티", "K-패션", "복합"].includes(category)) {
+    return Response.json({ ok: false, error: "브랜드 정보와 분야(K-뷰티·K-패션·복합)를 모두 입력해 주세요." }, { status: 400 });
   }
 
   // 신청 이메일과 같은 회원 계정이 있으면 그 회원에 연결하고, 없으면 같은 로그인 계정일 때만 연결한다.
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       contact_email: email,
       contact_phone: phone,
       description: headline,
-      mood: category,
+      brand_category: category,
       country: "South Korea",
       user_id: linkUserId,
     });

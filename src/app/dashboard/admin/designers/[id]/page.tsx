@@ -62,13 +62,13 @@ export default async function AdminDesignerDetailPage({ params }: { params: Prom
           </div>
           <div className="admin-meta-grid">
             <div><span>국가</span><b>{designer.country || "-"}</b></div>
+            <div><span>브랜드 분야</span><b>{designer.brand_category || "미분류"}</b></div>
             <div><span>등록일</span><b>{formatDate(designer.created_at)}</b></div>
             <div><span>상품</span><b>{products.length}</b></div>
             <div><span>포트폴리오</span><b>{portfolioImages.length}</b></div>
             <div><span>AI 이미지</span><b>{looks.length}</b></div>
           </div>
           <p className="admin-detail-copy">{designer.description || "브랜드 설명이 아직 입력되지 않았습니다."}</p>
-          <p className="admin-detail-copy muted">{designer.mood || "브랜드 무드가 아직 입력되지 않았습니다."}</p>
 
           <div className="gen-limit-card">
             <div className="gen-limit-card-head">

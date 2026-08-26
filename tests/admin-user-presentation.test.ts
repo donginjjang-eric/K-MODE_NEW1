@@ -39,6 +39,22 @@ test("pending creator application remains distinct from designer approval", () =
   assert.equal(result.statusLabel, "승인 대기");
 });
 
+test("legacy designer membership is presented as a brand partner", () => {
+  const result = adminUserPresentation({
+    role: "designer",
+    creator_id: null,
+    creator_key: null,
+    creator_name: null,
+    creator_approval_status: null,
+    designer_id: "designer-1",
+    brand_name: "Beauty Lab",
+    designer_approval_status: "approved",
+  });
+
+  assert.equal(result.roleLabel, "브랜드 파트너");
+  assert.equal(result.profileLabel, "Beauty Lab");
+});
+
 test("pending memberships expose the correct inline approval request", () => {
   assert.deepEqual(adminUserQuickApproval({
     role: "creator",

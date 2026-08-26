@@ -77,6 +77,7 @@ export function toDemoDesigner(): Designer {
     contact_email: "hello@maisonlune.co.kr",
     contact_phone: "",
     description: phaseDesigner.description,
+    brand_category: "K-패션",
     mood: phaseDesigner.mood,
     country: phaseDesigner.country,
     logo_url: null,
@@ -236,6 +237,7 @@ export async function createDesignerApplication(input: {
   contact_email: string;
   contact_phone: string;
   description?: string;
+  brand_category: string;
   mood?: string;
   country?: string;
   user_id?: string;
@@ -250,8 +252,8 @@ export async function createDesignerApplication(input: {
   const initialStatus = process.env.AUTO_APPROVE_DESIGNERS === "false" ? "pending" : "approved";
   return one<Designer>(
     `INSERT INTO designers
-       (brand_name, designer_name, contact_email, contact_phone, description, mood, country, approval_status, user_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       (brand_name, designer_name, contact_email, contact_phone, description, brand_category, mood, country, approval_status, user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, '', $7, $8, $9)
      RETURNING *`,
     [
       input.brand_name,
@@ -259,7 +261,7 @@ export async function createDesignerApplication(input: {
       input.contact_email,
       input.contact_phone,
       input.description ?? "",
-      input.mood ?? "",
+      input.brand_category,
       input.country ?? "South Korea",
       initialStatus,
       input.user_id ?? null,

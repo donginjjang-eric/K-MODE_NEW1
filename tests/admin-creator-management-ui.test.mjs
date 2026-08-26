@@ -42,7 +42,7 @@ test("creator detail and group administration pages expose the approved manageme
     source("../src/app/dashboard/admin/creator-groups/page.tsx"),
     source("../src/app/dashboard/admin/creator-groups/[groupId]/page.tsx"),
     source("../src/components/AdminCreatorGroupManager.tsx"),
-    source("../src/components/AdminNav.tsx"),
+    source("../src/lib/admin-navigation.ts"),
   ]);
 
   assert.match(detailPage, /getManagedCreatorDetail/);

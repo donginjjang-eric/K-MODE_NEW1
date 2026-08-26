@@ -5,17 +5,17 @@ import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "re
 import { validateCreatorSocialUrls, type CreatorSocialErrors } from "@/lib/creator-onboarding";
 
 const PARAM_MESSAGES: Record<string, string> = {
-  approval_required: "승인된 디자이너 계정만 사용할 수 있어요. 승인 완료 후 다시 로그인해주세요.",
-  approval_pending: "디자이너 신청이 접수되어 있어요. 관리자 승인이 끝나면 같은 구글 계정으로 바로 이용할 수 있어요.",
-  apply_required: "이 구글 계정으로 접수된 디자이너 신청이 없어요. 디자이너 등록 신청을 먼저 완료해주세요.",
+  approval_required: "승인된 브랜드 파트너 계정만 사용할 수 있어요. 승인 완료 후 다시 로그인해주세요.",
+  approval_pending: "브랜드 파트너 신청이 접수되어 있어요. 관리자 승인이 끝나면 같은 구글 계정으로 바로 이용할 수 있어요.",
+  apply_required: "이 구글 계정으로 접수된 브랜드 파트너 신청이 없어요. 파트너 등록 신청을 먼저 완료해주세요.",
   choose_role: "로그인이 완료됐어요. 시작할 활동 유형을 선택해 주세요.",
   creator_approval_pending: "크리에이터 신청이 접수되어 있어요. 관리자 승인 후 크리에이터 센터를 이용할 수 있어요.",
   creator_disabled: "현재 크리에이터 계정이 비활성 상태예요. K-MODU 운영팀에 문의해 주세요.",
-  login_required: "디자이너 등록 신청은 구글 로그인 후 진행돼요. 로그인하면 신청 페이지로 바로 이동해요.",
-  designer_required: "디자이너 계정으로 로그인해야 이용할 수 있는 페이지예요.",
+  login_required: "브랜드 파트너 등록 신청은 구글 로그인 후 진행돼요. 로그인하면 신청 페이지로 바로 이동해요.",
+  designer_required: "브랜드 파트너 계정으로 로그인해야 이용할 수 있는 페이지예요.",
   admin_login: "관리자 콘솔은 로그인 후 이용할 수 있어요. 관리자 권한이 있는 구글 계정으로 로그인해주세요.",
-  designer_login: "디자이너 스튜디오는 로그인 후 이용할 수 있어요. 구글 계정으로 로그인해주세요.",
-  studio_profile_required: "이 계정에는 아직 디자이너 프로필이 없어요. 디자이너 등록 신청을 완료하면 스튜디오가 열려요.",
+  designer_login: "브랜드 파트너 스튜디오는 로그인 후 이용할 수 있어요. 구글 계정으로 로그인해주세요.",
+  studio_profile_required: "이 계정에는 아직 브랜드 파트너 프로필이 없어요. 파트너 등록 신청을 완료하면 스튜디오가 열려요.",
   google_failed: "구글 로그인에 실패했어요. 잠시 후 다시 시도해주세요.",
   google_not_configured: "구글 로그인이 아직 설정되지 않았어요. 관리자에게 문의해주세요.",
 };
@@ -245,7 +245,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
             <a className="generate-button login-status-cta" href="/dashboard/admin">관리자 콘솔 열기</a>
             {me.designer ? (
               <a className="generate-button login-status-cta" href="/dashboard/designer/brand">
-                디자이너 스튜디오 열기 ({me.designer.brandName})
+                브랜드 파트너 스튜디오 열기 ({me.designer.brandName})
               </a>
             ) : (
               <a className="login-email-toggle" href="/apply">내 브랜드 등록하고 스튜디오 열기</a>
@@ -259,8 +259,8 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
           <div className="login-onboard"><p className="login-onboard-title">크리에이터 신청 검토 중</p><p className="login-google-hint"><b>{me.creator?.displayName}</b>님의 SNS와 프로필을 운영팀이 확인하고 있어요. 승인 후 같은 Google 계정으로 로그인하면 크리에이터 센터가 열립니다.</p><ol className="login-steps"><li className="is-done"><span>✓</span><div><b>크리에이터 신청</b><small>접수 완료</small></div></li><li className="is-active"><span>2</span><div><b>관리자 승인</b><small>프로필·SNS 확인 중</small></div></li><li><span>3</span><div><b>크리에이터 센터 오픈</b><small>캠페인·거래·정산 관리</small></div></li></ol></div>
         ) : isApproved ? (
           <>
-            <p className="login-google-hint">{me.designer?.brandName || "디자이너"} 계정으로 로그인되어 있어요.</p>
-            <a className="generate-button login-status-cta" href="/dashboard/designer/brand">디자이너 스튜디오 열기</a>
+            <p className="login-google-hint">{me.designer?.brandName || "브랜드 파트너"} 계정으로 로그인되어 있어요.</p>
+            <a className="generate-button login-status-cta" href="/dashboard/designer/brand">브랜드 파트너 스튜디오 열기</a>
           </>
         ) : isPending ? (
           <div className="login-onboard">
@@ -291,13 +291,13 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
           </form>
         ) : onboardingType === "designer" ? (
           <div className="login-onboard">
-            <p className="login-onboard-title">환영해요! K&#8209;MODU 디자이너로 시작해볼까요?</p>
-            <p className="login-google-hint">브랜드 등록 신청만 하면 <b>바로 스튜디오가 열려요</b>(승인 대기 없음). 상품·룩북을 올리고 AI 룩·숏폼을 만들어 글로벌 크리에이터와 매칭돼요.</p>
+            <p className="login-onboard-title">환영해요! K&#8209;MODU 브랜드 파트너로 시작해볼까요?</p>
+            <p className="login-google-hint">K-뷰티·K-패션 브랜드를 등록하고 상품과 캠페인을 글로벌 크리에이터와 연결해요.</p>
             <ol className="login-steps">
               <li className="is-active"><span>1</span><div><b>브랜드 등록 신청</b><small>브랜드명·소개만 입력 (1분)</small></div></li>
               <li><span>2</span><div><b>신청 즉시 스튜디오 오픈</b><small>상품·룩북 등록 · AI 룩 생성 · 크리에이터 매칭</small></div></li>
             </ol>
-            <a className="generate-button login-status-cta" href="/apply">디자이너 등록 신청하기</a>
+            <a className="generate-button login-status-cta" href="/apply">브랜드 파트너 등록 신청하기</a>
             <button className="login-email-toggle" type="button" onClick={() => setOnboardingType("")}>유형 다시 선택</button>
           </div>
         ) : (
@@ -306,7 +306,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
             <p className="login-google-hint">가입 목적에 맞는 전용 화면과 관리 기능을 제공합니다.</p>
             <div className="login-role-options">
               <button type="button" onClick={() => setOnboardingType("creator")}><strong>크리에이터로 시작</strong><span>프로필·SNS 등록 후 캠페인과 거래를 관리해요.</span></button>
-              <button type="button" onClick={() => setOnboardingType("designer")}><strong>디자이너로 시작</strong><span>브랜드·상품을 등록하고 크리에이터와 협업해요.</span></button>
+              <button type="button" onClick={() => setOnboardingType("designer")}><strong>브랜드 파트너로 시작</strong><span>K-뷰티·K-패션 상품을 등록하고 크리에이터와 협업해요.</span></button>
             </div>
           </div>
         )}
@@ -341,7 +341,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
             Google로 시작하기
           </a>
           <p className="login-google-hint">
-            처음이라면 로그인 후 크리에이터 또는 디자이너 유형을 선택할 수 있어요.
+            처음이라면 로그인 후 크리에이터 또는 브랜드 파트너 유형을 선택할 수 있어요.
           </p>
         </>
       ) : (

@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS designers (
   contact_email text NOT NULL DEFAULT '',
   contact_phone text NOT NULL DEFAULT '',
   description text NOT NULL DEFAULT '',
+  brand_category text NOT NULL DEFAULT '미분류',
   mood text NOT NULL DEFAULT '',
   country text NOT NULL DEFAULT '',
   logo_url text,
@@ -47,6 +48,7 @@ CREATE TABLE IF NOT EXISTS designers (
 ALTER TABLE designers ADD COLUMN IF NOT EXISTS designer_name text NOT NULL DEFAULT '';
 ALTER TABLE designers ADD COLUMN IF NOT EXISTS contact_email text NOT NULL DEFAULT '';
 ALTER TABLE designers ADD COLUMN IF NOT EXISTS contact_phone text NOT NULL DEFAULT '';
+ALTER TABLE designers ADD COLUMN IF NOT EXISTS brand_category text NOT NULL DEFAULT '미분류';
 -- 디자이너별 공개 AI 생성 일일 한도 (관리자가 조정). 비용 가드의 핵심.
 ALTER TABLE designers ADD COLUMN IF NOT EXISTS daily_generation_limit integer NOT NULL DEFAULT 20;
 

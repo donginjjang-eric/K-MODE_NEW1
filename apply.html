@@ -351,6 +351,16 @@
           </div>
 
           <div class="toss-field">
+            <label for="brandCategory">브랜드 분야</label>
+            <select id="brandCategory" name="category" class="toss-input" required>
+              <option value="">분야를 선택해 주세요</option>
+              <option value="K-뷰티">K-뷰티</option>
+              <option value="K-패션">K-패션</option>
+              <option value="복합">K-뷰티 · K-패션 복합</option>
+            </select>
+          </div>
+
+          <div class="toss-field">
             <label for="designerName">디자이너 실명</label>
             <input type="text" id="designerName" name="designer" class="toss-input" placeholder="예: 한서윤" required />
           </div>
@@ -545,7 +555,7 @@
     // Input validation helper for the current step
     function validateStep() {
       const activeCard = document.querySelector(`.step-card[data-step="${currentStep}"]`);
-      const inputs = activeCard.querySelectorAll('input[required]');
+      const inputs = activeCard.querySelectorAll('input[required], select[required]');
       let isValid = true;
       inputs.forEach(input => {
         if (!input.value.trim()) {
@@ -602,6 +612,7 @@
         step: currentStep,
         data: {
           brand: document.getElementById('brandName').value,
+          category: document.getElementById('brandCategory').value,
           designer: document.getElementById('designerName').value,
           email: document.getElementById('email').value,
           phone: document.getElementById('phone').value,
@@ -652,6 +663,7 @@
 
       // Populate inputs
       document.getElementById('brandName').value = d.brand || '';
+      document.getElementById('brandCategory').value = d.category || '';
       document.getElementById('designerName').value = d.designer || '';
       document.getElementById('email').value = d.email || '';
       document.getElementById('phone').value = d.phone || '';
@@ -678,15 +690,19 @@
 
     // --- 4. SUBMISSION & LOCALSTORAGE PERSISTENCE PIPELINE ---
     async function submitForm() {
+      const brandCategory = document.getElementById('brandCategory');
+      if (!brandCategory.value) {
+        currentStep = 1;
+        updateStep();
+        brandCategory.reportValidity();
+        return;
+      }
       const brandName = document.getElementById('brandName').value;
       const designerName = document.getElementById('designerName').value;
       const email = document.getElementById('email').value;
       const phone = document.getElementById('phone').value;
       const headline = document.getElementById('headline').value;
-      // 무드(category)는 마지막 단계의 선호 크리에이터 타입 선택값으로 구성 (없으면 한 줄 소개)
-      const creatorTypeLabels = Array.from(document.querySelectorAll('#creatorTypesGrid .toss-tag-pill.selected'))
-        .map((el) => el.textContent.trim());
-      const category = creatorTypeLabels.join(' / ') || headline || 'Minimal Fashion';
+      const category = brandCategory.value;
       const country = 'South Korea';
 
       const today = new Date();

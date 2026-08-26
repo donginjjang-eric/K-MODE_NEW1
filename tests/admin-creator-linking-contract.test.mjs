@@ -11,7 +11,7 @@ test("admin creator account linking keeps catalogue identity, normalizes email, 
     source("../src/lib/admin-creator-group-route-handlers.ts"),
     source("../src/app/dashboard/admin/creators/page.tsx"),
     source("../src/components/AdminCreatorDetailManager.tsx"),
-    source("../src/components/AdminNav.tsx"),
+    source("../src/lib/admin-navigation.ts"),
     source("../src/app/dashboard/admin/layout.tsx"),
   ]);
 
@@ -43,7 +43,7 @@ test("admin creator account linking keeps catalogue identity, normalizes email, 
   assert.match(page, /AdminCreatorManagementTable/);
   assert.match(manager, /Google 이메일/);
   assert.match(manager, /회원 레코드를 만들고 이메일을 연결/);
-  assert.match(manager, /value="disabled"/);
+  assert.match(manager, /changeApprovalStatus\("disabled"\)/);
   assert.match(nav, /"\/dashboard\/admin\/creators"/);
   assert.match(layout, /\.\/admin\.css/);
 });

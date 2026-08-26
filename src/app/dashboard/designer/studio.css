@@ -31,6 +31,9 @@
 .st-shell { display: grid; grid-template-columns: 230px minmax(0,1fr); max-width: 1240px; margin: 0 auto; }
 .st-side { padding: 22px 14px; position: sticky; top: 61px; align-self: start; height: calc(100vh - 61px); display: flex; flex-direction: column; }
 .st-side nav { display: flex; flex-direction: column; gap: 4px; }
+.admin-nav-group { display: grid; gap: 3px; padding: 0 0 12px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+.admin-nav-group:last-child { margin-bottom: 0; border-bottom: 0; }
+.admin-nav-group-label { padding: 0 14px 5px; color: #8a7b66; font-size: 10px; font-weight: 900; letter-spacing: .12em; }
 .st-side a,
 .st-nav-toggle { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 0; border-radius: 12px; background: transparent; font: inherit; font-weight: 700; font-size: 15px; color: #2a271f; text-align: left; cursor: pointer; }
 /* .studio button { font: inherit }(우선순위 높음)가 굵기를 normal로 덮어쓰던 버그 수정 — 링크 메뉴(700)와 동일하게 */
@@ -845,10 +848,15 @@ a.st-stat:hover { border-color: #94a3b8; transform: translateY(-2px); box-shadow
   .look-modal-info { padding: 18px; }
   .st-tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: rgba(255,255,255,.97);
     border-top: 1px solid var(--line); backdrop-filter: blur(8px); padding-bottom: env(safe-area-inset-bottom); }
-  .st-tabbar a { flex: 1; padding: 9px 0 11px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; color: var(--muted); }
+  .st-tabbar a, .st-tabbar button { flex: 1; padding: 9px 0 11px; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; color: var(--muted); }
   .st-tabbar a .ic { width: 21px; height: 21px; display: inline-flex; align-items: center; justify-content: center; }
   .st-tabbar .nav-svg { width: 20px; height: 20px; }
-  .st-tabbar a.is-active { color: var(--ink); }
+  .st-tabbar a.is-active, .st-tabbar button.is-active { color: var(--ink); }
+  .admin-mobile-menu { position: fixed; inset: 0 0 calc(58px + env(safe-area-inset-bottom)); z-index: 39; overflow-y: auto; padding: 24px 18px; background: rgba(255,255,255,.98); }
+  .admin-mobile-menu-close { float: right; min-height: 36px; padding: 0 14px; border: 1px solid var(--line2); border-radius: 999px; background: #fff; font-weight: 900; }
+  .admin-mobile-menu section { clear: both; display: grid; gap: 6px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .admin-mobile-menu section b { color: #8a7b66; font-size: 11px; letter-spacing: .1em; }
+  .admin-mobile-menu section a { padding: 11px 12px; border-radius: 10px; background: #f3f5f7; font-weight: 800; }
   .st-mobile-account {
     position: fixed;
     left: 12px;

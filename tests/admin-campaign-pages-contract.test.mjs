@@ -35,7 +35,7 @@ test("admin campaign APIs guard mutations, validate input, and revalidate campai
 
 test("admin campaign list, navigation, and editor expose the required campaign workflow", async () => {
   const [nav, list, form, listPage, newPage, editPage, css] = await Promise.all([
-    source("../src/components/AdminNav.tsx"),
+    source("../src/lib/admin-navigation.ts"),
     source("../src/components/AdminCampaignList.tsx"),
     source("../src/components/AdminCampaignForm.tsx"),
     source("../src/app/dashboard/admin/campaigns/page.tsx"),

@@ -146,6 +146,7 @@ export type Designer = {
   contact_email: string;
   contact_phone: string;
   description: string;
+  brand_category: string;
   mood: string;
   country: string;
   logo_url: string | null;

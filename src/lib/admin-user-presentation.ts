@@ -44,7 +44,7 @@ export function adminUserPresentation(user: AdminUserMembership) {
   if (user.designer_id) {
     const status = user.designer_approval_status ?? "pending";
     const segment: AdminUserSegment = status === "approved" ? "designer_approved" : status === "pending" ? "designer_pending" : "disabled";
-    return { roleLabel: "디자이너", segment, profileLabel: user.brand_name || "브랜드명 미입력", status, statusLabel: approvalLabel(status), href: `/dashboard/admin/designers/${user.designer_id}` };
+    return { roleLabel: "브랜드 파트너", segment, profileLabel: user.brand_name || "브랜드명 미입력", status, statusLabel: approvalLabel(status), href: `/dashboard/admin/designers/${user.designer_id}` };
   }
   return { roleLabel: "미선택", segment: "not_applied" as const, profileLabel: "계정만 가입", status: "pending" as const, statusLabel: "계정만 가입", href: null };
 }
