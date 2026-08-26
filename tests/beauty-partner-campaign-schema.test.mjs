@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { promisify } from "node:util";
 
 const source = (path) => readFile(new URL(path, import.meta.url), "utf8");
+const execFileAsync = promisify(execFile);
 
 test("campaign schema adds designer ownership and product linkage without removing the admin owner reference", async () => {
   const schema = await source("../db/schema.sql");
@@ -17,6 +20,20 @@ test("campaign schema adds designer ownership and product linkage without removi
   assert.doesNotMatch(schema, /DROP CONSTRAINT IF EXISTS campaigns_owner_id_fkey/);
 });
 
+test("campaign schema prevents future designer campaign and product ownership mismatches without rejecting legacy rows", async () => {
+  const schema = await source("../db/schema.sql");
+
+  assert.match(schema, /UPDATE campaigns campaign[\s\S]*SET product_id = NULL[\s\S]*campaign\.owner_type = 'designer'/);
+  assert.match(schema, /CREATE OR REPLACE FUNCTION enforce_campaign_product_designer_match/);
+  assert.match(schema, /NEW\.owner_type = 'designer'[\s\S]*NEW\.product_id IS NOT NULL/);
+  assert.match(schema, /product\.id = NEW\.product_id[\s\S]*product\.designer_id = NEW\.designer_id/);
+  assert.match(schema, /ERRCODE = '23514'/);
+  assert.match(schema, /CREATE TRIGGER campaigns_product_designer_match_trigger/);
+  assert.match(schema, /CREATE OR REPLACE FUNCTION enforce_product_campaign_designer_match/);
+  assert.match(schema, /NEW\.designer_id IS DISTINCT FROM OLD\.designer_id[\s\S]*campaign\.product_id = OLD\.id/);
+  assert.match(schema, /CREATE TRIGGER products_campaign_designer_match_trigger/);
+});
+
 test("admin campaign reads and mutations remain isolated to admin-owned rows", async () => {
   const domain = await source("../src/lib/creator-campaigns.ts");
 
@@ -29,13 +46,38 @@ test("admin campaign reads and mutations remain isolated to admin-owned rows", a
   }
 });
 
-test("production startup continues applying the single idempotent schema source", async () => {
+test("production startup and manual setup apply the single schema source through required transactional validation", async () => {
   const [startup, setup] = await Promise.all([
     source("../scripts/ensure-schema.mjs"),
     source("../scripts/db-setup.mjs"),
   ]);
   for (const script of [startup, setup]) {
     assert.match(script, /readFileSync\(path\.join\(root, "db", "schema\.sql"\), "utf8"\)/);
-    assert.match(script, /pool\.query\(schema\)/);
+    assert.match(script, /applyRequiredSchema\(pool, schema\)/);
   }
+});
+
+test("schema migration is rerunnable and fails validation inside a transaction", async () => {
+  await execFileAsync(process.execPath, ["tests/schema-bootstrap-transaction-runner.mjs"], { cwd: process.cwd() });
+});
+
+test("configured production startup exits nonzero when required schema bootstrap fails", async () => {
+  const result = await execFileAsync(
+    process.execPath,
+    ["--experimental-test-module-mocks", "tests/schema-startup-failure-runner.mjs"],
+    { cwd: process.cwd() },
+  ).then(
+    () => ({ code: 0 }),
+    (error) => ({ code: typeof error.code === "number" ? error.code : -1 }),
+  );
+
+  assert.notEqual(result.code, 0);
+});
+
+test("optional startup synchronization failures do not undo a validated required schema", async () => {
+  await execFileAsync(
+    process.execPath,
+    ["--experimental-test-module-mocks", "tests/schema-startup-optional-runner.mjs"],
+    { cwd: process.cwd() },
+  );
 });

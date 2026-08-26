@@ -397,6 +397,87 @@ BEGIN
   END IF;
 END $$;
 
+-- Preserve existing campaign rows while detaching any invalid legacy product
+-- reference before enabling the write-time ownership guard.
+UPDATE campaigns campaign
+   SET product_id = NULL,
+       updated_at = now()
+ WHERE campaign.owner_type = 'designer'
+   AND campaign.product_id IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1
+       FROM products product
+      WHERE product.id = campaign.product_id
+        AND product.designer_id = campaign.designer_id
+   );
+
+CREATE OR REPLACE FUNCTION enforce_campaign_product_designer_match()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.owner_type = 'designer'
+     AND NEW.product_id IS NOT NULL
+     AND NOT EXISTS (
+       SELECT 1
+         FROM products product
+        WHERE product.id = NEW.product_id
+          AND product.designer_id = NEW.designer_id
+     ) THEN
+    RAISE EXCEPTION 'Campaign product must belong to the campaign designer.'
+      USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION enforce_product_campaign_designer_match()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.designer_id IS DISTINCT FROM OLD.designer_id
+     AND EXISTS (
+       SELECT 1
+         FROM campaigns campaign
+        WHERE campaign.product_id = OLD.id
+          AND campaign.owner_type = 'designer'
+          AND campaign.designer_id IS DISTINCT FROM NEW.designer_id
+     ) THEN
+    RAISE EXCEPTION 'Product designer cannot differ from a linked campaign designer.'
+      USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'campaigns_product_designer_match_trigger'
+      AND tgrelid = 'campaigns'::regclass
+      AND NOT tgisinternal
+  ) THEN
+    CREATE TRIGGER campaigns_product_designer_match_trigger
+      BEFORE INSERT OR UPDATE ON campaigns
+      FOR EACH ROW
+      EXECUTE FUNCTION enforce_campaign_product_designer_match();
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'products_campaign_designer_match_trigger'
+      AND tgrelid = 'products'::regclass
+      AND NOT tgisinternal
+  ) THEN
+    CREATE TRIGGER products_campaign_designer_match_trigger
+      BEFORE UPDATE OF designer_id ON products
+      FOR EACH ROW
+      EXECUTE FUNCTION enforce_product_campaign_designer_match();
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS campaign_participations (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
   campaign_id text NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,

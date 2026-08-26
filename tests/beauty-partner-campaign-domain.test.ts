@@ -1,14 +1,13 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { resolve } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
 
 import { parseBeautyCampaignCreateInput, parseBeautyCampaignPatchInput } from "../src/lib/beauty-campaign-input";
+import { beautyCampaignMutationError } from "../src/lib/beauty-campaign-response";
 import { canTransitionCampaignStatus } from "../src/lib/creator-campaigns";
 
 const execFileAsync = promisify(execFile);
-const tsxCli = resolve("node_modules/tsx/dist/cli.mjs");
 
 const validCampaign = {
   product_id: "product-1",
@@ -41,6 +40,16 @@ test("beauty campaign lifecycle reuses the existing one-way campaign state machi
   assert.equal(canTransitionCampaignStatus("active", "draft"), false);
 });
 
+test("a stale or foreign submission id maps to a safe not-found response", async () => {
+  const response = beautyCampaignMutationError(new Error("The latest content submission was not found."));
+
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), {
+    code: "not_found",
+    error: "이 브랜드가 관리할 수 있는 상품 또는 캠페인 정보를 찾을 수 없습니다.",
+  });
+});
+
 test("owner-scoped campaign transactions reject foreign products and foreign campaign records", async () => {
-  await execFileAsync(process.execPath, ["--experimental-test-module-mocks", tsxCli, "--test", "tests/beauty-partner-campaign-transaction-runner.mjs"], { cwd: process.cwd() });
+  await execFileAsync(process.execPath, ["--experimental-test-module-mocks", "--import", "tsx", "tests/beauty-partner-campaign-transaction-runner.mjs"], { cwd: process.cwd() });
 });

@@ -53,6 +53,21 @@ test("campaign, content, order, proposal, and settlement screens expose real-dat
   }
 });
 
+test("content review actions carry the displayed latest submission id and campaign cards do not offer unbound review actions", async () => {
+  const [campaigns, content, actions, route] = await Promise.all([
+    source("../src/app/dashboard/beauty/campaigns/page.tsx"),
+    source("../src/app/dashboard/beauty/content/page.tsx"),
+    source("../src/components/BeautyCampaignActions.tsx"),
+    source("../src/app/api/beauty/participations/[id]/route.ts"),
+  ]);
+
+  assert.match(content, /submission\.is_latest[\s\S]*submissionId=\{submission\.id\}/);
+  assert.match(actions, /submissionId\?: string/);
+  assert.match(actions, /\{ action, note, submissionId \}/);
+  assert.match(route, /submissionId/);
+  assert.match(campaigns, /participant\.status !== "review"[\s\S]*BeautyParticipationActions/);
+});
+
 test("beauty primary navigation contains all eight active destinations and fits as two mobile rows", async () => {
   const [navData, css] = await Promise.all([
     import("../src/lib/brand-partner-center.js"),

@@ -42,6 +42,7 @@ export type BeautyContentRow = ContentSubmission & {
   participation_status: ParticipationStatus;
   creator_display_name: string;
   creator_platform: string;
+  is_latest: boolean;
 };
 
 export type BeautyOrderRow = CampaignParticipation & {
@@ -128,7 +129,12 @@ export async function listBeautyPartnerContent(designerId: string): Promise<Beau
   return query<BeautyContentRow>(
     `SELECT submission.*, campaign.id AS campaign_id, campaign.title AS campaign_title,
             product.name AS product_name, participation.status AS participation_status,
-            creator.display_name AS creator_display_name, creator.platform AS creator_platform
+            creator.display_name AS creator_display_name, creator.platform AS creator_platform,
+            NOT EXISTS (
+              SELECT 1 FROM content_submissions newer
+              WHERE newer.participation_id = submission.participation_id
+                AND newer.version > submission.version
+            ) AS is_latest
        FROM content_submissions submission
        JOIN campaign_participations participation ON participation.id = submission.participation_id
        JOIN campaigns campaign ON campaign.id = participation.campaign_id
@@ -259,18 +265,46 @@ function assertParticipationTransition(fromStatus: ParticipationStatus, toStatus
   }
 }
 
-async function recordReviewDecision(client: DatabaseTransactionClient, participationId: string, toStatus: ParticipationStatus, note: string) {
+async function lockLatestOwnedSubmission(
+  client: DatabaseTransactionClient,
+  submissionId: string,
+  participationId: string,
+  designerId: string,
+) {
+  const result = await client.query<Pick<ContentSubmission, "id" | "participation_id" | "version" | "status">>(
+    `SELECT submission.id, submission.participation_id, submission.version, submission.status
+       FROM content_submissions submission
+       JOIN campaign_participations participation ON participation.id = submission.participation_id
+       JOIN campaigns campaign ON campaign.id = participation.campaign_id
+      WHERE submission.id = $1
+        AND submission.participation_id = $2
+        AND campaign.owner_type = 'designer'
+        AND campaign.designer_id = $3
+        AND NOT EXISTS (
+          SELECT 1 FROM content_submissions newer
+          WHERE newer.participation_id = submission.participation_id
+            AND newer.version > submission.version
+        )
+      FOR UPDATE OF submission`,
+    [submissionId, participationId, designerId],
+  );
+  const submission = result.rows[0];
+  if (!submission) throw new Error("The latest content submission was not found.");
+  return submission;
+}
+
+async function recordReviewDecision(client: DatabaseTransactionClient, submissionId: string, participationId: string, toStatus: ParticipationStatus, note: string) {
   if (toStatus !== "creating" && toStatus !== "published") return;
   if (toStatus === "creating" && !note) throw new Error("A revision note is required.");
   const submissionStatus: SubmissionStatus = toStatus === "creating" ? "revision_requested" : "approved";
-  await client.query(
+  const result = await client.query<{ id: string }>(
     `UPDATE content_submissions
         SET status = '${submissionStatus}', review_note = $2, reviewed_at = now()
-      WHERE id = (
-        SELECT id FROM content_submissions WHERE participation_id = $1 ORDER BY version DESC LIMIT 1
-      )`,
-    [participationId, note],
+      WHERE id = $1 AND participation_id = $3
+      RETURNING id`,
+    [submissionId, note, participationId],
   );
+  if (!result.rows[0]) throw new Error("The latest content submission was not found.");
 }
 
 export async function transitionBeautyPartnerParticipation(
@@ -279,6 +313,7 @@ export async function transitionBeautyPartnerParticipation(
   participationId: string,
   action: AdminParticipationAction,
   note = "",
+  submissionId?: string,
 ): Promise<CampaignParticipation> {
   return withDatabaseTransaction(async (client) => {
     await lockBeautyPartner(client, designerId, actorUserId);
@@ -302,6 +337,11 @@ export async function transitionBeautyPartnerParticipation(
     if (!campaign) throw new Error("Campaign was not found.");
     const nextStatus = resolveCampaignOperatorParticipationAction(current.status, action);
     assertParticipationTransition(current.status, nextStatus);
+    const isContentReviewDecision = current.status === "review" && (nextStatus === "creating" || nextStatus === "published");
+    if (isContentReviewDecision) {
+      if (!submissionId) throw new Error("The latest content submission was not found.");
+      await lockLatestOwnedSubmission(client, submissionId, participationId, designerId);
+    }
     if (!participationConsumesCampaignCapacity(current.status) && participationConsumesCampaignCapacity(nextStatus)) {
       if (await occupiedSlots(client, current.campaign_id) >= campaign.slots) throw new Error("Campaign is at capacity.");
     }
@@ -311,7 +351,9 @@ export async function transitionBeautyPartnerParticipation(
     );
     const updated = result.rows[0];
     if (!updated) throw new Error("Campaign participation was not found.");
-    if (current.status === "review") await recordReviewDecision(client, participationId, nextStatus, note.trim());
+    if (isContentReviewDecision && submissionId) {
+      await recordReviewDecision(client, submissionId, participationId, nextStatus, note.trim());
+    }
     await client.query(
       `INSERT INTO campaign_events (participation_id, actor_user_id, event_type, from_status, to_status, message)
        VALUES ($1, $2, 'partner_status_changed', $3, $4, $5)`,

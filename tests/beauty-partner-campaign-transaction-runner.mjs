@@ -37,10 +37,11 @@ const validInput = {
 };
 
 class RecordingClient {
-  constructor({ productOwned = true, campaignOwned = true, participationStatus = "applied" } = {}) {
+  constructor({ productOwned = true, campaignOwned = true, participationStatus = "applied", latestSubmissionId = "submission-2" } = {}) {
     this.productOwned = productOwned;
     this.campaignOwned = campaignOwned;
     this.participationStatus = participationStatus;
+    this.latestSubmissionId = latestSubmissionId;
     this.statements = [];
   }
 
@@ -64,6 +65,16 @@ class RecordingClient {
     }
     if (text.includes("FROM campaign_participations") && text.includes("JOIN campaigns")) {
       return { rows: this.campaignOwned ? [{ id: "participation-1", campaign_id: "campaign-1", status: this.participationStatus, settlement_status: "none" }] : [] };
+    }
+    if (text.includes("FROM content_submissions submission") && text.includes("FOR UPDATE OF submission")) {
+      const [submissionId, participationId] = params;
+      const excludesNewerVersions = text.includes("NOT EXISTS") && text.includes("newer.version > submission.version");
+      const selectable = submissionId === this.latestSubmissionId || !excludesNewerVersions;
+      return {
+        rows: this.campaignOwned && selectable
+          ? [{ id: submissionId, participation_id: participationId, version: submissionId === this.latestSubmissionId ? 2 : 1, status: "submitted" }]
+          : [],
+      };
     }
     if (text.includes("COUNT(*)") && text.includes("campaign_participations")) return { rows: [{ count: "0" }] };
     if (text.includes("UPDATE campaign_participations")) {
@@ -92,7 +103,7 @@ test("creates a designer-owned campaign only after locking the authenticated par
   const insert = client.statements.find(({ text }) => text.includes("INSERT INTO campaigns"));
   assert.match(insert.text, /owner_type[^)]*owner_id[^)]*designer_id[^)]*product_id/s);
   assert.deepEqual(insert.params.slice(0, 4), ["user-1", "designer-1", "product-1", "Glow launch"]);
-  assert.equal(client.statements.at(-2).text, "COMMIT");
+  assert.equal(client.statements.at(-1).text, "COMMIT");
 });
 
 test("rejects another brand's product before campaign insertion", async () => {
@@ -101,7 +112,7 @@ test("rejects another brand's product before campaign insertion", async () => {
 
   await assert.rejects(createBeautyPartnerCampaign("designer-1", "user-1", validInput), /owned product was not found/i);
   assert.equal(client.statements.some(({ text }) => text.includes("INSERT INTO campaigns")), false);
-  assert.equal(client.statements.at(-2).text, "ROLLBACK");
+  assert.equal(client.statements.at(-1).text, "ROLLBACK");
 });
 
 test("scopes campaign edits by designer owner in the locking query", async () => {
@@ -116,21 +127,42 @@ test("scopes campaign edits by designer owner in the locking query", async () =>
   assert.equal(client.statements.some(({ text }) => text.includes("UPDATE campaigns")), false);
 });
 
-test("scopes participation decisions through the owned campaign and records content review decisions", async () => {
+test("locks and updates the exact latest owned submission for a content review decision", async () => {
   const client = new RecordingClient({ participationStatus: "review" });
   activeClient = client;
 
-  const participation = await transitionBeautyPartnerParticipation("designer-1", "user-1", "participation-1", "published", "검수 승인");
+  const participation = await transitionBeautyPartnerParticipation("designer-1", "user-1", "participation-1", "published", "검수 승인", "submission-2");
 
   assert.equal(participation.status, "published");
   const participationRead = client.statements.find(({ text }) => text.includes("FROM campaign_participations") && text.includes("JOIN campaigns"));
   assert.match(participationRead.text, /campaign\.owner_type\s*=\s*'designer'/);
   assert.match(participationRead.text, /campaign\.designer_id\s*=\s*\$2/);
   assert.deepEqual(participationRead.params, ["participation-1", "designer-1"]);
+  const submissionRead = client.statements.find(({ text }) => text.includes("FROM content_submissions submission") && text.includes("FOR UPDATE OF submission"));
+  assert.match(submissionRead.text, /submission\.id\s*=\s*\$1/);
+  assert.match(submissionRead.text, /submission\.participation_id\s*=\s*\$2/);
+  assert.match(submissionRead.text, /campaign\.designer_id\s*=\s*\$3/);
+  assert.match(submissionRead.text, /NOT EXISTS[\s\S]*newer\.version > submission\.version/);
+  assert.deepEqual(submissionRead.params, ["submission-2", "participation-1", "designer-1"]);
   const reviewUpdate = client.statements.find(({ text }) => text.includes("UPDATE content_submissions"));
   assert.match(reviewUpdate.text, /status\s*=\s*'approved'/);
-  assert.deepEqual(reviewUpdate.params, ["participation-1", "검수 승인"]);
+  assert.match(reviewUpdate.text, /WHERE id = \$1/);
+  assert.deepEqual(reviewUpdate.params, ["submission-2", "검수 승인", "participation-1"]);
   assert.equal(client.statements.some(({ text }) => text.includes("INSERT INTO campaign_events")), true);
+});
+
+test("rejects an older submission action without mutating the newer submission or participation", async () => {
+  const client = new RecordingClient({ participationStatus: "review", latestSubmissionId: "submission-2" });
+  activeClient = client;
+
+  await assert.rejects(
+    transitionBeautyPartnerParticipation("designer-1", "user-1", "participation-1", "published", "stale approval", "submission-1"),
+    /latest content submission was not found/i,
+  );
+
+  assert.equal(client.statements.some(({ text }) => text.includes("UPDATE content_submissions")), false);
+  assert.equal(client.statements.some(({ text }) => text.includes("UPDATE campaign_participations")), false);
+  assert.equal(client.statements.at(-1).text, "ROLLBACK");
 });
 
 test("rejects a participation outside the current brand without issuing an update", async () => {

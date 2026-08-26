@@ -1,13 +1,16 @@
 // 부팅 시 1회 실행: db/schema.sql(단일 스키마 소스)을 멱등 적용하고, 환경변수로 백업 관리자 계정을 시드한다.
-// 요청 경로에서 ALTER TABLE이 돌던 지연 마이그레이션을 대체한다. 어떤 경우에도 exit 0 — 앱 기동을 막지 않는다.
+// 필수 스키마 적용·검증 실패는 앱 기동을 중단하고, 선택적 시드 실패만 경고로 남긴다.
 import { pbkdf2Sync, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { applyRequiredSchema } from "./schema-bootstrap.mjs";
 import { syncMalaysiaMeetingCreators } from "./sync-malaysia-meeting-creators.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+let pool;
+let requiredSchemaApplied = false;
 
 try {
   const databaseUrl = process.env.DATABASE_URL;
@@ -16,7 +19,7 @@ try {
     process.exit(0);
   }
 
-  const pool = new pg.Pool({
+  pool = new pg.Pool({
     connectionString: databaseUrl,
     ssl: databaseUrl.includes("railway") && !databaseUrl.includes(".railway.internal")
       ? { rejectUnauthorized: false }
@@ -24,8 +27,9 @@ try {
   });
 
   const schema = readFileSync(path.join(root, "db", "schema.sql"), "utf8");
-  await pool.query(schema);
-  console.log("[schema] applied db/schema.sql");
+  await applyRequiredSchema(pool, schema);
+  requiredSchemaApplied = true;
+  console.log("[schema] applied and validated db/schema.sql");
 
   // 백업 관리자 시드 (구글 OAuth 장애 대비). ADMIN_EMAIL/ADMIN_PASSWORD가 설정된 경우에만.
   const email = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
@@ -121,9 +125,13 @@ try {
     );
     if (result.rowCount) console.log(`[schema] model template image synced: ${type}`);
   }
-
-  await pool.end();
 } catch (error) {
-  console.error("[schema] failed (app will still start):", error?.message || error);
+  if (requiredSchemaApplied) {
+    console.error("[schema] optional setup failed; required schema is ready:", error?.message || error);
+  } else {
+    console.error("[schema] required bootstrap failed; startup aborted:", error?.message || error);
+    process.exitCode = 1;
+  }
+} finally {
+  if (pool) await pool.end();
 }
-process.exit(0);

@@ -51,7 +51,7 @@ export function BeautyCampaignStatusActions({ campaignId, status }: { campaignId
   </div>;
 }
 
-export function BeautyParticipationActions({ participationId, status }: { participationId: string; status: ParticipationStatus }) {
+export function BeautyParticipationActions({ participationId, status, submissionId }: { participationId: string; status: ParticipationStatus; submissionId?: string }) {
   const router = useRouter();
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -66,7 +66,7 @@ export function BeautyParticipationActions({ participationId, status }: { partic
     }
     setBusy(true);
     setMessage("");
-    const result = await mutate(`/api/beauty/participations/${participationId}`, { action, note });
+    const result = await mutate(`/api/beauty/participations/${participationId}`, { action, note, submissionId });
     setBusy(false);
     if (!result.ok) setMessage(result.error);
     else {

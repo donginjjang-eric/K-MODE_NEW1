@@ -1,6 +1,6 @@
 export function beautyCampaignMutationError(error: unknown) {
   const message = error instanceof Error ? error.message : "Beauty campaign operation failed.";
-  if (/owned product was not found|campaign was not found|participation was not found/i.test(message)) {
+  if (/owned product was not found|campaign was not found|participation was not found|content submission was not found/i.test(message)) {
     return Response.json({ code: "not_found", error: "이 브랜드가 관리할 수 있는 상품 또는 캠페인 정보를 찾을 수 없습니다." }, { status: 404 });
   }
   if (/capacity|cannot transition|only draft or recruiting/i.test(message)) {

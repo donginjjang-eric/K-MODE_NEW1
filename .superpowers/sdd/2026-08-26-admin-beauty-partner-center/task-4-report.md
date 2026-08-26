@@ -42,3 +42,35 @@ Status: `DONE_WITH_CONCERNS`
 - The change is not deployed. A local server was already available at `http://localhost:8011`; the intended preview route is `http://localhost:8011/dashboard/beauty/campaigns` after signing in as an approved beauty/hybrid partner.
 - The production build retains existing warnings about multiple lockfiles/workspace-root inference and broad NFT tracing from the dynamic assets route. They did not fail the build and were not expanded into this task.
 - Proposals, orders/performance, and settlements intentionally remain read views over existing records in this reduced scope; no new proposal, payment, payout, or logistics state machine was introduced.
+
+---
+
+## Fix round 1/5 — 2026-08-26
+
+Status: `DONE_WITH_CONCERNS`
+
+### Findings resolved
+
+- Content review now carries the displayed `submissionId` from the latest submission row through the client action and API into the transaction.
+- The transaction locks that exact submission only when it belongs to the requested participation and a campaign owned by the authenticated designer. A `NOT EXISTS` newer-version guard rejects stale rows before either the participation or submission is updated.
+- Campaign cards no longer expose approve/revision controls for review-state participations because they do not display an exact submission. They link operators to the content review screen instead.
+- Production schema bootstrap now runs the full idempotent schema and required post-migration catalog validation in one database transaction. Required apply/validation failures roll back and leave the startup script nonzero, so the `npm start` command's existing `&&` chain does not serve the app.
+- An absent `DATABASE_URL` remains an explicitly supported no-database skip, and failures in optional creator/test/demo synchronization after required schema validation remain warning-only.
+- Added idempotent database triggers in both directions: designer campaign writes reject products owned by another designer, and product ownership changes reject any resulting linked designer-campaign mismatch. Invalid pre-trigger designer campaign links are detached by setting only `product_id` to null, preserving existing campaign rows.
+- Startup validates the required campaign columns, ownership checks, foreign keys, and both mismatch triggers before committing.
+
+### Test-first and verification evidence
+
+- RED: stale submission approval mutated the participation/latest submission path; campaign cards offered unbound review actions; configured startup swallowed required schema failures; no database mismatch trigger or post-migration validator existed.
+- GREEN: TypeScript/domain/state-machine focused suite — 39 passed, 0 failed.
+- GREEN: schema/startup/UI/admin-regression focused suite — 46 passed, 0 failed.
+- GREEN: executable migration harness applies the real schema source twice with `BEGIN → schema → validate → COMMIT`, and verifies validation failure produces `ROLLBACK` and rejection.
+- GREEN: configured-startup child process exits nonzero on required schema failure; optional post-validation synchronization failure exits successfully.
+- GREEN: `npx tsc --noEmit --pretty false` — exit 0.
+- GREEN: `npm run build` — exit 0; Next.js 16.2.6 generated 68 pages.
+
+### Remaining concerns
+
+- The assigned worktree still has no live `DATABASE_URL`; the PL/pgSQL trigger syntax and catalog validation are covered by schema contracts and the executable mock transaction harness, but were not run against a real PostgreSQL server.
+- Authenticated beauty-page visual verification remains blocked by the available local session being a fashion designer; it redirects to `/dashboard/designer/brand`. Preview after a beauty/hybrid login remains `http://localhost:8011/dashboard/beauty/content`.
+- The build still reports the pre-existing multiple-lockfile/workspace-root and broad NFT tracing warnings. No new build failure was introduced.
