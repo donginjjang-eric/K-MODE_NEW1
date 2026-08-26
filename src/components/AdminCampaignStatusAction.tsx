@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { adminCampaignOperationMessage } from "@/lib/admin-campaign-ui";
+import { campaignStatusActionLabel, campaignStatusLabel } from "@/lib/admin-campaign";
 import type { AdminCampaignStatus } from "@/lib/types";
 
 const NEXT_STATUSES: Record<AdminCampaignStatus, Exclude<AdminCampaignStatus, "draft">[]> = {
@@ -36,10 +37,10 @@ export default function AdminCampaignStatusAction({ campaignId, status }: { camp
   }
 
   return <section className="admin-campaign-status-action" aria-labelledby="campaign-status-action-heading">
-    <h2 id="campaign-status-action-heading">Campaign status</h2>
-    <p>Current: <strong>{status}</strong></p>
+    <h2 id="campaign-status-action-heading">캠페인 상태</h2>
+    <p>현재 상태: <strong>{campaignStatusLabel(status)}</strong></p>
     <div className="admin-campaign-form-actions">
-      {NEXT_STATUSES[status].map((nextStatus) => <button className="st-btn" disabled={busy} key={nextStatus} onClick={() => updateStatus(nextStatus)} type="button">{busy ? "Updating…" : `Move to ${nextStatus}`}</button>)}
+      {NEXT_STATUSES[status].map((nextStatus) => <button className="st-btn" disabled={busy} key={nextStatus} onClick={() => updateStatus(nextStatus)} type="button">{busy ? "상태 변경 중…" : campaignStatusActionLabel(nextStatus)}</button>)}
     </div>
     <p aria-live="polite" className="admin-campaign-error">{message}</p>
   </section>;

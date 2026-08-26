@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { AdminCreatorAccount } from "@/lib/db";
 import type { AdminCampaignParticipant } from "@/lib/creator-campaigns";
 import { adminCampaignOperationMessage, safeHttpsUrl } from "@/lib/admin-campaign-ui";
+import { campaignEventMessageLabel, participationNextActionLabel, participationSourceLabel, participationStatusLabel, settlementStatusLabel, submissionStatusLabel } from "@/lib/admin-campaign";
 import type { AdminParticipationAction, CampaignStatus, ContentSubmission, ParticipationStatus } from "@/lib/types";
 
 const ACTIONS: Record<ParticipationStatus, Array<{ action: AdminParticipationAction; label: string }>> = {
@@ -74,24 +75,24 @@ export default function AdminCampaignOperations({ campaignId, campaignStatus, pa
   }
 
   return <section className="admin-campaign-operations" aria-labelledby="campaign-operations-heading">
-    <div><h2 id="campaign-operations-heading">Participants and invitations</h2><p>Actions are checked again on the server. If another admin changes the campaign first, the latest state is shown after refresh.</p></div>
-    <label className="admin-campaign-note">Operation note<textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note recorded in the event timeline" /></label>
+    <div><h2 id="campaign-operations-heading">참여자 및 초대 관리</h2><p>운영 작업은 서버에서 다시 확인합니다. 다른 관리자가 먼저 변경한 경우 새로고침 후 최신 상태가 표시됩니다.</p></div>
+    <label className="admin-campaign-note">운영 메모<textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="선택 사항: 운영 이력에 남길 메모를 입력하세요." /></label>
     <p aria-live="polite" className="admin-campaign-error">{message}</p>
     <div className="admin-campaign-participant-list">
       {participants.map((participant) => <article className="admin-campaign-participant" key={participant.id}>
-        <header><div><h3>{participant.creator_display_name}</h3><p>{participant.creator_platform} · {participant.creator_market} · {participant.source}</p></div><span className={`admin-campaign-status is-${participant.status}`}>{participant.status}</span></header>
-        <p>Next action: {participant.next_action || "-"} · Settlement: {participant.settlement_status}</p>
-        <dl className="admin-campaign-operation-data"><div><dt>Submissions</dt><dd>{participant.submissions.length ? participant.submissions.map((submission) => <span key={submission.id}>v{submission.version} {submission.status}: {submission.review_note || "No review note"}<SubmissionLinks submission={submission} /></span>) : "None"}</dd></div><div><dt>Performance</dt><dd>{participant.performance ? `${participant.performance.views} views · ${participant.performance.orders} orders · ${participant.performance.revenue} ${participant.performance.currency}` : "Not reported"}</dd></div><div><dt>Timeline</dt><dd>{participant.events.length ? participant.events.map((event) => <span key={event.id}>{event.message}</span>) : "No activity"}</dd></div></dl>
-        <div className="admin-campaign-form-actions">{ACTIONS[participant.status].map(({ action, label }) => <button className="st-btn" disabled={Boolean(busyId)} key={action} onClick={() => request(`/api/admin/participations/${participant.id}`, { action, note }, participant.id)} type="button">{busyId === participant.id ? "Saving…" : label}</button>)}</div>
+        <header><div><h3>{participant.creator_display_name}</h3><p>{participant.creator_platform} · {participant.creator_market} · {participationSourceLabel(participant.source)}</p></div><span className={`admin-campaign-status is-${participant.status}`}>{participationStatusLabel(participant.status)}</span></header>
+        <p>다음 작업: {participant.next_action ? participationNextActionLabel(participant.next_action) : "없음"} · 정산 상태: {settlementStatusLabel(participant.settlement_status)}</p>
+        <dl className="admin-campaign-operation-data"><div><dt>콘텐츠 제출</dt><dd>{participant.submissions.length ? participant.submissions.map((submission) => <span key={submission.id}>v{submission.version} {submissionStatusLabel(submission.status)}: {submission.review_note || "검수 메모 없음"}<SubmissionLinks submission={submission} /></span>) : "제출된 콘텐츠 없음"}</dd></div><div><dt>성과</dt><dd>{participant.performance ? `조회 ${participant.performance.views} · 주문 ${participant.performance.orders} · ${participant.performance.revenue} ${participant.performance.currency}` : "집계된 성과 없음"}</dd></div><div><dt>운영 이력</dt><dd>{participant.events.length ? participant.events.map((event) => <span key={event.id}>{campaignEventMessageLabel(event.message)}</span>) : "운영 이력 없음"}</dd></div></dl>
+        <div className="admin-campaign-form-actions">{ACTIONS[participant.status].map(({ action, label }) => <button className="st-btn" disabled={Boolean(busyId)} key={action} onClick={() => request(`/api/admin/participations/${participant.id}`, { action, note }, participant.id)} type="button">{busyId === participant.id ? "저장 중…" : label}</button>)}</div>
       </article>)}
-      {!participants.length ? <p>No applications or invitations yet.</p> : null}
+      {!participants.length ? <p>아직 신청하거나 초대된 크리에이터가 없습니다.</p> : null}
     </div>
     <div className="admin-campaign-invite">
-      <h2>Invite approved creators</h2>
-      <label>Search approved creator accounts<input disabled={!canInvite} onChange={(event) => setQuery(event.target.value)} placeholder="Name, email, platform, or market" value={query} /></label>
-      {!canInvite ? <p>Invitations are available only while the campaign is recruiting.</p> : null}
-      {canInvite && invitees.map((creator) => <div className="admin-campaign-invite-row" key={creator.id}><span><strong>{creator.display_name}</strong><small>{creator.google_email || creator.creator_key} · {creator.platform} · {creator.market}</small></span><button className="st-btn" disabled={Boolean(busyId)} onClick={() => invite(creator.id)} type="button">{busyId === `invite-${creator.id}` ? "Sending…" : "Invite"}</button></div>)}
-      {canInvite && !invitees.length ? <p>No approved creator accounts match this search.</p> : null}
+      <h2>승인된 크리에이터 초대</h2>
+      <label>승인된 크리에이터 검색<input disabled={!canInvite} onChange={(event) => setQuery(event.target.value)} placeholder="이름, 이메일, 플랫폼 또는 시장" value={query} /></label>
+      {!canInvite ? <p>크리에이터 초대는 캠페인 모집 중에만 가능합니다.</p> : null}
+      {canInvite && invitees.map((creator) => <div className="admin-campaign-invite-row" key={creator.id}><span><strong>{creator.display_name}</strong><small>{creator.google_email || creator.creator_key} · {creator.platform} · {creator.market}</small></span><button className="st-btn" disabled={Boolean(busyId)} onClick={() => invite(creator.id)} type="button">{busyId === `invite-${creator.id}` ? "초대 전송 중…" : "초대하기"}</button></div>)}
+      {canInvite && !invitees.length ? <p>검색 조건에 맞는 승인된 크리에이터가 없습니다.</p> : null}
     </div>
   </section>;
 }
