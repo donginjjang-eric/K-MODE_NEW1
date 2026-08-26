@@ -13,6 +13,13 @@ export type AdminUserMembership = {
 
 export type AdminUserSegment = "creator_approved" | "creator_pending" | "designer_approved" | "designer_pending" | "not_applied" | "admin" | "disabled";
 
+export type AdminUserQuickApproval = {
+  kind: "creator" | "designer";
+  approveUrl: string;
+  approveMethod: "PATCH" | "POST";
+  approveBody?: { approvalStatus: "approved" };
+};
+
 function approvalLabel(status: ApprovalStatus) {
   if (status === "approved") return "승인 완료";
   if (status === "disabled") return "비활성";
@@ -33,4 +40,24 @@ export function adminUserPresentation(user: AdminUserMembership) {
     return { roleLabel: "디자이너", segment, profileLabel: user.brand_name || "브랜드명 미입력", status, statusLabel: approvalLabel(status), href: `/dashboard/admin/designers/${user.designer_id}` };
   }
   return { roleLabel: "미선택", segment: "not_applied" as const, profileLabel: "계정만 가입", status: "pending" as const, statusLabel: "계정만 가입", href: null };
+}
+
+export function adminUserQuickApproval(user: AdminUserMembership): AdminUserQuickApproval | null {
+  if (user.creator_id && user.creator_key && (user.creator_approval_status ?? "pending") === "pending") {
+    const url = `/api/admin/creators/${encodeURIComponent(user.creator_key)}`;
+    return {
+      kind: "creator",
+      approveUrl: url,
+      approveMethod: "PATCH",
+      approveBody: { approvalStatus: "approved" },
+    };
+  }
+  if (user.designer_id && (user.designer_approval_status ?? "pending") === "pending") {
+    return {
+      kind: "designer",
+      approveUrl: `/api/admin/designers/${user.designer_id}/approve`,
+      approveMethod: "POST",
+    };
+  }
+  return null;
 }

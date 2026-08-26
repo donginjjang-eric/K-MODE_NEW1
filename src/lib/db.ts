@@ -855,6 +855,14 @@ export type AdminUserRow = Pick<User, "id" | "email" | "role" | "created_at"> & 
   creator_key: string | null;
   creator_name: string | null;
   creator_approval_status: ApprovalStatus | null;
+  creator_platform: string | null;
+  creator_market: string | null;
+  creator_categories: string[] | null;
+  creator_instagram_url: string | null;
+  creator_tiktok_url: string | null;
+  designer_name: string | null;
+  designer_country: string | null;
+  designer_description: string | null;
 };
 
 export async function getAllUsersWithDesigner(): Promise<AdminUserRow[]> {
@@ -866,12 +874,19 @@ export async function getAllUsersWithDesigner(): Promise<AdminUserRow[]> {
     `SELECT users.id, users.email, users.role, users.created_at,
             designer_match.id AS designer_id, designer_match.brand_name,
             designer_match.approval_status AS designer_approval_status,
+            designer_match.designer_name, designer_match.country AS designer_country,
+            designer_match.description AS designer_description,
             creator_match.id AS creator_id, creator_match.creator_key,
             creator_match.display_name AS creator_name,
-            creator_match.approval_status AS creator_approval_status
+            creator_match.approval_status AS creator_approval_status,
+            creator_match.platform AS creator_platform, creator_match.market AS creator_market,
+            creator_match.categories AS creator_categories,
+            creator_match.instagram_url AS creator_instagram_url,
+            creator_match.tiktok_url AS creator_tiktok_url
        FROM users
        LEFT JOIN LATERAL (
-         SELECT designers.id, designers.brand_name, designers.approval_status
+         SELECT designers.id, designers.brand_name, designers.approval_status,
+                designers.designer_name, designers.country, designers.description
            FROM designers
           WHERE designers.user_id = users.id
              OR (designers.user_id IS NULL AND lower(designers.contact_email) = lower(users.email))
@@ -881,7 +896,9 @@ export async function getAllUsersWithDesigner(): Promise<AdminUserRow[]> {
           LIMIT 1
        ) designer_match ON true
        LEFT JOIN LATERAL (
-         SELECT creator_accounts.id, creator_accounts.creator_key, creator_accounts.display_name, creator_accounts.approval_status
+         SELECT creator_accounts.id, creator_accounts.creator_key, creator_accounts.display_name, creator_accounts.approval_status,
+                creator_accounts.platform, creator_accounts.market, creator_accounts.categories,
+                creator_accounts.instagram_url, creator_accounts.tiktok_url
            FROM creator_accounts
           WHERE creator_accounts.user_id = users.id
              OR lower(creator_accounts.google_email) = lower(users.email)
