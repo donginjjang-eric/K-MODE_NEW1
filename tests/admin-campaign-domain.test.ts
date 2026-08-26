@@ -72,7 +72,9 @@ test("normalizes campaign deadlines for datetime-local inputs without changing e
 
   assert.equal(normalizeCampaignDeadlineForDatetimeLocal(localDate), "2026-09-01T09:30");
   assert.equal(normalizeCampaignDeadlineForDatetimeLocal("2026-09-01T09:30:45.123Z"), "2026-09-01T09:30");
+  assert.equal(normalizeCampaignDeadlineForDatetimeLocal("2026-09-01T09:30:45.123456Z"), "2026-09-01T09:30");
   assert.equal(normalizeCampaignDeadlineForDatetimeLocal("2026-09-01T09:30:45+09:00"), "2026-09-01T09:30");
+  assert.equal(normalizeCampaignDeadlineForDatetimeLocal("2026-09-01T09:30:45.123456+09:00"), "2026-09-01T09:30");
 
   for (const value of [null, undefined, "", "not-a-date", "2026-02-31T09:30:00Z", "2026-09-01T09:30invalid", "2026-09-01T09:30:45Zinvalid"]) {
     assert.equal(normalizeCampaignDeadlineForDatetimeLocal(value), "");

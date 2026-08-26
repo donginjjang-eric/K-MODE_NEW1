@@ -75,3 +75,26 @@ The build retained the previously reported workspace-root/lockfile and NFT traci
 
 - No authenticated desktop or mobile visual verification was fabricated or claimed in this round.
 - The protected admin campaign page remains an explicit Task 5 check, where an authenticated session must validate the desktop and mobile layouts.
+
+## Fix round 2 — high-precision fractional seconds
+
+### Covering test
+
+- Extended `normalizes campaign deadlines for datetime-local inputs without changing explicit local time` in `tests/admin-campaign-domain.test.ts`.
+- It now accepts `2026-09-01T09:30:45.123456Z` and `2026-09-01T09:30:45.123456+09:00`, both normalized to `2026-09-01T09:30`.
+- The round 1 malformed-suffix cases remain in the same test, so the final end-of-string check continues to reject trailing garbage.
+
+### Test-first evidence
+
+- Command: `node --import tsx --test tests/admin-campaign-domain.test.ts`
+- Before the fix: the 6-digit UTC fractional timestamp returned an empty string instead of `2026-09-01T09:30`, confirming that the former `{1,3}` fractional-second limit was the cause.
+
+### Verification
+
+| Command | Output |
+| --- | --- |
+| `node --import tsx --test tests/admin-campaign-domain.test.ts` | Pass: 19 tests, 0 failures. |
+| `node --experimental-test-module-mocks node_modules/tsx/dist/cli.mjs --test tests/admin-campaign-ui.test.ts` | Pass: 1 test, 0 failures. |
+| `npm run build` | Pass: optimized production build and TypeScript completed successfully. |
+
+The build retained the previously reported workspace-root/lockfile and NFT tracing warnings, but exited with code 0.
