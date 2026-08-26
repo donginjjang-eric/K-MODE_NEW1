@@ -2,7 +2,8 @@ import "../designer/studio.css";
 import "./admin.css";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getAdminPendingCounts } from "@/lib/db";
+import { getAdminPendingCounts, getDesignerForUser } from "@/lib/db";
+import { isMasterAdminEmail } from "@/lib/master-admin";
 import { AdminSideNav, AdminTabBar } from "@/components/AdminNav";
 import LogoutButton from "@/components/LogoutButton";
 import ScrollResetOnLoad from "@/components/ScrollResetOnLoad";
@@ -11,7 +12,10 @@ import MasterRoleSwitcher from "@/components/MasterRoleSwitcher";
 export default async function AdminStudioLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser("admin");
   // 처리 대기 건수 — 메뉴 뱃지로 표시 (조회 실패 시 뱃지 없이 렌더)
-  const pending = await getAdminPendingCounts().catch(() => ({ pendingDesigners: 0, pendingLooks: 0, newCreatorProposals: 0 }));
+  const [pending, masterDesigner] = await Promise.all([
+    getAdminPendingCounts().catch(() => ({ pendingDesigners: 0, pendingLooks: 0, newCreatorProposals: 0 })),
+    isMasterAdminEmail(user.email) ? getDesignerForUser(user.id).catch(() => null) : Promise.resolve(null),
+  ]);
   const badges = {
     "/dashboard/admin/creator-proposals": pending.newCreatorProposals,
     "/dashboard/admin/designers": pending.pendingDesigners,
@@ -27,7 +31,7 @@ export default async function AdminStudioLayout({ children }: { children: React.
           <span className="role-chip admin">관리자 콘솔</span>
         </Link>
         <div className="top-context">
-          <MasterRoleSwitcher email={user.email} active="admin" />
+          <MasterRoleSwitcher email={user.email} active="admin" brandCategory={masterDesigner?.brand_category} />
           <div className="me compact">
             <span className="role-label">운영자</span>
             <span>{user.email}</span>

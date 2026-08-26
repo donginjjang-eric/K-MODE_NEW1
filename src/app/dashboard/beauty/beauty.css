@@ -1,0 +1,305 @@
+.beauty-partner {
+  --bg: #f7f5f0;
+  --panel: #fffdf9;
+  --ink: #22211f;
+  --muted: #746f68;
+  --line: rgba(55, 48, 43, .11);
+  --line2: rgba(55, 48, 43, .18);
+  --soft: #efe9e1;
+  --good: #446b58;
+  --beauty-accent: #75465c;
+  --beauty-accent-soft: #f1e3e9;
+  overflow-x: clip;
+  background:
+    radial-gradient(circle at 72% 6%, rgba(214, 187, 198, .24), transparent 25rem),
+    #f7f5f0;
+}
+
+.beauty-topbar {
+  background: rgba(247, 245, 240, .92);
+}
+
+.beauty-role-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 0 10px;
+  border: 1px solid rgba(117, 70, 92, .2);
+  border-radius: 999px;
+  background: var(--beauty-accent-soft);
+  color: var(--beauty-accent) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: .04em;
+}
+
+.beauty-approval-banner {
+  padding: 9px 20px;
+  border-bottom: 1px solid rgba(117, 70, 92, .15);
+  background: #fff3f4;
+  color: #773d50;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.beauty-shell {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.beauty-side {
+  position: sticky;
+  top: 61px;
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  height: calc(100vh - 61px);
+  padding: 26px 16px 20px;
+  border-right: 1px solid var(--line);
+  background: rgba(255, 253, 249, .54);
+}
+
+.beauty-side nav { display: grid; gap: 5px; }
+.beauty-nav-label { margin: 0 12px 10px; color: #9a8e87; font-size: 10px; font-weight: 900; letter-spacing: .14em; }
+.beauty-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  color: #4a4541;
+  font-size: 14px;
+  font-weight: 800;
+}
+.beauty-nav-item .ic { display: grid; width: 21px; place-items: center; color: #88777e; }
+.beauty-nav-item:hover { background: rgba(117, 70, 92, .07); }
+.beauty-nav-item.is-active { background: #332b2f; color: #fff; box-shadow: 0 9px 22px rgba(51, 43, 47, .13); }
+.beauty-nav-item.is-active .ic { color: #f2dfe7; }
+.beauty-nav-item.is-upcoming { cursor: default; opacity: .56; }
+.beauty-nav-item.is-upcoming small { margin-left: auto; color: #846875; font-size: 10px; font-weight: 900; }
+
+.beauty-account-card {
+  margin-top: auto;
+  padding: 15px;
+  border: 1px solid rgba(117, 70, 92, .13);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(241,227,233,.7));
+  box-shadow: 0 16px 38px rgba(57, 42, 49, .07);
+}
+.beauty-account-avatar { display: grid; width: 40px; height: 40px; place-items: center; overflow: hidden; border-radius: 13px; background: #75465c; color: #fff; }
+.beauty-account-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.beauty-account-copy { display: grid; gap: 2px; margin-top: 10px; }
+.beauty-account-copy > span { color: #8d697a; font-size: 10px; font-weight: 900; letter-spacing: .1em; }
+.beauty-account-copy strong, .beauty-account-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.beauty-account-copy strong { font-size: 14px; }
+.beauty-account-copy small { color: var(--muted); font-size: 11px; }
+.beauty-account-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 13px; }
+.beauty-account-actions a, .beauty-account-actions button { display: grid; min-height: 34px; place-items: center; border: 1px solid var(--line2); border-radius: 10px; background: #fff; color: var(--ink); font-size: 11px; font-weight: 900; }
+.beauty-account-actions button { background: #332b2f; color: #fff; }
+
+.beauty-main { min-width: 0; min-height: calc(100vh - 61px); padding: 42px 42px 100px; }
+.beauty-mobile-nav { display: none; }
+
+.beauty-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  min-height: 272px;
+  padding: 38px;
+  overflow: hidden;
+  border: 1px solid rgba(117, 70, 92, .13);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255,255,255,.72), transparent 16rem),
+    linear-gradient(128deg, #ead9df 0%, #f3e9e5 54%, #dce5dd 100%);
+}
+.beauty-eyebrow { margin: 0 0 12px; color: #846376; font-size: 11px; font-weight: 900; letter-spacing: .16em; }
+.beauty-hero h1 { max-width: 720px; margin: 0; font-size: clamp(32px, 4.2vw, 58px); line-height: 1.06; letter-spacing: -.045em; word-break: keep-all; }
+.beauty-hero p:not(.beauty-eyebrow) { max-width: 650px; margin: 18px 0 0; color: #5f5757; font-size: 15px; line-height: 1.75; }
+.beauty-primary-action { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 18px; min-height: 50px; padding: 0 20px; border-radius: 999px; background: #332b2f; color: #fff !important; font-size: 13px; font-weight: 900; }
+
+.beauty-status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+.beauty-status-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; min-height: 146px; padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: rgba(255,253,249,.92); }
+.beauty-status-icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 15px; background: #e5ece6; color: #446b58; }
+.beauty-status-card.is-profile .beauty-status-icon { background: var(--beauty-accent-soft); color: var(--beauty-accent); }
+.beauty-status-icon .nav-svg { width: 23px; height: 23px; }
+.beauty-status-card p { margin: 0 0 4px; color: var(--muted); font-size: 12px; font-weight: 800; }
+.beauty-status-card strong { display: block; font-size: 22px; letter-spacing: -.025em; }
+.beauty-status-card div > span { color: var(--muted); font-size: 12px; }
+.beauty-status-card > a { color: #75465c; font-size: 12px; font-weight: 900; }
+.beauty-progress { width: 100%; height: 5px; margin-top: 12px; overflow: hidden; border-radius: 999px; background: #eadfe3; }
+.beauty-progress i { display: block; height: 100%; border-radius: inherit; background: #75465c; }
+
+.beauty-next-section, .beauty-coming-section { margin-top: 36px; }
+.beauty-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 14px; }
+.beauty-section-heading h2, .beauty-coming-section h2 { margin: 0; font-size: 23px; letter-spacing: -.025em; }
+.beauty-section-heading > span { color: var(--muted); font-size: 12px; font-weight: 800; }
+.beauty-next-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.beauty-next-list li { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 15px; min-height: 82px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,253,249,.82); }
+.beauty-next-list li.is-done { background: rgba(230,238,231,.64); }
+.beauty-step-number { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: #332b2f; color: #fff; font-size: 12px; font-weight: 900; }
+.beauty-next-list li.is-done .beauty-step-number { background: #50725e; }
+.beauty-next-list strong { font-size: 14px; }
+.beauty-next-list p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.beauty-next-list a { padding: 8px 12px; border-radius: 999px; background: var(--beauty-accent-soft); color: var(--beauty-accent); font-size: 11px; font-weight: 900; }
+.beauty-done-label { color: #50725e; font-size: 11px; font-weight: 900; }
+
+.beauty-coming-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+.beauty-coming-grid article, .beauty-coming-grid > a { display: grid; min-height: 130px; align-content: end; gap: 7px; padding: 18px; border: 1px dashed rgba(117,70,92,.25); border-radius: 18px; background: rgba(255,253,249,.5); color: inherit; }
+.beauty-coming-grid .nav-svg { width: 23px; color: #957889; }
+.beauty-coming-grid strong { font-size: 14px; }
+.beauty-coming-grid span { color: var(--muted); font-size: 11px; }
+
+.beauty-operations-page { width: min(1120px, 100%); }
+.beauty-page-heading { max-width: 780px; margin-bottom: 28px; }
+.beauty-page-heading > p { margin: 0 0 10px; color: var(--beauty-accent); font-size: 10px; font-weight: 900; letter-spacing: .16em; }
+.beauty-page-heading h1 { margin: 0; color: #332b2f; font-size: clamp(32px, 4vw, 50px); letter-spacing: -.045em; }
+.beauty-page-heading > span { display: block; margin-top: 12px; color: var(--muted); font-size: 14px; line-height: 1.75; word-break: keep-all; }
+.beauty-create-panel, .beauty-campaign-card, .beauty-request-list > article, .beauty-content-list > article, .beauty-order-list > article, .beauty-settlement-list, .beauty-empty-state { border: 1px solid var(--line); border-radius: 22px; background: rgba(255,253,249,.92); box-shadow: 0 16px 45px rgba(57,42,49,.045); }
+.beauty-create-panel { margin-bottom: 22px; overflow: hidden; }
+.beauty-create-panel > summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 22px; cursor: pointer; list-style: none; }
+.beauty-create-panel > summary::-webkit-details-marker { display: none; }
+.beauty-create-panel > summary span { display: grid; gap: 3px; }
+.beauty-create-panel > summary b { font-size: 16px; }
+.beauty-create-panel > summary small { color: var(--muted); }
+.beauty-create-panel > summary i { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: var(--beauty-accent-soft); color: var(--beauty-accent); font-style: normal; font-size: 20px; }
+.beauty-campaign-form { display: grid; gap: 18px; padding: 22px; border-top: 1px solid var(--line); }
+.beauty-campaign-form > label, .beauty-form-grid > label, .beauty-participation-actions > label { display: grid; gap: 7px; color: #4d4548; font-size: 12px; font-weight: 900; }
+.beauty-campaign-form input, .beauty-campaign-form select, .beauty-campaign-form textarea, .beauty-participation-actions textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line2); border-radius: 11px; background: #fff; color: var(--ink); font: inherit; font-weight: 600; }
+.beauty-campaign-form textarea, .beauty-participation-actions textarea { min-height: 92px; resize: vertical; }
+.beauty-campaign-form small { color: var(--muted); font-weight: 500; }
+.beauty-campaign-form fieldset { min-width: 0; margin: 0; padding: 14px; border: 1px solid var(--line); border-radius: 14px; }
+.beauty-campaign-form legend { padding: 0 6px; color: #4d4548; font-size: 12px; font-weight: 900; }
+.beauty-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.beauty-choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.beauty-choice-row label { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 999px; background: #f3efea; font-size: 11px; font-weight: 800; }
+.beauty-choice-row input { width: auto; min-height: 0; padding: 0; }
+.beauty-action { display: inline-flex; width: fit-content; min-height: 36px; align-items: center; justify-content: center; padding: 0 13px; border: 1px solid rgba(117,70,92,.3); border-radius: 999px; background: #fff; color: var(--beauty-accent); font-size: 11px; font-weight: 900; cursor: pointer; }
+.beauty-action.primary { border-color: #332b2f; background: #332b2f; color: #fff; }
+.beauty-action:disabled { cursor: wait; opacity: .56; }
+.beauty-form-error { grid-column: 1 / -1; margin: 0; color: #a13e53; font-size: 12px; font-weight: 800; }
+.beauty-inline-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.beauty-campaign-list, .beauty-request-list, .beauty-content-list, .beauty-order-list { display: grid; gap: 14px; }
+.beauty-campaign-card { padding: 24px; }
+.beauty-campaign-card > header, .beauty-request-list > article > header, .beauty-content-list > article > header, .beauty-order-list > article > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.beauty-campaign-card header span, .beauty-request-list header span, .beauty-content-list header span, .beauty-order-list header span, .beauty-settlement-list article span { color: var(--beauty-accent); font-size: 10px; font-weight: 900; letter-spacing: .06em; }
+.beauty-campaign-card h2, .beauty-request-list h2, .beauty-content-list h2, .beauty-order-list h2, .beauty-settlement-list h2 { margin: 4px 0; font-size: 20px; letter-spacing: -.025em; }
+.beauty-campaign-card header p, .beauty-request-list header p, .beauty-content-list header p, .beauty-order-list header p, .beauty-settlement-list p { margin: 0; color: var(--muted); font-size: 12px; }
+.beauty-status { display: inline-flex; flex: 0 0 auto; min-height: 28px; align-items: center; padding: 0 10px; border-radius: 999px; background: #eee9e4; color: #665e59; font-size: 10px; font-weight: 900; white-space: nowrap; }
+.beauty-status.is-recruiting, .beauty-status.is-new, .beauty-status.is-submitted, .beauty-status.is-applied { background: #f4e2ea; color: #85445f; }
+.beauty-status.is-active, .beauty-status.is-matched, .beauty-status.is-approved, .beauty-status.is-published, .beauty-status.is-paid, .beauty-status.is-done, .beauty-status.is-completed { background: #e3eee6; color: #3f6a50; }
+.beauty-status.is-shipping, .beauty-status.is-creating, .beauty-status.is-review, .beauty-status.is-settlement, .beauty-status.is-pending, .beauty-status.is-confirmed { background: #eee9da; color: #756323; }
+.beauty-campaign-brief { margin: 18px 0; color: #56504d; font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+.beauty-metric-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; }
+.beauty-metric-row > div { min-width: 0; padding: 13px; border-right: 1px solid var(--line); }
+.beauty-metric-row > div:last-child { border-right: 0; }
+.beauty-metric-row dt { color: var(--muted); font-size: 10px; font-weight: 800; }
+.beauty-metric-row dd { margin: 5px 0 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 900; }
+.beauty-edit-panel { margin-top: 14px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.beauty-edit-panel > summary { padding: 12px 14px; cursor: pointer; color: var(--beauty-accent); font-size: 11px; font-weight: 900; }
+.beauty-participant-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.beauty-subheading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.beauty-subheading h3 { margin: 0; font-size: 15px; }
+.beauty-subheading span { color: var(--muted); font-size: 11px; font-weight: 800; }
+.beauty-participant-list { display: grid; gap: 8px; margin-top: 12px; }
+.beauty-participant-list > article { display: grid; grid-template-columns: minmax(150px, 1fr) auto minmax(220px, 1fr); align-items: center; gap: 12px; padding: 13px; border-radius: 13px; background: #f7f3ef; }
+.beauty-participant-list > article > div:first-child { display: grid; gap: 3px; }
+.beauty-participant-list strong { font-size: 13px; }
+.beauty-participant-list span { color: var(--muted); font-size: 10px; }
+.beauty-participation-actions { min-width: 0; }
+.beauty-participation-actions textarea { min-height: 58px; }
+.beauty-participation-actions .beauty-inline-actions { margin-top: 7px; }
+.beauty-empty-inline { padding: 15px; border-radius: 13px; background: #f5f1ed; }
+.beauty-empty-inline p { margin: 0 0 4px; font-size: 12px; font-weight: 900; }
+.beauty-empty-inline span { color: var(--muted); font-size: 11px; line-height: 1.55; }
+.beauty-empty-state { display: grid; min-height: 220px; align-content: center; justify-items: start; padding: 34px; }
+.beauty-empty-state h2 { margin: 0; font-size: 22px; }
+.beauty-empty-state p { max-width: 620px; margin: 10px 0 18px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.beauty-request-list > article, .beauty-content-list > article, .beauty-order-list > article { padding: 22px; }
+.beauty-request-list > article > p { margin: 18px 0; color: #56504d; font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+.beauty-request-list footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.beauty-request-list time { color: var(--muted); font-size: 11px; }
+.beauty-request-list .pill { min-height: 34px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 999px; background: #332b2f; color: #fff; font-size: 11px; font-weight: 900; }
+.beauty-request-list .pill.light { background: #fff; color: var(--beauty-accent); }
+.beauty-content-body { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin: 18px 0; padding: 14px; border-radius: 13px; background: #f5f1ed; }
+.beauty-content-body p { margin: 0; color: #56504d; font-size: 12px; line-height: 1.6; }
+.beauty-content-body a, .beauty-content-body span { flex: 0 0 auto; color: var(--beauty-accent); font-size: 11px; font-weight: 900; }
+.beauty-content-list footer { color: var(--muted); font-size: 11px; }
+.beauty-content-list footer p { margin: 5px 0 0; }
+.beauty-real-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.beauty-real-summary.is-four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.beauty-real-summary article { display: grid; gap: 5px; padding: 18px; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,253,249,.86); }
+.beauty-real-summary span, .beauty-real-summary small { color: var(--muted); font-size: 10px; font-weight: 800; }
+.beauty-real-summary strong { font-size: 26px; }
+.beauty-order-list dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; }
+.beauty-order-list dl > div { padding: 12px; border-radius: 12px; background: #f5f1ed; }
+.beauty-order-list dt { color: var(--muted); font-size: 10px; font-weight: 800; }
+.beauty-order-list dd { margin: 5px 0 0; font-size: 12px; }
+.beauty-performance-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; }
+.beauty-performance-row span { display: grid; gap: 4px; padding: 11px; border: 1px solid var(--line); border-radius: 11px; color: var(--muted); font-size: 9px; font-weight: 800; }
+.beauty-performance-row b { color: var(--ink); font-size: 12px; overflow-wrap: anywhere; }
+.beauty-settlement-list { overflow: hidden; }
+.beauty-settlement-list article { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 20px; padding: 20px 22px; border-bottom: 1px solid var(--line); }
+.beauty-settlement-list article:last-child { border-bottom: 0; }
+.beauty-settlement-list article > div:last-child { display: grid; justify-items: end; gap: 6px; }
+.beauty-settlement-list article > div:last-child strong { font-size: 15px; }
+
+.beauty-main > .bp, .beauty-main > .st-title, .beauty-main > .st-grid2col { max-width: 1120px; }
+.beauty-main .st-title { color: #332b2f; }
+.beauty-main .st-btn { border-color: #75465c; background: #75465c; }
+.beauty-main .portfolio-kind-picker button.is-active { border-color: #75465c; background: #f4e8ed; color: #63384c; }
+
+@media (max-width: 980px) {
+  .beauty-main { padding: 30px 24px 96px; }
+  .beauty-hero { align-items: flex-start; flex-direction: column; min-height: 0; }
+  .beauty-status-grid { grid-template-columns: 1fr; }
+  .beauty-participant-list > article { grid-template-columns: minmax(0, 1fr) auto; }
+  .beauty-participant-list .beauty-participation-actions { grid-column: 1 / -1; }
+  .beauty-performance-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .beauty-topbar { padding: 11px 15px; }
+  .beauty-topbar .brand { align-items: center; }
+  .beauty-topbar .brand b { font-size: 20px; }
+  .beauty-role-chip { display: inline-flex !important; min-height: 23px; padding: 0 8px; font-size: 9px !important; }
+  .beauty-topbar .top-context { display: none; }
+  .beauty-shell { display: block; }
+  .beauty-side { display: none; }
+  .beauty-main { padding: 18px 14px 154px; }
+  .beauty-hero { gap: 24px; padding: 25px 21px; border-radius: 20px; }
+  .beauty-hero h1 { font-size: 31px; }
+  .beauty-hero p:not(.beauty-eyebrow) { margin-top: 13px; font-size: 13px; }
+  .beauty-primary-action { width: 100%; justify-content: space-between; }
+  .beauty-status-card { grid-template-columns: auto 1fr; min-height: 126px; padding: 19px 16px; }
+  .beauty-status-card > a { grid-column: 2; }
+  .beauty-section-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .beauty-next-list li { grid-template-columns: auto 1fr; }
+  .beauty-next-list li > a, .beauty-done-label { grid-column: 2; justify-self: start; }
+  .beauty-coming-grid { grid-template-columns: 1fr; }
+  .beauty-coming-grid article { min-height: 108px; }
+  .beauty-mobile-nav { position: fixed; right: 12px; bottom: 12px; left: 12px; z-index: 45; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; padding: 6px; border: 1px solid rgba(80,63,70,.14); border-radius: 18px; background: rgba(255,253,249,.96); box-shadow: 0 14px 38px rgba(45,34,39,.18); backdrop-filter: blur(14px); }
+  .beauty-mobile-nav a { display: flex; min-width: 0; align-items: center; justify-content: center; gap: 4px; min-height: 43px; border-radius: 11px; color: #81777b; font-size: 9px; font-weight: 800; }
+  .beauty-mobile-nav a.is-active { background: #332b2f; color: #fff; }
+  .beauty-mobile-nav .ic { display: grid; width: 18px; place-items: center; }
+  .beauty-mobile-nav .nav-svg { width: 18px; height: 18px; }
+  .beauty-page-heading { margin-bottom: 20px; }
+  .beauty-page-heading h1 { font-size: 34px; }
+  .beauty-form-grid, .beauty-metric-row, .beauty-real-summary, .beauty-real-summary.is-four, .beauty-order-list dl { grid-template-columns: 1fr; }
+  .beauty-metric-row > div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .beauty-metric-row > div:last-child { border-bottom: 0; }
+  .beauty-campaign-card, .beauty-request-list > article, .beauty-content-list > article, .beauty-order-list > article { padding: 17px; }
+  .beauty-campaign-card > header, .beauty-request-list > article > header, .beauty-content-list > article > header, .beauty-order-list > article > header { align-items: flex-start; flex-direction: column-reverse; gap: 10px; }
+  .beauty-participant-list > article { grid-template-columns: 1fr; }
+  .beauty-participant-list > article > .beauty-status { justify-self: start; }
+  .beauty-content-body { flex-direction: column; }
+  .beauty-performance-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .beauty-settlement-list article { grid-template-columns: 1fr; padding: 17px; }
+  .beauty-settlement-list article > div:last-child { justify-items: start; }
+}

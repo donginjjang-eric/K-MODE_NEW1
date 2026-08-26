@@ -1,6 +1,8 @@
 import "./creator.css";
 import Link from "next/link";
 import { requireApprovedCreator } from "@/lib/auth";
+import { getDesignerForUser } from "@/lib/db";
+import { isMasterAdminEmail } from "@/lib/master-admin";
 import { CreatorSideNav, CreatorTabBar } from "@/components/CreatorNav";
 import { CreatorDemoControls } from "@/components/CreatorDemoControls";
 import { CreatorPersonaSwitch } from "@/components/CreatorPersonaSwitch";
@@ -8,6 +10,9 @@ import MasterRoleSwitcher from "@/components/MasterRoleSwitcher";
 
 export default async function CreatorCenterLayout({ children }: { children: React.ReactNode }) {
   const { user, creator } = await requireApprovedCreator();
+  const masterDesigner = isMasterAdminEmail(user.email)
+    ? await getDesignerForUser(user.id).catch(() => null)
+    : null;
 
   return (
     <div className="creator-center">
@@ -18,7 +23,7 @@ export default async function CreatorCenterLayout({ children }: { children: Reac
             <span>해외 크리에이터가 실제로 보는 화면입니다.</span>
             <Link href="/dashboard/admin/campaigns">캠페인 관리</Link>
           </div>
-          <MasterRoleSwitcher email={user.email} active="creator" />
+          <MasterRoleSwitcher email={user.email} active="creator" brandCategory={masterDesigner?.brand_category} />
           <CreatorPersonaSwitch />
           <CreatorDemoControls />
         </div>

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createSessionToken, loginUser, passwordLoginDestination, sessionCookieName, sessionMaxAgeSeconds } from "@/lib/auth";
+import { getDesignerForUser } from "@/lib/db";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -25,7 +26,8 @@ export async function POST(request: Request) {
   });
 
   // 명시적인 안전한 복귀 경로가 없으면 역할별 대시보드로 이동한다.
-  const dest = passwordLoginDestination(user, body.next);
+  const designer = user.role === "designer" ? await getDesignerForUser(user.id) : null;
+  const dest = passwordLoginDestination({ ...user, brand_category: designer?.brand_category }, body.next);
 
   return Response.json({
     ok: true,

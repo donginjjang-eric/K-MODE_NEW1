@@ -4,6 +4,7 @@ import { createSessionToken, sessionCookieName, sessionMaxAgeSeconds } from "@/l
 import { findOrCreateGoogleUser, getCreatorAccountByEmail, linkCreatorAccountToUser } from "@/lib/db";
 import { activateAgencyInvitationsForLogin } from "@/lib/creator-management";
 import { creatorOnboardingDestination } from "@/lib/creator-onboarding";
+import { brandPartnerCenterPath } from "@/lib/brand-partner-center";
 import {
   exchangeGoogleCode,
   fetchGoogleProfile,
@@ -101,7 +102,7 @@ export async function GET(request: Request) {
       return Response.redirect(withWelcome(dest || "/dashboard/agency"), 302);
     }
     if (designer?.approval_status === "approved") {
-      return Response.redirect(withWelcome(dest || "/"), 302);
+      return Response.redirect(withWelcome(dest || brandPartnerCenterPath(designer.brand_category)), 302);
     }
     if (designer) {
       // 신청서는 있으나 아직 승인 전

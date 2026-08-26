@@ -12,7 +12,12 @@ export async function GET() {
   try {
     const row = await getDesignerForUser(user.id);
     if (row) {
-      designer = { id: row.id, brandName: row.brand_name, approvalStatus: row.approval_status };
+      designer = {
+        id: row.id,
+        brandName: row.brand_name,
+        brandCategory: row.brand_category,
+        approvalStatus: row.approval_status,
+      };
     }
   } catch {
     // 조회 실패 시 디자이너 정보 없이 사용자만 반환

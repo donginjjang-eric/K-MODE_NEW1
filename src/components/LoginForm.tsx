@@ -3,6 +3,7 @@
 // 파트너 로그인: 구글 로그인 단일 방식. 로그인된 상태면 상태 카드(누구로 로그인됨 + 다음 행동)를 보여준다.
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { validateCreatorSocialUrls, type CreatorSocialErrors } from "@/lib/creator-onboarding";
+import { brandPartnerCenterPath } from "@/lib/brand-partner-center";
 
 const PARAM_MESSAGES: Record<string, string> = {
   approval_required: "승인된 브랜드 파트너 계정만 사용할 수 있어요. 승인 완료 후 다시 로그인해주세요.",
@@ -22,7 +23,7 @@ const PARAM_MESSAGES: Record<string, string> = {
 
 type Me = {
   user: { id: string; email: string; role: string } | null;
-  designer: { id: string; brandName: string; approvalStatus: string } | null;
+  designer: { id: string; brandName: string; brandCategory?: string; approvalStatus: string } | null;
   creator: { id: string; displayName: string; approvalStatus: string } | null;
 };
 
@@ -223,6 +224,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
     const isCreatorPending = me.creator?.approvalStatus === "pending";
     const isApproved = me.designer?.approvalStatus === "approved";
     const isPending = !isApproved && Boolean(me.designer);
+    const partnerCenterHref = brandPartnerCenterPath(me.designer?.brandCategory);
     return (
       <div className="generate-box login-form-card">
         <div className="login-status-head">
@@ -244,7 +246,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
             <p className="login-google-hint">관리자 계정으로 로그인되어 있어요.</p>
             <a className="generate-button login-status-cta" href="/dashboard/admin">관리자 콘솔 열기</a>
             {me.designer ? (
-              <a className="generate-button login-status-cta" href="/dashboard/designer/brand">
+              <a className="generate-button login-status-cta" href={partnerCenterHref}>
                 브랜드 파트너 스튜디오 열기 ({me.designer.brandName})
               </a>
             ) : (
@@ -260,7 +262,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
         ) : isApproved ? (
           <>
             <p className="login-google-hint">{me.designer?.brandName || "브랜드 파트너"} 계정으로 로그인되어 있어요.</p>
-            <a className="generate-button login-status-cta" href="/dashboard/designer/brand">브랜드 파트너 스튜디오 열기</a>
+            <a className="generate-button login-status-cta" href={partnerCenterHref}>브랜드 파트너 센터 열기</a>
           </>
         ) : isPending ? (
           <div className="login-onboard">

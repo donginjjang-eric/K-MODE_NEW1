@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { adminCampaignOperationMessage } from "@/lib/admin-campaign-ui";
+import { normalizeCampaignDeadlineForDatetimeLocal } from "@/lib/admin-campaign";
 import type { Campaign } from "@/lib/types";
 
 const MARKET_OPTIONS = ["한국", "일본", "미국", "글로벌"];
@@ -26,8 +27,8 @@ export default function AdminCampaignForm({ campaign, endpoint, method, redirect
     brief: campaign?.brief ?? "",
     reward_text: campaign?.reward_text ?? "",
     slots: String(campaign?.slots ?? 1),
-    application_deadline: campaign?.application_deadline ? campaign.application_deadline.slice(0, 16) : "",
-    content_deadline: campaign?.content_deadline ? campaign.content_deadline.slice(0, 16) : "",
+    application_deadline: normalizeCampaignDeadlineForDatetimeLocal(campaign?.application_deadline),
+    content_deadline: normalizeCampaignDeadlineForDatetimeLocal(campaign?.content_deadline),
     image_url: campaign?.image_urls[0] ?? "",
   }), [campaign]);
   const [values, setValues] = useState(initial);

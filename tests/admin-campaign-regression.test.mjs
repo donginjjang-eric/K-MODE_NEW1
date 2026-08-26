@@ -65,11 +65,14 @@ test("campaign operations expose no destructive delete route or campaign delete 
 
 test("participation mutations lock the record, update it, and record an event inside a transaction", async () => {
   const campaignDomain = await source("../src/lib/creator-campaigns.ts");
-  const transition = campaignDomain.match(/export async function transitionParticipationAsAdmin[\s\S]*?\n}\n/);
+  const transition = campaignDomain.match(/export async function transitionParticipationAsAdmin[\s\S]*?\r?\n}\r?\n/);
 
   assert.ok(transition, "the admin participation transition must exist");
   assert.match(transition[0], /withDatabaseTransaction/);
-  assert.match(transition[0], /SELECT \* FROM campaign_participations WHERE id = \$1 FOR UPDATE/);
+  assert.match(
+    transition[0],
+    /SELECT \* FROM campaign_participations WHERE id = \$1 AND EXISTS \(SELECT 1 FROM campaigns WHERE campaigns\.id = campaign_id AND owner_type = 'admin'\) FOR UPDATE/,
+  );
   assert.match(transition[0], /UPDATE campaign_participations SET status/);
   assert.match(transition[0], /insertCampaignEvent/);
 });

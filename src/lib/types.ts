@@ -6,6 +6,7 @@ export type CreatorClaimState = "unclaimed" | "claimed";
 export type CreatorManagementGroupStatus = "active" | "inactive";
 export type AgencyInviteStatus = "invited" | "active" | "revoked";
 export type CampaignStatus = "draft" | "recruiting" | "active" | "closed";
+export type CampaignOwnerType = "admin" | "designer";
 export type ParticipationStatus = "applied" | "invited" | "matched" | "shipping" | "creating" | "review" | "published" | "settlement" | "completed" | "cancelled";
 export type AdminCampaignStatus = CampaignStatus;
 export type AdminParticipationAction = "approve" | "reject" | "cancel" | "shipping" | "creating" | "review" | "published" | "settlement" | "completed";
@@ -21,6 +22,7 @@ export type AdminCampaignInput = {
   slots: number;
   image_urls?: string[];
 };
+export type BeautyCampaignInput = AdminCampaignInput & { product_id: string };
 export type SettlementStatus = "none" | "pending" | "confirmed" | "paid";
 export type SubmissionStatus = "submitted" | "revision_requested" | "approved" | "published";
 export type ProductStatus = "draft" | "active" | "hidden";
@@ -66,8 +68,10 @@ export type CreatorAccount = {
 
 export type Campaign = {
   id: string;
-  owner_type: "admin";
+  owner_type: CampaignOwnerType;
   owner_id: string;
+  designer_id: string | null;
+  product_id: string | null;
   title: string;
   category: string;
   markets: string[];

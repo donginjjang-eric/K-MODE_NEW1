@@ -4,7 +4,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AdminPagination from "@/components/AdminPagination";
 import type { AdminUserRow } from "@/lib/db";
+import { paginateAdminItems } from "@/lib/admin-list-utils";
 import { adminUserPresentation, adminUserQuickApproval, formatAdminJoinDate, type AdminUserSegment } from "@/lib/admin-user-presentation";
 
 type Segment = AdminUserSegment;
@@ -19,6 +21,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | Segment>("all");
+  const [currentPage, setCurrentPage] = useState(1);
   // 기본은 최신순(가장 최근 가입자가 1번으로 맨 위 — 신규 가입이 바로 보이게)
   const [sortAsc, setSortAsc] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -128,10 +131,22 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
       return sortAsc ? ta - tb : tb - ta;
     });
   }, [withSeg, filter, search, sortAsc]);
+  const pageUsers = useMemo(() => paginateAdminItems(visible, currentPage), [currentPage, visible]);
+
+  const changePage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const holdReview = () => {
+    if (!selected) return;
+    setToast(`${selected.presentation.profileLabel} 승인 대기 유지`);
+    setSelectedId(null);
+  };
 
   const chip = (key: "all" | Segment, label: string, n: number) =>
     n || key === "all" ? (
-      <button type="button" key={key} className={`apm-chip${filter === key ? " is-active" : ""}`} onClick={() => setFilter(key)}>
+      <button type="button" key={key} className={`apm-chip${filter === key ? " is-active" : ""}`} onClick={() => { setFilter(key); setCurrentPage(1); }}>
         {label} <b>{n}</b>
       </button>
     ) : null;
@@ -143,8 +158,8 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
           {chip("all", "전체", counts.all)}
           {chip("creator_approved", "승인 크리에이터", counts.creator_approved)}
           {chip("creator_pending", "크리에이터 승인 대기", counts.creator_pending)}
-          {chip("designer_approved", "승인 디자이너", counts.designer_approved)}
-          {chip("designer_pending", "디자이너 승인 대기", counts.designer_pending)}
+          {chip("designer_approved", "승인 브랜드 파트너", counts.designer_approved)}
+          {chip("designer_pending", "브랜드 파트너 승인 대기", counts.designer_pending)}
           {chip("not_applied", "계정만 가입", counts.not_applied)}
           {chip("admin", "관리자", counts.admin)}
           {chip("disabled", "비활성", counts.disabled)}
@@ -155,15 +170,15 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
             type="search"
             placeholder="이메일·브랜드 검색"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
           />
-          <button type="button" className="apm-toggle" onClick={() => setSortAsc((v) => !v)}>
+          <button type="button" className="apm-toggle" onClick={() => { setSortAsc((v) => !v); setCurrentPage(1); }}>
             {sortAsc ? "오래된 가입순" : "최신 가입순"}
           </button>
         </div>
       </div>
 
-      <p className="apm-result">{visible.length}명 표시 중</p>
+      <AdminPagination total={visible.length} currentPage={currentPage} onPageChange={changePage} unit="명" />
 
       {visible.length ? (
         <section className="st-card members-card">
@@ -176,7 +191,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
               <span className="col-action">승인 관리</span>
               <span className="col-date">가입일</span>
             </div>
-            {visible.map(({ u, presentation }) => (
+            {pageUsers.map(({ u, presentation }) => (
               <article className="admin-table-row" key={u.id}>
                 <span className="col-no">{numberById[u.id]}</span>
                 {presentation.href ? (
@@ -226,7 +241,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
         <div className="aum-review-layer" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedId(null); }}>
           <aside className="aum-review-drawer" ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby="aum-review-title" tabIndex={-1}>
             <header>
-              <div><span>QUICK APPROVAL</span><h2 id="aum-review-title">{quickApproval.kind === "creator" ? "크리에이터" : "디자이너"} 승인 검토</h2></div>
+              <div><span>QUICK APPROVAL</span><h2 id="aum-review-title">{quickApproval.kind === "creator" ? "크리에이터" : "브랜드 파트너"} 승인 검토</h2></div>
               <button type="button" aria-label="승인 패널 닫기" onClick={() => setSelectedId(null)}>×</button>
             </header>
             <section className="aum-review-identity">
@@ -234,7 +249,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
               <span><em>승인 대기</em><strong>{quickApproval.kind === "creator" ? selected.u.creator_name || "활동명 미입력" : selected.u.brand_name || "브랜드명 미입력"}</strong><small>{selected.u.email}</small></span>
             </section>
             <dl className="aum-review-facts">
-              <div><dt>신청 유형</dt><dd>{quickApproval.kind === "creator" ? "크리에이터" : "디자이너"}</dd></div>
+              <div><dt>신청 유형</dt><dd>{quickApproval.kind === "creator" ? "크리에이터" : "브랜드 파트너"}</dd></div>
               <div><dt>가입일</dt><dd>{formatAdminJoinDate(selected.u.created_at)}</dd></div>
               {quickApproval.kind === "creator" ? <>
                 <div><dt>활동 국가</dt><dd>{selected.u.creator_market || "미입력"}</dd></div>
@@ -249,7 +264,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
             </dl>
             {error ? <p className="aum-review-error" role="alert">{error}</p> : null}
             <footer>
-              <button className="aum-hold-button" type="button" disabled={busy} onClick={() => setSelectedId(null)}>나중에 검토</button>
+              <button className="aum-hold-button" type="button" disabled={busy} onClick={holdReview}>승인 보류</button>
               <button className="aum-approve-button" type="button" disabled={busy} onClick={review}>{busy ? "처리 중…" : "승인하기"}</button>
             </footer>
             <Link className="aum-full-detail" href={selected.presentation.href || "#"}>전체 상세 정보 보기</Link>

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isMasterAdminEmail, masterRoleDestinations } from "../src/lib/master-admin.ts";
+import { getMasterRoleDestinations, isMasterAdminEmail, masterRoleDestinations } from "../src/lib/master-admin.ts";
 
 test("the designated owner account is recognized as master admin", () => {
   assert.equal(isMasterAdminEmail("DONGINJJANG@gmail.com"), true);
@@ -15,6 +15,7 @@ test("master admin can switch among all three service surfaces", () => {
   assert.deepEqual(masterRoleDestinations, [
     { key: "admin", label: "관리자 콘솔", href: "/dashboard/admin" },
     { key: "creator", label: "크리에이터 센터", href: "/dashboard/creator" },
-    { key: "designer", label: "파트너 센터", href: "/dashboard/designer/brand" },
+    { key: "designer", label: "브랜드 파트너 센터", href: "/dashboard/designer/brand" },
   ]);
+  assert.equal(getMasterRoleDestinations("K-뷰티")[2].href, "/dashboard/beauty");
 });

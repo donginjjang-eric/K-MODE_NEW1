@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 
 import * as campaignDomain from "../src/lib/creator-campaigns";
 import { createAdminCampaign, normalizeCampaignRewardText } from "../src/lib/creator-campaigns";
+import { campaignEventMessageLabel, normalizeCampaignDeadlineForDatetimeLocal, participationNextActionLabel } from "../src/lib/admin-campaign";
 import type { AdminCampaignInput } from "../src/lib/types";
 
 const execFileAsync = promisify(execFile);
@@ -64,6 +65,27 @@ test("requires both campaign deadlines", async (t) => {
       await assert.rejects(createAdminCampaign("admin-1", input), /deadline is required/i);
     });
   }
+});
+
+test("normalizes campaign deadlines for datetime-local inputs without changing explicit local time", () => {
+  const localDate = new Date(2026, 8, 1, 9, 30, 45);
+
+  assert.equal(normalizeCampaignDeadlineForDatetimeLocal(localDate), "2026-09-01T09:30");
+  assert.equal(normalizeCampaignDeadlineForDatetimeLocal("2026-09-01T09:30:45.123Z"), "2026-09-01T09:30");
+  assert.equal(normalizeCampaignDeadlineForDatetimeLocal("2026-09-01T09:30:45.123456Z"), "2026-09-01T09:30");
+  assert.equal(normalizeCampaignDeadlineForDatetimeLocal("2026-09-01T09:30:45+09:00"), "2026-09-01T09:30");
+  assert.equal(normalizeCampaignDeadlineForDatetimeLocal("2026-09-01T09:30:45.123456+09:00"), "2026-09-01T09:30");
+
+  for (const value of [null, undefined, "", "not-a-date", "2026-02-31T09:30:00Z", "2026-09-01T09:30invalid", "2026-09-01T09:30:45Zinvalid"]) {
+    assert.equal(normalizeCampaignDeadlineForDatetimeLocal(value), "");
+  }
+});
+
+test("localizes stored campaign operation messages while preserving admin notes", () => {
+  assert.equal(participationNextActionLabel("Await campaign response"), "캠페인 응답 대기");
+  assert.equal(participationNextActionLabel("Custom admin note"), "Custom admin note");
+  assert.equal(campaignEventMessageLabel("Status changed to review."), "상태가 콘텐츠 검수로 변경되었습니다.");
+  assert.equal(campaignEventMessageLabel("운영팀 확인 완료"), "운영팀 확인 완료");
 });
 
 test("accepts only canonical creator reward formats", () => {

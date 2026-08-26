@@ -6,8 +6,10 @@ export default async function AdminDashboardPage() {
   const stats = await getAdminDashboardStats();
 
   const actions = [
-    { n: stats.creatorProposalsNew, l: "신규 협업 제안", href: "/dashboard/admin/creator-proposals", alert: stats.creatorProposalsNew > 0 },
-    { n: stats.pendingDesigners, l: "승인 대기 브랜드 파트너", href: "/dashboard/admin/designers", alert: stats.pendingDesigners > 0 },
+    { n: stats.pendingCreators, l: "크리에이터 승인", d: "가입 신청 검토", href: "/dashboard/admin/creators" },
+    { n: stats.pendingDesigners, l: "브랜드 파트너 승인", d: "브랜드 신청 검토", href: "/dashboard/admin/designers" },
+    { n: stats.pendingProducts, l: "상품 검수", d: "비공개 상품 확인", href: "/dashboard/admin/products" },
+    { n: stats.pendingGeneratedLooks, l: "AI 콘텐츠 검수", d: "생성 결과 공개 검토", href: "/dashboard/admin/generated-looks" },
   ];
   const aggregates = [
     { n: stats.usersTotal, l: "가입 회원", href: "/dashboard/admin/users" },
@@ -26,14 +28,15 @@ export default async function AdminDashboardPage() {
       <h1 className="st-title">관리자 홈</h1>
       <p className="st-sub">처리할 운영 항목과 전체 현황 집계를 구분해 확인합니다.</p>
 
-      <section aria-labelledby="admin-action-center-heading">
-        <p className="admin-stats-label">우선 처리</p>
-        <h2 id="admin-action-center-heading">바로 처리할 일</h2>
-        <div className="st-stats admin-stats admin-actions-grid">
-          {actions.map((s) => (
-            <Link className={`st-stat${s.alert ? " is-alert" : ""}`} href={s.href} key={s.l}>
-              <div className="n">{s.n}</div>
-              <div className="l">{s.l}</div>
+      <section className="admin-action-center" aria-labelledby="admin-action-center-title">
+        <div className="admin-action-center-head">
+          <div><span>OPERATIONS</span><h2 id="admin-action-center-title">처리할 업무</h2></div>
+          <p>{actions.reduce((sum, action) => sum + action.n, 0)}건 대기 중</p>
+        </div>
+        <div className="admin-action-grid">
+          {actions.map((action) => (
+            <Link className={`admin-action-card${action.n ? " has-pending" : ""}`} href={action.href} key={action.l}>
+              <span>{action.l}</span><strong>{action.n}</strong><small>{action.d}</small><em>바로가기 →</em>
             </Link>
           ))}
         </div>

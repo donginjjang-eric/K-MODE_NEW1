@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { applyRequiredSchema } from "./schema-bootstrap.mjs";
 
 const { Pool } = pg;
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -138,8 +139,8 @@ async function seedDemoData() {
 
 try {
   const schema = readFileSync(path.join(root, "db", "schema.sql"), "utf8");
-  await pool.query(schema);
-  console.log("Schema applied.");
+  await applyRequiredSchema(pool, schema);
+  console.log("Schema applied and validated.");
   await upsertAdmin();
   await seedDemoData();
 } finally {

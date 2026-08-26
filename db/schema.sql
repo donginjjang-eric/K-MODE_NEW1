@@ -320,8 +320,10 @@ CREATE INDEX IF NOT EXISTS creator_management_audit_logs_group_created_idx
 
 CREATE TABLE IF NOT EXISTS campaigns (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  owner_type text NOT NULL DEFAULT 'admin' CHECK (owner_type IN ('admin')),
+  owner_type text NOT NULL DEFAULT 'admin' CHECK (owner_type IN ('admin', 'designer')),
   owner_id text NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  designer_id text REFERENCES designers(id) ON DELETE RESTRICT,
+  product_id text REFERENCES products(id) ON DELETE SET NULL,
   title text NOT NULL,
   category text NOT NULL,
   markets jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -334,10 +336,147 @@ CREATE TABLE IF NOT EXISTS campaigns (
   image_urls jsonb NOT NULL DEFAULT '[]'::jsonb,
   status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'recruiting', 'active', 'closed')),
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT campaigns_designer_owner_check CHECK (
+    (owner_type = 'admin' AND designer_id IS NULL)
+    OR (owner_type = 'designer' AND designer_id IS NOT NULL)
+  )
 );
 
 ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_urls jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS designer_id text;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS product_id text;
+
+-- Existing installations only allow admin ownership. Keep owner_id's users FK
+-- intact for legacy/admin campaigns and add a dedicated designer FK for partner
+-- campaigns so polymorphic ownership never weakens the existing reference.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'campaigns_owner_type_check'
+      AND conrelid = 'campaigns'::regclass
+  ) THEN
+    ALTER TABLE campaigns DROP CONSTRAINT campaigns_owner_type_check;
+  END IF;
+
+  ALTER TABLE campaigns
+    ADD CONSTRAINT campaigns_owner_type_check
+    CHECK (owner_type IN ('admin', 'designer'));
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'campaigns_designer_id_fkey'
+      AND conrelid = 'campaigns'::regclass
+  ) THEN
+    ALTER TABLE campaigns
+      ADD CONSTRAINT campaigns_designer_id_fkey
+      FOREIGN KEY (designer_id) REFERENCES designers(id) ON DELETE RESTRICT;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'campaigns_product_id_fkey'
+      AND conrelid = 'campaigns'::regclass
+  ) THEN
+    ALTER TABLE campaigns
+      ADD CONSTRAINT campaigns_product_id_fkey
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'campaigns_designer_owner_check'
+      AND conrelid = 'campaigns'::regclass
+  ) THEN
+    ALTER TABLE campaigns
+      ADD CONSTRAINT campaigns_designer_owner_check CHECK (
+        (owner_type = 'admin' AND designer_id IS NULL)
+        OR (owner_type = 'designer' AND designer_id IS NOT NULL)
+      );
+  END IF;
+END $$;
+
+-- Preserve existing campaign rows while detaching any invalid legacy product
+-- reference before enabling the write-time ownership guard.
+UPDATE campaigns campaign
+   SET product_id = NULL,
+       updated_at = now()
+ WHERE campaign.owner_type = 'designer'
+   AND campaign.product_id IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1
+       FROM products product
+      WHERE product.id = campaign.product_id
+        AND product.designer_id = campaign.designer_id
+   );
+
+CREATE OR REPLACE FUNCTION enforce_campaign_product_designer_match()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.owner_type = 'designer'
+     AND NEW.product_id IS NOT NULL
+     AND NOT EXISTS (
+       SELECT 1
+         FROM products product
+        WHERE product.id = NEW.product_id
+          AND product.designer_id = NEW.designer_id
+     ) THEN
+    RAISE EXCEPTION 'Campaign product must belong to the campaign designer.'
+      USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION enforce_product_campaign_designer_match()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.designer_id IS DISTINCT FROM OLD.designer_id
+     AND EXISTS (
+       SELECT 1
+         FROM campaigns campaign
+        WHERE campaign.product_id = OLD.id
+          AND campaign.owner_type = 'designer'
+          AND campaign.designer_id IS DISTINCT FROM NEW.designer_id
+     ) THEN
+    RAISE EXCEPTION 'Product designer cannot differ from a linked campaign designer.'
+      USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'campaigns_product_designer_match_trigger'
+      AND tgrelid = 'campaigns'::regclass
+      AND NOT tgisinternal
+  ) THEN
+    CREATE TRIGGER campaigns_product_designer_match_trigger
+      BEFORE INSERT OR UPDATE ON campaigns
+      FOR EACH ROW
+      EXECUTE FUNCTION enforce_campaign_product_designer_match();
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'products_campaign_designer_match_trigger'
+      AND tgrelid = 'products'::regclass
+      AND NOT tgisinternal
+  ) THEN
+    CREATE TRIGGER products_campaign_designer_match_trigger
+      BEFORE UPDATE OF designer_id ON products
+      FOR EACH ROW
+      EXECUTE FUNCTION enforce_product_campaign_designer_match();
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS campaign_participations (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -397,6 +536,14 @@ CREATE INDEX IF NOT EXISTS creator_accounts_user_id_idx
 CREATE INDEX IF NOT EXISTS campaigns_recruiting_filters_idx
   ON campaigns(status, application_deadline, category)
   WHERE status = 'recruiting';
+
+CREATE INDEX IF NOT EXISTS campaigns_designer_owner_idx
+  ON campaigns(owner_type, designer_id, created_at DESC)
+  WHERE owner_type = 'designer';
+
+CREATE INDEX IF NOT EXISTS campaigns_product_idx
+  ON campaigns(product_id)
+  WHERE product_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS campaign_participations_creator_status_idx
   ON campaign_participations(creator_account_id, status, updated_at DESC);
