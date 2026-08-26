@@ -4,13 +4,13 @@
 // 단, URL 해시(#product-upload 등 앵커 링크)가 있으면 해당 위치를 존중한다.
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { scheduleScrollReset } from "@/lib/scroll-reset";
 
 export default function ScrollResetOnLoad() {
   const pathname = usePathname();
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
-    if (!window.location.hash) window.scrollTo(0, 0);
+    if (!window.location.hash) return scheduleScrollReset(window);
   }, [pathname]);
   return null;
 }
