@@ -48,3 +48,30 @@ The production build emitted existing workspace-root/lockfile and NFT tracing wa
 
 - Direct visual inspection of the protected admin campaign page could not be completed: the local preview redirects to `/login?notice=admin_login`. The preview server itself started successfully and the login page had content, no framework error overlay, and no captured console errors.
 - An older broad regression command (`tests/admin-campaign-regression.test.mjs`) has a pre-existing line-ending-sensitive regex failure in its unchanged `creator-campaigns.ts` assertion. It is outside the focused Task 1 test set; the focused domain/UI tests above pass.
+
+## Fix round 1 — canonical deadline suffix validation
+
+### Covering test
+
+- Extended `normalizes campaign deadlines for datetime-local inputs without changing explicit local time` in `tests/admin-campaign-domain.test.ts`.
+- It now rejects `2026-09-01T09:30invalid` and `2026-09-01T09:30:45Zinvalid`, while preserving the existing ISO UTC (`...45.123Z`) and timezone-offset (`...45+09:00`) coverage.
+
+### Test-first evidence
+
+- Command: `node --import tsx --test tests/admin-campaign-domain.test.ts`
+- Before the fix: expected empty string but received `2026-09-01T09:30` for the non-canonical suffix, confirming that the prefix-only regular expression was the cause.
+
+### Verification
+
+| Command | Output |
+| --- | --- |
+| `node --import tsx --test tests/admin-campaign-domain.test.ts` | Pass: 19 tests, 0 failures. |
+| `node --experimental-test-module-mocks node_modules/tsx/dist/cli.mjs --test tests/admin-campaign-ui.test.ts` | Pass: 1 test, 0 failures. |
+| `npm run build` | Pass: optimized production build and TypeScript completed successfully. |
+
+The build retained the previously reported workspace-root/lockfile and NFT tracing warnings, but exited with code 0.
+
+### Visual verification status
+
+- No authenticated desktop or mobile visual verification was fabricated or claimed in this round.
+- The protected admin campaign page remains an explicit Task 5 check, where an authenticated session must validate the desktop and mobile layouts.

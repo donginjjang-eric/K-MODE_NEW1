@@ -79,7 +79,7 @@ export function normalizeCampaignDeadlineForDatetimeLocal(value: unknown): strin
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? "" : formatLocalDatetime(value);
   if (typeof value !== "string") return "";
 
-  const localDatetime = value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/)?.[0] ?? "";
+  const localDatetime = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?$/.exec(value)?.[1] ?? "";
   return isValidLocalDatetime(localDatetime) ? localDatetime : "";
 }
 
