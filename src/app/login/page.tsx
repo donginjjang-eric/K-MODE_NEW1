@@ -14,9 +14,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="login-auth-column">
           <div className="login-auth-intro">
             <p className="login-auth-brand">K-MODU</p>
-            <h1>K-MODU 파트너 시작</h1>
-            <p>브랜드와 크리에이터를 세계와 연결합니다.</p>
-            <span>로그인 후 활동 유형을 선택하고 전용 서비스를 시작할 수 있습니다.</span>
+            <h1>K-MODU 글로벌 파트너 시작</h1>
+            <p>K-뷰티·K-패션과 글로벌 크리에이터를 연결합니다.</p>
+            <span>브랜드와 크리에이터가 캠페인·콘텐츠·거래를 함께 시작하는 파트너 플랫폼입니다.</span>
           </div>
           <LoginForm googleEnabled={isGoogleLoginConfigured()} previewRoleSelection={previewRoleSelection} />
           <p className="login-legal">

@@ -5,8 +5,8 @@ export default function LoginEditorialPanel() {
     <section className="login-editorial" aria-label="K-MODU 브랜드 소개">
       <Image
         className="login-editorial-image"
-        src="/assets/LOGIN_IMG1.webp"
-        alt="한국 디자이너 브랜드의 에디토리얼 룩북 이미지"
+        src="/assets/login-kbeauty-global-v1.webp"
+        alt="K-뷰티 제품과 함께한 글로벌 크리에이터 캠페인 이미지"
         width={1132}
         height={1390}
         priority
@@ -14,17 +14,17 @@ export default function LoginEditorialPanel() {
       />
       <div className="login-editorial-overlay" aria-hidden="true" />
       <div className="login-editorial-copy">
-        <p className="login-editorial-kicker">K-MODU / DESIGNER STUDIO</p>
+        <p className="login-editorial-kicker">K-MODU / GLOBAL CREATOR NETWORK</p>
         <h2>
           <span className="login-editorial-line">K-beauty, K-fashion</span>
           <br />
           세계를 향합니다
         </h2>
-        <p>디자이너 브랜드의 룩북 제작부터 글로벌 크리에이터 협업까지.</p>
+        <p>K-뷰티와 K-패션을 글로벌 크리에이터의 콘텐츠와 영향력으로 연결합니다.</p>
         <div className="login-editorial-tags">
-          <span>AI LOOKBOOK</span>
-          <span>DIGITAL SHOWROOM</span>
-          <span>GLOBAL COLLABORATION</span>
+          <span>K-BEAUTY</span>
+          <span>K-FASHION</span>
+          <span>GLOBAL CREATORS</span>
         </div>
       </div>
     </section>
