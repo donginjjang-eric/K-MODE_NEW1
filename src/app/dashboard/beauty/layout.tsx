@@ -1,17 +1,13 @@
 import "../designer/studio.css";
 import "./beauty.css";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { requireApprovedDesigner } from "@/lib/auth";
-import { brandPartnerCenterPath } from "@/lib/brand-partner-center";
+import { requireBeautyPartner } from "@/lib/auth";
 import { BeautyPartnerMobileNav, BeautyPartnerSideNav } from "@/components/BeautyPartnerNav";
 import MasterRoleSwitcher from "@/components/MasterRoleSwitcher";
 import ScrollResetOnLoad from "@/components/ScrollResetOnLoad";
 
 export default async function BeautyPartnerLayout({ children }: { children: React.ReactNode }) {
-  const { user, designer } = await requireApprovedDesigner("/dashboard/beauty");
-  const partnerCenter = brandPartnerCenterPath(designer.brand_category);
-  if (partnerCenter !== "/dashboard/beauty") redirect(partnerCenter);
+  const { user, designer } = await requireBeautyPartner();
 
   const publicHref = `/designers?open=${designer.id}`;
 

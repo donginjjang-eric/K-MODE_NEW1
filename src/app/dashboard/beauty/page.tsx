@@ -1,9 +1,9 @@
-import { requireApprovedDesigner } from "@/lib/auth";
+import { requireBeautyPartner } from "@/lib/auth";
 import { getPortfolioImagesForDesigner, getProductsForDesigner } from "@/lib/db";
 import BeautyPartnerHome from "@/components/BeautyPartnerHome";
 
 export default async function BeautyPartnerPage() {
-  const { designer } = await requireApprovedDesigner();
+  const { designer } = await requireBeautyPartner();
   const [products, portfolio] = await Promise.all([
     getProductsForDesigner(designer.id),
     getPortfolioImagesForDesigner(designer.id),

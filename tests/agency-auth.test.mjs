@@ -37,7 +37,7 @@ await mock.module("next/navigation", {
 
 process.env.DATABASE_URL = "postgres://test:test@localhost:5432/kmodu_test";
 
-const { createSessionToken, loginEntryUrl, passwordLoginDestination, requireAgencyUser } = await import("../src/lib/auth.ts");
+const { createSessionToken, loginEntryUrl, passwordLoginDestination, requireAgencyUser, requireBeautyPartner } = await import("../src/lib/auth.ts");
 const {
   activateAgencyInvitationsForLogin,
   hasActiveAgencyGroupRelationship,
@@ -175,6 +175,14 @@ test("agency role without an active group relationship is denied at the authenti
   const user = await requireAgencyUser();
   assert.equal(user.id, "agency-user");
   sessionToken = undefined;
+});
+
+test("an unauthenticated beauty route always returns to the beauty center after login", async () => {
+  sessionToken = undefined;
+  await assert.rejects(
+    requireBeautyPartner(),
+    /redirect:\/login\?notice=designer_login&next=%2Fdashboard%2Fbeauty/,
+  );
 });
 
 test("creator claim links, marks claimed, promotes, and writes its audit in one transaction", async () => {

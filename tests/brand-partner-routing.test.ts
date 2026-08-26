@@ -7,7 +7,7 @@ import {
   normalizeBrandCategory,
 } from "../src/lib/brand-partner-center";
 import { loginEntryUrl, passwordLoginDestination } from "../src/lib/auth";
-import { getMasterRoleDestinations } from "../src/lib/master-admin";
+import { getMasterRoleDestinations, resolveMasterPartnerDestination } from "../src/lib/master-admin";
 
 test("normalizes Korean and English partner categories with a fashion-safe legacy fallback", () => {
   for (const value of ["K-뷰티", "k beauty", "K뷰티", "beauty", "뷰티 브랜드"]) {
@@ -58,4 +58,11 @@ test("master workspace keeps three clear labels and selects the partner center b
   ]);
   assert.equal(getMasterRoleDestinations("복합")[2].href, "/dashboard/beauty");
   assert.equal(getMasterRoleDestinations(undefined)[2].href, "/dashboard/designer/brand");
+});
+
+test("resolves the master partner destination from a linked brand category with fashion fallback", () => {
+  assert.equal(resolveMasterPartnerDestination("K-뷰티"), "/dashboard/beauty");
+  assert.equal(resolveMasterPartnerDestination("복합"), "/dashboard/beauty");
+  assert.equal(resolveMasterPartnerDestination("K-패션"), "/dashboard/designer/brand");
+  assert.equal(resolveMasterPartnerDestination(undefined), "/dashboard/designer/brand");
 });

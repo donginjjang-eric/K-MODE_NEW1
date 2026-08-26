@@ -127,6 +127,13 @@ export async function requireApprovedDesigner(loginDestination = loginEntryUrl("
   return { user, designer };
 }
 
+export async function requireBeautyPartner() {
+  const auth = await requireApprovedDesigner("/dashboard/beauty");
+  const destination = brandPartnerCenterPath(auth.designer.brand_category);
+  if (destination !== "/dashboard/beauty") redirect(destination);
+  return auth;
+}
+
 export async function getApprovedDesignerForApi() {
   const user = await getCurrentUser();
   if (!user || (user.role !== "designer" && user.role !== "admin")) {

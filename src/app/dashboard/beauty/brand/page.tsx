@@ -1,9 +1,9 @@
-import { requireApprovedDesigner } from "@/lib/auth";
+import { requireBeautyPartner } from "@/lib/auth";
 import { getPortfolioImagesForDesigner } from "@/lib/db";
 import BrandProfileStudio from "@/components/BrandProfileStudio";
 
 export default async function BeautyBrandPage() {
-  const { designer } = await requireApprovedDesigner();
+  const { designer } = await requireBeautyPartner();
   const portfolioImages = await getPortfolioImagesForDesigner(designer.id);
 
   return (

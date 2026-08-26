@@ -14,8 +14,10 @@ test("beauty routes use the guarded partner identity and owner-scoped existing d
     source("../src/app/dashboard/beauty/products/page.tsx"),
   ]);
 
-  assert.match(layout, /requireApprovedDesigner\("\/dashboard\/beauty"\)/);
-  assert.match(layout, /brandPartnerCenterPath\(designer\.brand_category\)/);
+  for (const routeSource of [layout, home, brand, products]) {
+    assert.match(routeSource, /requireBeautyPartner\(\)/);
+    assert.doesNotMatch(routeSource, /requireApprovedDesigner\(/);
+  }
   assert.match(home, /getProductsForDesigner\(designer\.id\)/);
   assert.match(home, /getPortfolioImagesForDesigner\(designer\.id\)/);
   assert.match(brand, /getPortfolioImagesForDesigner\(designer\.id\)/);

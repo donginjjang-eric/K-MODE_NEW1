@@ -116,3 +116,59 @@ Focused 합계: 23 tests, 23 pass, 0 failures.
 2. 변경 사항은 배포하지 않았습니다. 직접 확인 경로는 개발 서버 실행 후 `/dashboard/beauty`, `/dashboard/beauty/brand`, `/dashboard/beauty/products`이며 승인된 K-뷰티 또는 복합 파트너 세션이 필요합니다.
 3. production build에는 기존 multi-lockfile workspace root 및 NFT tracing 경고가 남아 있습니다.
 4. 기존 shared editor의 client-side mutation 로직을 재사용했기 때문에 beauty와 fashion UI는 같은 API field(`designer_name`, `color`)를 각 화면 용어로 표시합니다. DB schema 변경 없이 호환성을 유지하기 위한 의도된 매핑입니다.
+
+---
+
+## Fix round 1/5 — 2026-08-26
+
+### 수정 완료 항목
+
+1. Beauty route 인증 경계 중앙화
+   - `requireBeautyPartner()`를 추가해 승인된 partner 확인, beauty login 복귀 경로, category 기반 direct-access redirect를 한 경계에서 처리합니다.
+   - `/dashboard/beauty` layout, home, brand, products가 모두 이 helper를 사용합니다.
+   - nested layout/page의 병렬 렌더 중 page-level 기본값이 `/dashboard/designer/brand` redirect를 먼저 발생시키는 race를 제거했습니다.
+   - 비로그인 상태에서 helper를 직접 호출해 `/login?notice=designer_login&next=%2Fdashboard%2Fbeauty` redirect를 검증합니다.
+2. Master workspace partner destination
+   - admin layout과 creator admin-preview layout이 master email에 대해서만 현재 session user ID로 `getDesignerForUser`를 호출합니다.
+   - 조회한 linked designer의 `brand_category`를 `MasterRoleSwitcher`에 전달합니다.
+   - linked brand가 없거나 조회가 실패하면 `undefined`를 전달해 기존 fashion fallback을 유지합니다.
+   - admin의 pending-count 조회와 linked-brand 조회는 `Promise.all`로 병렬 실행합니다.
+3. Destination 행동 테스트
+   - `resolveMasterPartnerDestination` 순수 helper로 K-뷰티/복합 → beauty, K-패션/누락 → fashion을 literal expected path로 검증합니다.
+   - admin/creator layout이 owner-safe linked designer lookup 결과를 switcher prop으로 전달하는 계약을 검증합니다.
+
+### TDD RED 증거
+
+| 명령 | 예상 실패 |
+| --- | --- |
+| `node --test tests/beauty-partner-center.test.mjs tests/master-role-switcher-ui.test.mjs` | beauty 네 route의 공용 guard 부재 및 admin/creator linked category 전달 부재로 2 failures |
+| `node --import tsx --test tests/brand-partner-routing.test.ts` | `resolveMasterPartnerDestination` export 부재로 test module failure |
+| `node --experimental-test-module-mocks --import tsx --test tests/agency-auth.test.mjs` | `requireBeautyPartner` 부재로 direct unauthenticated redirect test failure |
+
+### GREEN / 최종 검증
+
+| 명령 | 결과 |
+| --- | --- |
+| `node --import tsx --test tests/brand-partner-routing.test.ts` | PASS — 5 tests, 0 failures |
+| `node --test tests/beauty-partner-center.test.mjs tests/creator-center-regression.test.mjs tests/master-admin.test.mjs tests/master-role-switcher-ui.test.mjs` | PASS — 11 tests, 0 failures |
+| `node --experimental-test-module-mocks --import tsx --test tests/agency-auth.test.mjs` | PASS — 10 tests, 0 failures |
+| `npx tsc --noEmit --pretty false` | PASS — type errors 0 |
+| `npm run build` | PASS — Next.js compile, TypeScript, 62 static pages generated |
+| `git diff --check` | PASS — whitespace errors 0 |
+
+Focused 합계: 26 tests, 26 pass, 0 failures.
+
+### Self-review
+
+- beauty route별 guard argument를 반복하는 대신 single helper로 login destination과 category authorization을 함께 고정했습니다.
+- `redirect()`는 catch block 밖에서 호출되어 Next.js navigation signal이 삼켜지지 않습니다.
+- master category lookup은 authenticated session user ID만 사용하고 다른 partner ID를 입력받지 않습니다.
+- non-master admin/creator에는 불필요한 designer lookup을 실행하지 않습니다.
+- category prop은 문자열/undefined만 client switcher에 전달되며 DB row 전체를 직렬화하지 않습니다.
+- 기존 `/dashboard/designer/*`와 `StudioNav.tsx`는 수정하지 않았습니다.
+
+### 남은 우려
+
+1. mobile visual verification은 사용자 지시에 따라 Task 5로 유지합니다. 이번 fix round는 route/auth 및 switch destination만 변경했습니다.
+2. 변경 사항은 배포하지 않았습니다.
+3. production build의 기존 multi-lockfile workspace-root 및 NFT dynamic tracing 경고는 계속 출력됩니다.
