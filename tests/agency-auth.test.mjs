@@ -114,7 +114,8 @@ test("password login defaults every role to its canonical dashboard, including a
     readFile(new URL("../src/app/api/auth/login/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/components/LoginForm.tsx", import.meta.url), "utf8"),
   ]);
-  assert.match(route, /passwordLoginDestination\(user, body\.next\)/);
+  assert.match(route, /getDesignerForUser\(user\.id\)/);
+  assert.match(route, /passwordLoginDestination\([\s\S]*brand_category:\s*designer\?\.brand_category[\s\S]*body\.next/);
   assert.doesNotMatch(form, /const roleHome\s*=/);
   assert.match(form, /window\.location\.assign\(String\(data\.redirectTo \|\| "\/"\)\)/);
 });

@@ -8,5 +8,6 @@ test("master controls separate permission from workspace navigation", async () =
   assert.match(component, />마스터 권한</);
   assert.match(component, /master-workspace-switcher/);
   assert.match(component, /화면 전환/);
+  assert.match(component, /getMasterRoleDestinations\(brandCategory\)/);
   assert.match(component, /aria-current=\{item\.key === active \? "page" : undefined\}/);
 });

@@ -28,9 +28,11 @@ type Props = {
   designer: { id: string; brandName: string; designerName: string; description: string; mood: string };
   initialImages: DesignerPortfolioImage[];
   looksCount: number;
+  mode?: "fashion" | "beauty";
 };
 
-export default function BrandProfileStudio({ designer, initialImages, looksCount }: Props) {
+export default function BrandProfileStudio({ designer, initialImages, looksCount, mode = "fashion" }: Props) {
+  const isBeauty = mode === "beauty";
   const router = useRouter();
   const [form, setForm] = useState({
     brandName: designer.brandName,
@@ -76,7 +78,7 @@ export default function BrandProfileStudio({ designer, initialImages, looksCount
     { done: Boolean(cover), label: "대표 사진 1장" },
     { done: form.description.trim().length > 0, label: "브랜드 소개 입력" },
     { done: galleryImages.filter((image) => image.status === "approved").length >= 3, label: "포트폴리오 3장 이상" },
-    { done: looksCount >= 1, label: "AI 룩 1개 만들기", href: "/dashboard/designer/generated-looks" },
+    ...(!isBeauty ? [{ done: looksCount >= 1, label: "AI 룩 1개 만들기", href: "/dashboard/designer/generated-looks" }] : []),
   ];
   const doneCount = checklist.filter((item) => item.done).length;
 
@@ -230,11 +232,11 @@ export default function BrandProfileStudio({ designer, initialImages, looksCount
           <div className="bp-pcard-cover is-empty"><span>대표 사진을 올리면<br />여기에 보여요</span></div>
         )}
         <div className="bp-pcard-body">
-          <p className="bp-kicker">DESIGNER PROFILE / PORTFOLIO</p>
+          <p className="bp-kicker">{isBeauty ? "BEAUTY BRAND PROFILE" : "DESIGNER PROFILE / PORTFOLIO"}</p>
           <h3>{form.brandName || "브랜드명"}</h3>
           {form.mood ? <p className="bp-mood">{form.mood}</p> : null}
           <p className="bp-desc">{form.description || "브랜드 소개를 입력하면 여기에 보여요."}</p>
-          {form.designerName ? <p className="bp-designer">DESIGNER · {form.designerName}</p> : null}
+          {form.designerName ? <p className="bp-designer">{isBeauty ? "CONTACT" : "DESIGNER"} · {form.designerName}</p> : null}
         </div>
         {stripImages.length ? (
           <div className="bp-pcard-strip">
@@ -263,7 +265,7 @@ export default function BrandProfileStudio({ designer, initialImages, looksCount
       <div className="bp-head">
         <div>
           <h1 className="st-title">브랜드 프로필</h1>
-          <p className="st-sub">여기서 입력한 내용이 공개 카드·룩북 인트로·영어판에 한 번에 쓰여요. 오른쪽이 크리에이터에게 보이는 실제 모습입니다.</p>
+          <p className="st-sub">{isBeauty ? "브랜드 소개와 대표 이미지를 관리하세요. 오른쪽에서 크리에이터에게 보일 프로필을 확인할 수 있습니다." : "여기서 입력한 내용이 공개 카드·룩북 인트로·영어판에 한 번에 쓰여요. 오른쪽이 크리에이터에게 보이는 실제 모습입니다."}</p>
         </div>
       </div>
 
@@ -279,13 +281,13 @@ export default function BrandProfileStudio({ designer, initialImages, looksCount
         <div className="bp-edit">
           <section className="st-card bp-card">
             <h2><span className="bp-step">1</span>브랜드 기본 정보</h2>
-            <p className="bp-sub">이 내용이 공개 카드 텍스트의 <b>원본</b>이 됩니다 (룩북 인트로에도 자동 사용)</p>
+            <p className="bp-sub">{isBeauty ? <>브랜드와 제품을 이해할 수 있는 핵심 정보를 입력하세요.</> : <>이 내용이 공개 카드 텍스트의 <b>원본</b>이 됩니다 (룩북 인트로에도 자동 사용)</>}</p>
             <label>브랜드명</label>
             <input type="text" value={form.brandName} maxLength={60} onChange={(e) => setForm({ ...form, brandName: e.target.value })} />
-            <label>디자이너명 <span className="opt">(공개 카드 DESIGNER 항목)</span></label>
-            <input type="text" value={form.designerName} maxLength={60} placeholder="예: Han Seo Yoon" onChange={(e) => setForm({ ...form, designerName: e.target.value })} />
-            <label>한 줄 무드</label>
-            <input type="text" value={form.mood} maxLength={120} placeholder="예: Quiet Luxury · Seoul Minimal" onChange={(e) => setForm({ ...form, mood: e.target.value })} />
+            <label>{isBeauty ? "브랜드 담당자명" : "디자이너명"} <span className="opt">({isBeauty ? "공개 프로필 CONTACT 항목" : "공개 카드 DESIGNER 항목"})</span></label>
+            <input type="text" value={form.designerName} maxLength={60} placeholder={isBeauty ? "예: Kim Mina" : "예: Han Seo Yoon"} onChange={(e) => setForm({ ...form, designerName: e.target.value })} />
+            <label>{isBeauty ? "브랜드 키워드" : "한 줄 무드"}</label>
+            <input type="text" value={form.mood} maxLength={120} placeholder={isBeauty ? "예: Clean Beauty · Sensitive Skin" : "예: Quiet Luxury · Seoul Minimal"} onChange={(e) => setForm({ ...form, mood: e.target.value })} />
             <label>브랜드 소개</label>
             <textarea value={form.description} maxLength={600} rows={3} placeholder="브랜드를 소개하는 2~3문장" onChange={(e) => setForm({ ...form, description: e.target.value })} />
             <div className="bp-save-row">
@@ -323,7 +325,7 @@ export default function BrandProfileStudio({ designer, initialImages, looksCount
 
           <section className="st-card bp-card">
             <h2><span className="bp-step">3</span>포트폴리오 사진</h2>
-            <p className="bp-sub">올리면 <b>바로 공개 카드에 반영</b> — 종류 선택·등록 버튼 없이 끝. 룩북 만들기에서도 그대로 쓸 수 있어요</p>
+            <p className="bp-sub">{isBeauty ? <>제품과 브랜드 무드를 보여주는 이미지를 올리면 <b>공개 프로필에 바로 반영</b>됩니다.</> : <>올리면 <b>바로 공개 카드에 반영</b> — 종류 선택·등록 버튼 없이 끝. 룩북 만들기에서도 그대로 쓸 수 있어요</>}</p>
             <button type="button" className="bp-drop" disabled={uploading} onClick={() => galleryFileRef.current?.click()}>
               <b>{uploading ? "올리는 중…" : "＋ 사진 올리기 (여러 장 가능)"}</b>
               <span>클릭해서 선택 · JPG·PNG·WEBP·아이폰(HEIC) · 8MB 이하</span>

@@ -5,19 +5,30 @@ import type { Product } from "@/lib/types";
 import DraggableTabs from "./DraggableTabs";
 
 // 용어 사전: 브랜드 사진 관리와 동일한 분류 카드 UX. 상품은 사진과 달리 정보 입력 단계가 추가된다.
-const PRODUCT_KINDS: Array<{ value: string; label: string; desc: string }> = [
+const FASHION_PRODUCT_KINDS: Array<{ value: string; label: string; desc: string }> = [
   { value: "상의", label: "상의", desc: "티셔츠·니트·셔츠·아우터 등 상의류" },
   { value: "하의", label: "하의", desc: "팬츠·스커트·데님 등 하의류" },
   { value: "악세서리", label: "악세서리", desc: "가방·슈즈·주얼리 등 소품" },
 ];
-const CATEGORIES = PRODUCT_KINDS.map((kind) => kind.value);
+const BEAUTY_PRODUCT_KINDS: Array<{ value: string; label: string; desc: string }> = [
+  { value: "스킨케어", label: "스킨케어", desc: "클렌징·토너·세럼·크림·선케어" },
+  { value: "메이크업", label: "메이크업", desc: "베이스·립·아이·치크 메이크업" },
+  { value: "헤어·바디", label: "헤어·바디", desc: "헤어케어·바디케어·향 제품" },
+  { value: "기타", label: "기타", desc: "뷰티 도구·세트·그 밖의 제품" },
+];
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 // 아이폰 HEIC 포함. 빈 type(HEIC)은 서버가 실제 바이트로 판별하므로 통과시킨다.
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
-const groupProductCategory = (category: string) => {
+const groupProductCategory = (category: string, mode: "fashion" | "beauty") => {
   const raw = String(category || "").trim();
   const value = raw.toLowerCase();
+  if (mode === "beauty") {
+    if (raw.includes("스킨") || /skin|cleanser|serum|cream|sun/.test(value)) return "스킨케어";
+    if (raw.includes("메이크업") || /makeup|lip|eye|base|cheek/.test(value)) return "메이크업";
+    if (raw.includes("헤어") || raw.includes("바디") || /hair|body|fragrance/.test(value)) return "헤어·바디";
+    return "기타";
+  }
   if (raw.includes("하의") || ["bottom", "bottoms", "pants", "trouser", "trousers", "skirt"].includes(value)) return "하의";
   if (raw.includes("상의") || raw.includes("아우터") || ["top", "tops", "inner", "shirt", "outer", "outerwear", "jacket", "coat"].includes(value)) return "상의";
   return "악세서리";
@@ -33,20 +44,21 @@ type FormState = {
   visibility: string;
 };
 
-const EMPTY: FormState = {
+const emptyForm = (mode: "fashion" | "beauty"): FormState => ({
   name: "",
-  category: "상의",
+  category: mode === "beauty" ? "스킨케어" : "상의",
   supplyPrice: "",
   price: "",
   color: "",
   description: "",
   visibility: "active",
-};
+});
 
-export default function ProductManager({ initialProducts }: { initialProducts: Product[] }) {
+export default function ProductManager({ initialProducts, mode = "fashion" }: { initialProducts: Product[]; mode?: "fashion" | "beauty" }) {
+  const productKinds = mode === "beauty" ? BEAUTY_PRODUCT_KINDS : FASHION_PRODUCT_KINDS;
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [activeCategory, setActiveCategory] = useState("전체");
-  const [form, setForm] = useState<FormState>(EMPTY);
+  const [form, setForm] = useState<FormState>(() => emptyForm(mode));
   const [imageUrl, setImageUrl] = useState("");
   const [imageHash, setImageHash] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -58,11 +70,11 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
   const fileRef = useRef<HTMLInputElement>(null);
 
   const productCategories = useMemo(() => {
-    return ["전체", ...CATEGORIES];
-  }, []);
+    return ["전체", ...productKinds.map((kind) => kind.value)];
+  }, [productKinds]);
   const visibleProducts = useMemo(
-    () => activeCategory === "전체" ? products : products.filter((product) => groupProductCategory(product.category) === activeCategory),
-    [activeCategory, products],
+    () => activeCategory === "전체" ? products : products.filter((product) => groupProductCategory(product.category, mode) === activeCategory),
+    [activeCategory, mode, products],
   );
 
   const setField = (key: keyof FormState, value: string) => setForm((current) => ({ ...current, [key]: value }));
@@ -103,7 +115,7 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
     setEditingId(product.id);
     setForm({
       name: product.name || "",
-      category: groupProductCategory(product.category),
+      category: groupProductCategory(product.category, mode),
       supplyPrice: product.supply_price || "",
       price: product.price || "",
       color: product.color || "",
@@ -120,7 +132,7 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
 
   const cancelEdit = () => {
     setEditingId(null);
-    setForm(EMPTY);
+    setForm(emptyForm(mode));
     setImageUrl("");
     setImageHash("");
     setMsg(null);
@@ -160,11 +172,11 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
         setMsg({ text: "수정 완료! 변경 사항이 바로 반영됐어요.", ok: true });
       } else {
         setProducts((current) => [result.product, ...current]);
-        setMsg({ text: "등록 완료! 내 상품 목록과 스타일링 보드에 바로 반영됐어요.", ok: true });
+        setMsg({ text: mode === "beauty" ? "등록 완료! 내 상품 목록에 바로 반영됐어요." : "등록 완료! 내 상품 목록과 스타일링 보드에 바로 반영됐어요.", ok: true });
       }
       // 같은 분류를 연달아 올리기 쉽게, 방금 쓴 분류는 유지하고 나머지 입력만 비운다
       setEditingId(null);
-      setForm({ ...EMPTY, category: form.category });
+      setForm({ ...emptyForm(mode), category: form.category });
       setImageUrl("");
       setImageHash("");
     } catch (error) {
@@ -206,10 +218,10 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
 
   const canSave = Boolean(imageUrl && form.name.trim() && !saving);
   const categoryCounts = useMemo(() => {
-    const base: Record<string, number> = { 상의: 0, 하의: 0, 악세서리: 0 };
-    products.forEach((product) => { base[groupProductCategory(product.category)] += 1; });
+    const base = Object.fromEntries(productKinds.map((kind) => [kind.value, 0])) as Record<string, number>;
+    products.forEach((product) => { base[groupProductCategory(product.category, mode)] += 1; });
     return base;
-  }, [products]);
+  }, [mode, productKinds, products]);
   const submitLabel = saving
     ? "저장 중..."
     : !imageUrl
@@ -222,8 +234,8 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
 
   return (
     <>
-      <h1 className="st-title">상품 등록</h1>
-      <p className="st-sub">상품 사진과 정보를 등록하면 내 상품 목록과 스타일링 보드에 바로 반영돼요.</p>
+      <h1 className="st-title">{mode === "beauty" ? "상품 관리" : "상품 등록"}</h1>
+      <p className="st-sub">{mode === "beauty" ? "협업할 뷰티 상품을 등록하고 공개 상태를 관리하세요." : "상품 사진과 정보를 등록하면 내 상품 목록과 스타일링 보드에 바로 반영돼요."}</p>
 
       <div className="st-grid2col">
         <form className="st-card" id="product-upload" onSubmit={submit}>
@@ -236,7 +248,7 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
           <div className="st-step"><span className="num">1</span> 상품 분류 선택</div>
           <p className="st-substep">어떤 상품인지 먼저 고르면 분류별로 깔끔하게 정리돼요.</p>
           <div className="portfolio-kind-picker" role="radiogroup" aria-label="상품 분류">
-            {PRODUCT_KINDS.map((kind) => (
+            {productKinds.map((kind) => (
               <button
                 key={kind.value}
                 type="button"
@@ -307,8 +319,8 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
           </div>
           <div className="st-2">
             <div className="st-field">
-              <label>색상 <span className="opt">(선택)</span></label>
-              <input value={form.color} onChange={(event) => setField("color", event.target.value)} placeholder="예: 블랙" />
+              <label>{mode === "beauty" ? "옵션·색상" : "색상"} <span className="opt">(선택)</span></label>
+              <input value={form.color} onChange={(event) => setField("color", event.target.value)} placeholder={mode === "beauty" ? "예: 50ml · 무향" : "예: 블랙"} />
             </div>
             <div className="st-field">
               <label>설명 <span className="opt">(선택)</span></label>
@@ -321,7 +333,7 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
               <option value="active">공개</option>
               <option value="draft">비공개</option>
             </select>
-            <p className="hint">공개 상품은 스타일링 보드와 관리자 콘솔에 표시됩니다.</p>
+            <p className="hint">{mode === "beauty" ? "공개 상품은 파트너 상품 목록과 관리자 콘솔에 표시됩니다." : "공개 상품은 스타일링 보드와 관리자 콘솔에 표시됩니다."}</p>
           </div>
 
           <button className="st-btn block" type="submit" disabled={!canSave} style={{ marginTop: 8 }}>{submitLabel}</button>
@@ -349,7 +361,7 @@ export default function ProductManager({ initialProducts }: { initialProducts: P
                       <span className={`badge ${isPublic ? "pub" : "priv"}`}>{isPublic ? "공개 중" : "비공개"}</span>
                     </div>
                     <div className="b">
-                      <div className="c">{groupProductCategory(product.category)}</div>
+                      <div className="c">{groupProductCategory(product.category, mode)}</div>
                       <div className="n">{product.name}</div>
                       <div className="st-prices">
                         {product.supply_price ? <span className="supply">공급가 {product.supply_price}</span> : null}

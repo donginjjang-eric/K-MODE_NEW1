@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ensureMasterAdminRole, getCreatorAccountForUser, getDesignerForUser, getOrCreateAdminCreatorAccount, getOrCreateAdminDesignerAccount, getUserByEmail } from "./db";
 import { hasActiveAgencyGroupRelationship } from "./creator-management";
+import { brandPartnerCenterPath } from "./brand-partner-center";
 import { isMasterAdminEmail } from "./master-admin";
 import type { CreatorAccount, Role, User } from "./types";
 
@@ -79,23 +80,26 @@ export async function getCurrentUser() {
   return { ...session, role: "admin" as const };
 }
 
-export function loginEntryUrl(value: Role | Pick<User, "role">) {
+type BrandAwareRole = Role | (Pick<User, "role"> & { brand_category?: unknown });
+
+export function loginEntryUrl(value: BrandAwareRole) {
   const role = typeof value === "string" ? value : value.role;
   if (role === "admin") return "/dashboard/admin";
   if (role === "creator") return "/dashboard/creator";
   if (role === "agency") return "/dashboard/agency";
-  return "/dashboard/designer/brand";
+  const brandCategory = typeof value === "string" ? undefined : value.brand_category;
+  return brandPartnerCenterPath(brandCategory);
 }
 
-export function passwordLoginDestination(value: Role | Pick<User, "role">, requestedNext: unknown) {
+export function passwordLoginDestination(value: BrandAwareRole, requestedNext: unknown) {
   const next = String(requestedNext || "");
   const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "";
   return safeNext || loginEntryUrl(value);
 }
 
 // 입구별 로그인 후 복귀 목적지. 로그인 자체는 메인으로 돌아가고, 입구로 들어온 경우만 그 목적지로 보낸다.
-function loginPromptUrl(role: Role) {
-  return `/login?notice=${role}_login&next=${encodeURIComponent(loginEntryUrl(role))}`;
+function loginPromptUrl(role: Role, destination = loginEntryUrl(role)) {
+  return `/login?notice=${role}_login&next=${encodeURIComponent(destination)}`;
 }
 
 export async function requireUser(role?: Role) {
@@ -108,9 +112,9 @@ export async function requireUser(role?: Role) {
 }
 
 // 관리자는 모든 영역에 입장 가능. 스튜디오는 계정에 연결된 디자이너 프로필로 동작한다.
-export async function requireApprovedDesigner() {
+export async function requireApprovedDesigner(loginDestination = loginEntryUrl("designer")) {
   const user = await getCurrentUser();
-  if (!user) redirect(loginPromptUrl("designer"));
+  if (!user) redirect(loginPromptUrl("designer", loginDestination));
   if (user.role !== "designer" && user.role !== "admin") redirect("/login?error=designer_required");
 
   const designer = await getDesignerForUser(user.id);

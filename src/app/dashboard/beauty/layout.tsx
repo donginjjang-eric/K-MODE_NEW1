@@ -1,0 +1,53 @@
+import "../designer/studio.css";
+import "./beauty.css";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { requireApprovedDesigner } from "@/lib/auth";
+import { brandPartnerCenterPath } from "@/lib/brand-partner-center";
+import { BeautyPartnerMobileNav, BeautyPartnerSideNav } from "@/components/BeautyPartnerNav";
+import MasterRoleSwitcher from "@/components/MasterRoleSwitcher";
+import ScrollResetOnLoad from "@/components/ScrollResetOnLoad";
+
+export default async function BeautyPartnerLayout({ children }: { children: React.ReactNode }) {
+  const { user, designer } = await requireApprovedDesigner("/dashboard/beauty");
+  const partnerCenter = brandPartnerCenterPath(designer.brand_category);
+  if (partnerCenter !== "/dashboard/beauty") redirect(partnerCenter);
+
+  const publicHref = `/designers?open=${designer.id}`;
+
+  return (
+    <div className="studio beauty-partner">
+      <ScrollResetOnLoad />
+      <header className="st-top beauty-topbar">
+        <Link className="brand" href="/dashboard/beauty">
+          <b>K-MODU</b>
+          <span className="beauty-role-chip">뷰티 파트너 센터</span>
+        </Link>
+        <div className="top-context">
+          <MasterRoleSwitcher email={user.email} active="designer" brandCategory={designer.brand_category} />
+          <Link className="top-link" href={publicHref}>공개 프로필</Link>
+          <div className="me compact">
+            <span className="role-label">BEAUTY BRAND</span>
+            <span>{designer.brand_name}</span>
+          </div>
+        </div>
+      </header>
+
+      {designer.approval_status !== "approved" ? (
+        <div className="beauty-approval-banner" role="status">이 브랜드 프로필은 승인 전이며 공개 영역에 노출되지 않습니다.</div>
+      ) : null}
+
+      <div className="beauty-shell">
+        <BeautyPartnerSideNav
+          brandName={designer.brand_name}
+          publicHref={publicHref}
+          googleName={user.name}
+          googleAvatar={user.avatar}
+          googleEmail={user.email}
+        />
+        <main className="beauty-main">{children}</main>
+      </div>
+      <BeautyPartnerMobileNav />
+    </div>
+  );
+}
