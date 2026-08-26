@@ -1,4 +1,14 @@
 const EDITABLE_CAMPAIGN_STATUSES = new Set(["draft", "recruiting"]);
+const CAMPAIGN_STATUS_LABELS = {
+  draft: "초안",
+  recruiting: "모집 중",
+  active: "진행 중",
+  closed: "마감",
+};
+
+export function adminCampaignStatusLabel(status) {
+  return CAMPAIGN_STATUS_LABELS[status] ?? "상태 확인 필요";
+}
 
 export function isAdminCampaignEditable(status) {
   return EDITABLE_CAMPAIGN_STATUSES.has(status);
