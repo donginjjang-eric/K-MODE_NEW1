@@ -16,6 +16,7 @@ export default async function CreatorCenterLayout({ children }: { children: Reac
 
   return (
     <div className="creator-center">
+      <MasterRoleSwitcher email={user.email} active="creator" brandCategory={masterDesigner?.brand_category} />
       {user.role === "admin" ? (
         <div className="creator-admin-preview">
           <div className="creator-admin-preview-copy" role="status">
@@ -23,7 +24,6 @@ export default async function CreatorCenterLayout({ children }: { children: Reac
             <span>해외 크리에이터가 실제로 보는 화면입니다.</span>
             <Link href="/dashboard/admin/campaigns">캠페인 관리</Link>
           </div>
-          <MasterRoleSwitcher email={user.email} active="creator" brandCategory={masterDesigner?.brand_category} />
           <CreatorPersonaSwitch />
           <CreatorDemoControls />
         </div>

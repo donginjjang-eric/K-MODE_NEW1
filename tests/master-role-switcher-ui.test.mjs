@@ -23,3 +23,21 @@ test("admin and creator master workspaces pass the linked owner brand category t
     assert.match(layout, /brandCategory=\{masterDesigner\?\.brand_category\}/);
   }
 });
+
+test("master workspace switcher uses the same standalone top bar in every center", async () => {
+  const [component, adminLayout, creatorLayout, designerLayout, beautyLayout] = await Promise.all([
+    readFile(new URL("../src/components/MasterRoleSwitcher.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/dashboard/admin/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/dashboard/creator/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/dashboard/designer/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/dashboard/beauty/layout.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(component, /master-workspace-bar/);
+  for (const layout of [adminLayout, creatorLayout, designerLayout, beautyLayout]) {
+    assert.match(layout, /<MasterRoleSwitcher/);
+  }
+
+  const preview = creatorLayout.match(/<div className="creator-admin-preview">([\s\S]*?)<\/div>\s*\) : null\}/)?.[1] || "";
+  assert.doesNotMatch(preview, /MasterRoleSwitcher/);
+});

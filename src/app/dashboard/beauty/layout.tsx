@@ -14,13 +14,13 @@ export default async function BeautyPartnerLayout({ children }: { children: Reac
   return (
     <div className="studio beauty-partner">
       <ScrollResetOnLoad />
+      <MasterRoleSwitcher email={user.email} active="designer" brandCategory={designer.brand_category} />
       <header className="st-top beauty-topbar">
         <Link className="brand" href="/dashboard/beauty">
           <b>K-MODU</b>
           <span className="beauty-role-chip">뷰티 파트너 센터</span>
         </Link>
         <div className="top-context">
-          <MasterRoleSwitcher email={user.email} active="designer" brandCategory={designer.brand_category} />
           <Link className="top-link" href={publicHref}>공개 프로필</Link>
           <div className="me compact">
             <span className="role-label">BEAUTY BRAND</span>
