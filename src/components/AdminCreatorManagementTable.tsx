@@ -7,7 +7,7 @@ import AdminPagination from "@/components/AdminPagination";
 import type { AdminManagedCreator, CreatorManagementGroupSummary } from "@/lib/creator-management";
 import { publicMediaUrl } from "@/lib/public-media-url";
 import { prioritizePendingCreators } from "@/lib/creator-approval-queue";
-import { isCreatorApprovalApplication, paginateAdminItems } from "@/lib/admin-list-utils";
+import { isAdminCatalogueCreator, isCreatorApprovalApplication, paginateAdminItems } from "@/lib/admin-list-utils";
 
 export type AdminCreatorManagementRow = AdminManagedCreator & { durable: boolean };
 
@@ -58,7 +58,7 @@ export default function AdminCreatorManagementTable({ creators, groups }: {
     return prioritizePendingCreators(creators.filter((creator) => {
       const matchesSearch = !term || [creator.display_name, creator.creator_key, creator.google_email, creator.instagram_handle, creator.tiktok_handle]
         .filter(Boolean).some((value) => value!.toLocaleLowerCase().includes(term));
-      const isCatalogue = creator.onboarding_source === "admin" && !creator.user_id;
+      const isCatalogue = isAdminCatalogueCreator(creator);
       const matchesApproval = approval === ALL
         || (approval === "catalogue" ? isCatalogue : !isCatalogue && creator.approval_status === approval);
       return matchesSearch
@@ -216,7 +216,7 @@ export default function AdminCreatorManagementTable({ creators, groups }: {
           <thead><tr><th><input type="checkbox" aria-label="전체 크리에이터 선택" checked={allSelected} onChange={toggleAll} disabled={!selectableIds.length} /></th><th>크리에이터</th><th>SNS · 팔로워</th><th>가입 경로</th><th>계정 상태</th><th>귀속 상태</th><th>승인 상태</th><th>승인 관리</th><th>관리 그룹</th></tr></thead>
           <tbody>{pageCreators.map((creator) => {
             const isApprovalApplication = isCreatorApprovalApplication(creator);
-            const isCatalogue = creator.onboarding_source === "admin" && !creator.user_id;
+            const isCatalogue = isAdminCatalogueCreator(creator);
             return <tr className={isApprovalApplication ? "is-approval-pending" : isCatalogue ? "is-catalogue" : ""} key={creator.creator_key}>
               <td><input type="checkbox" aria-label={`${creator.display_name} 선택`} checked={selected.has(creator.id)} onChange={() => toggle(creator.id)} disabled={!creator.durable} /></td>
               <td><Link className="admin-creator-identity" href={`/dashboard/admin/creators/${encodeURIComponent(creator.creator_key)}`}><span className="admin-creator-thumb">{publicMediaUrl(creator.profile_image_url) ? <img src={publicMediaUrl(creator.profile_image_url) || ""} alt="" /> : creator.display_name.slice(0, 1)}</span><span><strong>{creator.display_name}</strong><small>{creator.creator_key}</small></span></Link></td>

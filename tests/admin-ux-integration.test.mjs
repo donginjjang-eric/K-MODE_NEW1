@@ -54,9 +54,17 @@ test("catalogue creators cannot appear as pending applications or expose approva
   const table = await source("../src/components/AdminCreatorManagementTable.tsx");
 
   assert.match(table, /isCreatorApprovalApplication/);
+  assert.match(table, /isAdminCatalogueCreator/);
   assert.match(table, /운영 카탈로그/);
   assert.match(table, /가입 신청/);
   assert.match(table, /isApprovalApplication \?/);
+});
+
+test("generated-look actions own the only live approval badge", async () => {
+  const manager = await source("../src/components/AdminGeneratedLooksManager.tsx");
+
+  assert.match(manager, /AdminGeneratedLookActions/);
+  assert.doesNotMatch(manager, /look\.status === "approved" \? "pub" : "priv"/);
 });
 
 test("product and generated-look cards share an image failure fallback", async () => {

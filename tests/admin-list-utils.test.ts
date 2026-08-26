@@ -3,8 +3,10 @@ import test from "node:test";
 import {
   ADMIN_PAGE_SIZE,
   adminPageMeta,
+  isAdminCatalogueCreator,
   isCreatorApprovalApplication,
   paginateAdminItems,
+  reconcilePageSelection,
 } from "../src/lib/admin-list-utils";
 
 test("admin lists paginate in fixed groups of twenty and clamp stale pages", () => {
@@ -36,6 +38,24 @@ test("admin page metadata reports total, visible range, and numbered controls", 
 test("only account-linked self registrations enter the creator approval queue", () => {
   assert.equal(isCreatorApprovalApplication({ onboarding_source: "self_registered", user_id: "user-1", approval_status: "pending" }), true);
   assert.equal(isCreatorApprovalApplication({ onboarding_source: "admin", user_id: null, approval_status: "pending" }), false);
+  assert.equal(isCreatorApprovalApplication({ onboarding_source: "admin", user_id: "linked-user", approval_status: "pending" }), false);
   assert.equal(isCreatorApprovalApplication({ onboarding_source: "self_registered", user_id: null, approval_status: "pending" }), false);
   assert.equal(isCreatorApprovalApplication({ onboarding_source: "self_registered", user_id: "user-1", approval_status: "approved" }), false);
+});
+
+test("admin origin remains catalogue identity independently of member linkage", () => {
+  assert.equal(isAdminCatalogueCreator({ onboarding_source: "admin", user_id: null }), true);
+  assert.equal(isAdminCatalogueCreator({ onboarding_source: "admin", user_id: "linked-user" }), true);
+  assert.equal(isAdminCatalogueCreator({ onboarding_source: "self_registered", user_id: "linked-user" }), false);
+});
+
+test("selection keeps only current-page IDs and removes successfully mutated IDs", () => {
+  assert.deepEqual(
+    reconcilePageSelection(["page-1", "other-page", "mutated"], ["page-1", "mutated"]),
+    ["page-1", "mutated"],
+  );
+  assert.deepEqual(
+    reconcilePageSelection(["page-1", "other-page", "mutated"], ["page-1", "mutated"], ["mutated"]),
+    ["page-1"],
+  );
 });

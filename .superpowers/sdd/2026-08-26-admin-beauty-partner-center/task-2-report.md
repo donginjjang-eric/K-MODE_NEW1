@@ -18,7 +18,7 @@ DONE_WITH_CONCERNS
    - 검색/필터 변경 시 1페이지로 초기화합니다.
 3. 크리에이터 관리
    - 계정 연결된 직접 가입 승인 신청과 관리자 운영 카탈로그를 시각·문구로 구분했습니다.
-   - 계정 없는 운영 카탈로그는 승인 대기로 집계하지 않고 승인 액션을 노출하지 않습니다.
+   - 관리자 등록 운영 카탈로그는 회원 계정 연결 여부와 무관하게 승인 대기로 집계하지 않고 승인 액션을 노출하지 않습니다.
    - 일괄 선택은 현재 페이지 항목으로 제한하고 페이지/필터 변경 시 선택을 초기화합니다.
 4. 회원 승인
    - 기존 접근성 드로어와 기존 승인 API를 유지했습니다.
@@ -119,3 +119,52 @@ DONE_WITH_CONCERNS
 2. 클라이언트 페이지네이션 요구에 맞춰 상품·AI 목록 조회 상한을 제거했습니다. 데이터가 매우 커지면 서버 직렬화 비용이 증가할 수 있으므로 향후 서버 검색/페이지네이션 전환 시 UX 계약을 다시 정의해야 합니다.
 3. 실제 DB가 없는 로컬 demo 환경이라 승인 드로어와 20건 초과 데이터의 브라우저 상호작용은 focused automated tests로만 검증했습니다.
 4. 변경 사항은 배포하지 않았습니다.
+
+---
+
+## Fix round 1/5 — 2026-08-26
+
+### 수정 완료 항목
+
+1. 상품 선택 상태
+   - 선택 항목을 현재 페이지 ID와 교집합으로 계산하도록 변경했습니다.
+   - 개별/일괄 상태 변경에 성공한 상품 ID를 선택 상태에서 즉시 제거합니다.
+   - 현재 필터에서 사라진 상품이나 다른 페이지 상품이 bulk count/action에 남지 않습니다.
+2. 운영 카탈로그 분류
+   - 운영 카탈로그 정체성을 `onboarding_source === "admin"`으로 단일화했습니다.
+   - `user_id`는 회원 연결 여부 표시에만 사용하며, 연결된 관리자 등록 크리에이터에도 승인 의미를 부여하지 않습니다.
+3. AI 생성 룩 상태 배지
+   - 부모 카드의 초기 props 기반 중복 상태 배지를 제거했습니다.
+   - 액션 컴포넌트가 관리하는 최신 상태 배지만 남겨 액션 직후 불일치를 제거했습니다.
+4. 행동 테스트
+   - 현재 페이지 선택 제한과 성공 mutation ID 제거를 순수 함수 입출력으로 검증합니다.
+   - 관리자 등록 출처가 회원 연결 여부와 독립적으로 카탈로그로 분류되는지 검증합니다.
+
+### TDD RED 증거
+
+| 명령 | 예상 실패 |
+| --- | --- |
+| `node --import tsx --test tests/admin-list-utils.test.ts` | 새 선택 조정/카탈로그 분류 함수 export 부재로 테스트 파일 실패 |
+| `node --test tests/admin-ux-integration.test.mjs` | 7 tests 중 신규 카탈로그 helper 사용 및 중복 배지 제거 계약 2건 실패, 기존 5건 통과 |
+
+### GREEN / 최종 검증
+
+| 명령 | 결과 |
+| --- | --- |
+| `node --import tsx --test tests/admin-list-utils.test.ts` | PASS — 5 tests, 0 failures |
+| `node --test tests/admin-ux-integration.test.mjs tests/admin-creator-management-ui.test.mjs tests/admin-users-creator-contract.test.mjs` | PASS — 12 tests, 0 failures |
+| `npx.cmd --no-install tsc --noEmit` | PASS — type errors 0 |
+| `git diff --check` | PASS — whitespace errors 0 |
+| `npm.cmd run build` | PASS — Next.js production compile, TypeScript, 59 static pages 생성 완료 |
+
+### 범위 확인
+
+- `/dashboard/designer/*`는 수정하지 않았습니다.
+- 이번 라운드의 리뷰 지적 4건은 모두 구현 및 focused test 범위에서 완료했습니다.
+- 미완료 구현 항목은 없습니다.
+
+### 남은 우려
+
+1. 빌드는 성공했지만 기존 다중 lockfile workspace-root 추론 경고와 NFT 동적 파일 추적 경고가 계속 출력됩니다.
+2. 이번 라운드는 상태/분류 로직 수정이므로 별도 브라우저 시각 재검증은 하지 않았습니다. 변경 사항은 배포하지 않았습니다.
+3. 저장소 전체 MJS 기준점의 선행 17개 실패는 이번 라운드 범위 밖이며 통합 Task 5 대상입니다.

@@ -7,7 +7,7 @@ import AdminImageWithFallback from "@/components/AdminImageWithFallback";
 import AdminPagination from "@/components/AdminPagination";
 import { paginateAdminItems } from "@/lib/admin-list-utils";
 import type { AdminGeneratedLook } from "@/lib/db";
-import { getGeneratedLookStatusLabel, getGenerationTypeLabel } from "@/lib/status-labels";
+import { getGenerationTypeLabel } from "@/lib/status-labels";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -36,7 +36,6 @@ export default function AdminGeneratedLooksManager({ looks }: { looks: AdminGene
                 height={800}
                 eager={currentPage === 1 && index === 0}
               />
-              <span className={`badge ${look.status === "approved" ? "pub" : "priv"}`}>{getGeneratedLookStatusLabel(look.status)}</span>
             </div>
             <div className="b">
               <div className="c"><Link href={`/dashboard/admin/designers/${look.designer_id}`}>{look.designer_brand_name || "브랜드 정보 없음"}</Link></div>

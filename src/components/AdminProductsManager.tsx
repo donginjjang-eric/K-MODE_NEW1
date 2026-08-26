@@ -6,7 +6,7 @@ import Link from "next/link";
 import AdminImageWithFallback from "@/components/AdminImageWithFallback";
 import AdminPagination from "@/components/AdminPagination";
 import type { AdminProduct } from "@/lib/db";
-import { paginateAdminItems } from "@/lib/admin-list-utils";
+import { paginateAdminItems, reconcilePageSelection } from "@/lib/admin-list-utils";
 
 type Status = "active" | "draft" | "hidden";
 
@@ -63,6 +63,11 @@ export default function AdminProductsManager({ products }: { products: AdminProd
     });
   }, [products, statusMap, statusFilter, brandFilter, categoryFilter, search]);
   const pageProducts = useMemo(() => paginateAdminItems(filtered, currentPage), [currentPage, filtered]);
+  const pageProductIds = useMemo(() => pageProducts.map((product) => product.id), [pageProducts]);
+  const selectedOnPage = useMemo(
+    () => new Set(reconcilePageSelection(selected, pageProductIds)),
+    [pageProductIds, selected],
+  );
 
   const grouped = useMemo(() => {
     if (!groupByBrand) return [{ brand: "", items: pageProducts }];
@@ -99,6 +104,8 @@ export default function AdminProductsManager({ products }: { products: AdminProd
       results.forEach((r) => { if (r.status === "fulfilled") copy[r.value] = next; });
       return copy;
     });
+    const mutatedIds = results.flatMap((result) => result.status === "fulfilled" ? [result.value] : []);
+    setSelected((current) => new Set(reconcilePageSelection(current, pageProductIds, mutatedIds)));
     // 실패를 조용히 넘기지 않는다 — 몇 건이 안 됐는지 관리자에게 알린다
     const failed = results.filter((r) => r.status === "rejected").length;
     if (failed) {
@@ -122,7 +129,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
   };
 
   const bulk = async (next: Status) => {
-    const ids = Array.from(selected);
+    const ids = Array.from(selectedOnPage);
     if (!ids.length) return;
     await setStatus(ids, next);
     setSelected(new Set());
@@ -198,7 +205,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
               {items.map((p) => {
                 const st = statusMap[p.id];
                 const isPublic = st === "active";
-                const checked = selected.has(p.id);
+                const checked = selectedOnPage.has(p.id);
                 return viewMode === "grid" ? (
                   <article className={`st-pcard apm-card${checked ? " is-checked" : ""}`} key={p.id}>
                     <label className="apm-check"><input type="checkbox" checked={checked} onChange={() => toggleSelect(p.id)} /></label>
@@ -252,9 +259,9 @@ export default function AdminProductsManager({ products }: { products: AdminProd
         <div className="st-empty compact"><p>조건에 맞는 상품이 없습니다.</p></div>
       )}
 
-      {selected.size ? (
+      {selectedOnPage.size ? (
         <div className="apm-bulkbar">
-          <span><b>{selected.size}개</b> 선택</span>
+          <span><b>{selectedOnPage.size}개</b> 선택</span>
           <div className="apm-bulkbar-actions">
             <button type="button" className="primary" disabled={busy} onClick={() => bulk("active")}>공개로</button>
             <button type="button" className="danger" disabled={busy} onClick={() => bulk("draft")}>비공개로</button>

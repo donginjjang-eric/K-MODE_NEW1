@@ -20,6 +20,20 @@ export function paginateAdminItems<T>(items: T[], requestedPage: number) {
   return start === 0 ? [] : items.slice(start - 1, end);
 }
 
+export function reconcilePageSelection(
+  selectedIds: Iterable<string>,
+  currentPageIds: Iterable<string>,
+  removedIds: Iterable<string> = [],
+) {
+  const page = new Set(currentPageIds);
+  const removed = new Set(removedIds);
+  return [...selectedIds].filter((id) => page.has(id) && !removed.has(id));
+}
+
+export function isAdminCatalogueCreator(creator: { onboarding_source: string }) {
+  return creator.onboarding_source === "admin";
+}
+
 export function isCreatorApprovalApplication(creator: {
   onboarding_source: string;
   user_id: string | null;
