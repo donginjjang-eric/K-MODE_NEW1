@@ -30,7 +30,7 @@ input {
 }
 
 .site-shell:has(.creator-center) > .top-nav {
-  position: relative;
+  display: none;
 }
 
 .top-nav {

@@ -57,8 +57,16 @@ test("master workspace switcher uses the same standalone top bar in every center
   assert.doesNotMatch(preview, /MasterRoleSwitcher/);
 });
 
+test("creator center hides the public site header and only uses the workspace switcher", async () => {
+  const globals = await readFile(new URL("../src/app/globals.css", import.meta.url), "utf8");
+  assert.match(
+    globals,
+    /\.site-shell:has\(\.creator-center\)\s*>\s*\.top-nav\s*\{\s*display:\s*none;\s*\}/,
+  );
+});
+
 test("admin navigation identifies the operations console with a dedicated illustration", async () => {
   const adminNav = await readFile(new URL("../src/components/AdminNav.tsx", import.meta.url), "utf8");
-  assert.match(adminNav, /admin-console-operator\.webp/);
-  assert.match(adminNav, /관리자 콘솔 운영 화면/);
+  assert.match(adminNav, /admin-console-identity-mark/);
+  assert.match(adminNav, /관리자 콘솔 전용 표지/);
 });
