@@ -2,7 +2,7 @@
 
 // 파트너 로그인: 구글 로그인 단일 방식. 로그인된 상태면 상태 카드(누구로 로그인됨 + 다음 행동)를 보여준다.
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
-import { validateCreatorSocialUrls, type CreatorSocialErrors } from "@/lib/creator-onboarding";
+import { validateCreatorSocialUrls, type CreatorSocialErrors } from "@/lib/creator-social-validation";
 import { brandPartnerCenterPath } from "@/lib/brand-partner-center";
 
 const PARAM_MESSAGES: Record<string, string> = {

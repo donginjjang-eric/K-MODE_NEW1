@@ -1,6 +1,8 @@
 import type { CreatorAccount } from "./types";
 import type { DatabaseTransactionClient } from "./db";
 import { partnerWorkspaceTypes } from "./workspace-access";
+import { validateCreatorSocialUrls } from "./creator-social-validation";
+export { validateCreatorSocialUrls, type CreatorSocialErrors } from "./creator-social-validation";
 
 export type CreatorApplicationInput = {
   userId: string;
@@ -108,29 +110,6 @@ function socialUrl(value: string, host: "instagram.com" | "tiktok.com") {
   } catch {
     return false;
   }
-}
-
-export type CreatorSocialErrors = {
-  form?: string;
-  instagramUrl?: string;
-  tiktokUrl?: string;
-};
-
-export function validateCreatorSocialUrls(instagramValue: string, tiktokValue: string): CreatorSocialErrors {
-  const instagramUrl = text(instagramValue);
-  const tiktokUrl = text(tiktokValue);
-  if (!instagramUrl && !tiktokUrl) {
-    return { form: "Instagram 또는 TikTok 주소를 하나 이상 입력해 주세요." };
-  }
-
-  const errors: CreatorSocialErrors = {};
-  if (instagramUrl && !socialUrl(instagramUrl, "instagram.com")) {
-    errors.instagramUrl = "Instagram 프로필 주소를 확인해 주세요. 예: https://www.instagram.com/아이디";
-  }
-  if (tiktokUrl && !socialUrl(tiktokUrl, "tiktok.com")) {
-    errors.tiktokUrl = "TikTok 프로필 주소를 확인해 주세요. 예: https://www.tiktok.com/@아이디";
-  }
-  return errors;
 }
 
 export async function handleCreatorApplication(request: Request, dependencies: Dependencies) {
