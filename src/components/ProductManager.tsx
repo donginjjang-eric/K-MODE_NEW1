@@ -307,7 +307,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
           <div className="st-step" style={{ marginTop: 24 }}><span className="num">3</span> 상품 정보</div>
           <div className="st-field">
             <label>상품 이름</label>
-            <input value={form.name} onChange={(event) => setField("name", event.target.value)} placeholder="예: 블랙 니트 가디건" />
+            <input value={form.name} onChange={(event) => setField("name", event.target.value)} placeholder={mode === "beauty" ? "예: 장벽 케어 세럼" : "예: 블랙 니트 가디건"} />
           </div>
           <div className="st-2">
             <div className="st-field">
@@ -326,7 +326,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
             </div>
             <div className="st-field">
               <label>설명 <span className="opt">(선택)</span></label>
-              <input value={form.description} onChange={(event) => setField("description", event.target.value)} placeholder="소재, 핏, 무드 설명" />
+              <input value={form.description} onChange={(event) => setField("description", event.target.value)} placeholder={mode === "beauty" ? "성분, 효능, 사용감 설명" : "소재, 핏, 무드 설명"} />
             </div>
           </div>
           <div className="st-field">

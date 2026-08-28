@@ -10,17 +10,21 @@ import { paginateAdminItems, reconcilePageSelection } from "@/lib/admin-list-uti
 
 type Status = "active" | "draft" | "hidden";
 
-// ProductManager와 동일한 분류 규칙 (상의/하의/악세서리)
+// 패션과 뷰티 상품을 같은 관리자 화면에서 원래 분류 그대로 보여준다.
 function groupCategory(category: string) {
   const raw = String(category || "").trim();
   const value = raw.toLowerCase();
+  if (raw.includes("스킨") || /skin|cleanser|serum|cream|sun/.test(value)) return "스킨케어";
+  if (raw.includes("메이크업") || /makeup|lip|eye|base|cheek/.test(value)) return "메이크업";
+  if (raw.includes("헤어") || raw.includes("바디") || /hair|body|fragrance/.test(value)) return "헤어·바디";
+  if (raw === "기타" || ["beauty", "beauty-tool", "beauty-tools"].includes(value)) return "기타";
   if (raw.includes("하의") || ["bottom", "bottoms", "pants", "trouser", "trousers", "skirt"].includes(value)) return "하의";
   if (raw.includes("상의") || raw.includes("아우터") || ["top", "tops", "inner", "shirt", "outer", "outerwear", "jacket", "coat"].includes(value)) return "상의";
   return "악세서리";
 }
 
 const STATUS_LABEL: Record<Status, string> = { active: "공개 중", draft: "비공개", hidden: "숨김" };
-const CATEGORIES = ["상의", "하의", "악세서리"];
+const CATEGORIES = ["스킨케어", "메이크업", "헤어·바디", "기타", "상의", "하의", "악세서리"];
 
 export default function AdminProductsManager({ products }: { products: AdminProduct[] }) {
   const [statusMap, setStatusMap] = useState<Record<string, Status>>(
