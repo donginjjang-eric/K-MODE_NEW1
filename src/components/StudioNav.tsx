@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NavIcon from "@/components/NavIcons";
-import LogoutButton from "@/components/LogoutButton";
+import WorkspaceAccountCard from "@/components/WorkspaceAccountCard";
 
 export type NavItem = {
   href: string;
@@ -64,20 +64,14 @@ export function StudioSideNav({
           );
         })}
       </nav>
-      <div className="st-account-card">
-        <div className="st-account-avatar">
-          {googleAvatar ? <img src={googleAvatar} alt="" referrerPolicy="no-referrer" /> : <NavIcon name="user" />}
-        </div>
-        <div className="st-account-copy">
-          <span>디자이너 스튜디오</span>
-          <strong>{brandName}</strong>
-          {googleLabel ? <small className="st-account-google" title={googleEmail}>{googleLabel}</small> : null}
-        </div>
-        <div className="st-account-actions">
-          <Link href={publicHref}>공개 페이지</Link>
-          <LogoutButton />
-        </div>
-      </div>
+      <WorkspaceAccountCard
+        centerLabel="패션 브랜드 센터"
+        title={brandName}
+        detail={googleLabel}
+        avatarUrl={googleAvatar}
+        publicHref={publicHref}
+        tone="fashion"
+      />
     </aside>
   );
 }

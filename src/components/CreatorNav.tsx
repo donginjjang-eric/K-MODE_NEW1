@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import NavIcon from "@/components/NavIcons";
 import type { SessionUser } from "@/lib/auth";
 import type { CreatorAccount } from "@/lib/types";
+import WorkspaceAccountCard from "@/components/WorkspaceAccountCard";
 
 type NavItem = {
   href: string;
@@ -45,20 +46,6 @@ function isActive(pathname: string, href: string) {
   return href === "/dashboard/creator" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function CreatorIdentity({ creator, user }: CreatorNavigationProps) {
-  const initial = (creator.display_name || user.email || "C").trim().charAt(0).toUpperCase();
-
-  return (
-    <Link href="/dashboard/creator/profile" className="creator-identity" aria-label="내 정보">
-      <span className="creator-avatar" aria-hidden="true">{initial}</span>
-      <span className="creator-identity-copy">
-        <strong>{creator.display_name}</strong>
-        <small>{creator.platform || user.email}</small>
-      </span>
-    </Link>
-  );
-}
-
 export function CreatorSideNav({ creator, user }: CreatorNavigationProps) {
   const pathname = usePathname();
   const withPersona = useCreatorHref();
@@ -68,7 +55,6 @@ export function CreatorSideNav({ creator, user }: CreatorNavigationProps) {
       <Link className="creator-brand" href="/dashboard/creator" aria-label="K-MODU 크리에이터 홈">
         <b>K-MODU</b><span>크리에이터</span>
       </Link>
-      <CreatorIdentity creator={creator} user={user} />
       <nav className="creator-menu" aria-label="크리에이터 메뉴">
         {CREATOR_NAV.map((item) => (
           <Link key={item.href} href={withPersona(item.href)} className={isActive(pathname, item.href) ? "is-active" : ""}>
@@ -77,6 +63,13 @@ export function CreatorSideNav({ creator, user }: CreatorNavigationProps) {
           </Link>
         ))}
       </nav>
+      <WorkspaceAccountCard
+        centerLabel="크리에이터 센터"
+        title={creator.display_name}
+        detail={user.email}
+        initial={(creator.display_name || user.email || "C").charAt(0).toUpperCase()}
+        tone="creator"
+      />
     </aside>
   );
 }

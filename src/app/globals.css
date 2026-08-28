@@ -33,6 +33,97 @@ input {
   display: none;
 }
 
+/* 모든 운영 화면에서 같은 위치와 구조를 사용하는 로그인 계정 카드 */
+.workspace-account-card {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 8px;
+  width: calc(100% - 24px);
+  margin: auto 12px 14px;
+  padding: 14px;
+  border: 1px solid #d9dce2;
+  border-top: 4px solid #14243b;
+  border-radius: 16px;
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .08);
+  font-family: Pretendard, "Pretendard Variable", Arial, sans-serif;
+}
+
+.workspace-account-card.is-creator { border-top-color: #188b82; }
+.workspace-account-card.is-fashion { border-top-color: #788a67; }
+.workspace-account-card.is-beauty { border-top-color: #a45f79; }
+
+.workspace-account-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.workspace-account-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #14243b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.workspace-account-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.workspace-account-card.is-creator .workspace-account-avatar { background: #188b82; }
+.workspace-account-card.is-fashion .workspace-account-avatar { background: #788a67; }
+.workspace-account-card.is-beauty .workspace-account-avatar { background: #a45f79; }
+
+.workspace-account-center {
+  color: #5c6470;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .02em;
+}
+
+.workspace-account-title,
+.workspace-account-detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-account-title { font-size: 14px; line-height: 1.35; }
+.workspace-account-detail { color: #737b87; font-size: 11px; }
+
+.workspace-account-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 7px;
+  margin-top: 3px;
+}
+
+.workspace-account-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid #cfd3da;
+  border-radius: 9px;
+  background: #fff;
+  color: #202936;
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.workspace-account-actions a:last-child {
+  border-color: #111827;
+  background: #111827;
+  color: #fff;
+}
+
 .top-nav {
   position: sticky;
   top: 0;

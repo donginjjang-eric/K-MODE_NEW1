@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import LogoutButton from "@/components/LogoutButton";
+import WorkspaceAccountCard from "@/components/WorkspaceAccountCard";
 import NavIcon from "@/components/NavIcons";
 import { BEAUTY_PARTNER_NAV_ITEMS, isBeautyPartnerPathActive } from "@/lib/brand-partner-center";
 
@@ -42,20 +42,15 @@ export function BeautyPartnerSideNav({ brandName, publicHref, googleName, google
         })}
       </nav>
 
-      <div className="beauty-account-card">
-        <div className="beauty-account-avatar">
-          {googleAvatar ? <img src={googleAvatar} alt="" referrerPolicy="no-referrer" /> : <NavIcon name="building" />}
-        </div>
-        <div className="beauty-account-copy">
-          <span>뷰티 파트너</span>
-          <strong>{brandName}</strong>
-          {googleLabel ? <small title={googleEmail}>{googleLabel}</small> : null}
-        </div>
-        <div className="beauty-account-actions">
-          <Link href={publicHref}>공개 프로필</Link>
-          <LogoutButton />
-        </div>
-      </div>
+      <WorkspaceAccountCard
+        centerLabel="뷰티 브랜드 센터"
+        title={brandName}
+        detail={googleLabel}
+        avatarUrl={googleAvatar}
+        publicHref={publicHref}
+        publicLabel="공개 프로필"
+        tone="beauty"
+      />
     </aside>
   );
 }

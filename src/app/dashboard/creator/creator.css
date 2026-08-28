@@ -51,6 +51,8 @@
 .creator-center .creator-menu a.is-active { background: var(--creator-teal); color: #fff; }
 .creator-center .nav-svg { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .creator-center .creator-menu .nav-svg { width: 19px; height: 19px; }
+.creator-center .workspace-account-actions a { color: #202936; }
+.creator-center .workspace-account-actions a:last-child { color: #fff; }
 
 .creator-center .creator-content { min-width: 0; padding: 44px clamp(24px, 5vw, 72px); background: var(--creator-ivory); }
 .creator-center .creator-mobile-top,

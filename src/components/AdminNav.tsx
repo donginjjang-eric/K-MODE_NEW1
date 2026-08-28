@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import NavIcon from "@/components/NavIcons";
-import LogoutButton from "@/components/LogoutButton";
+import WorkspaceAccountCard from "@/components/WorkspaceAccountCard";
 import { ADMIN_MOBILE_NAV, ADMIN_NAV_GROUPS } from "@/lib/admin-navigation";
 
 // href별 처리 대기 건수 — 있으면 메뉴 옆에 뱃지로 표시
@@ -85,17 +85,7 @@ export function AdminSideNav({ email, badges = {} }: { email: string; badges?: A
           </section>
         ))}
       </nav>
-      <div className="st-account-card admin">
-        <div className="st-account-avatar">{initial}</div>
-        <div className="st-account-copy">
-          <span>관리자 콘솔</span>
-          <strong>{email}</strong>
-        </div>
-        <div className="st-account-actions">
-          <Link href="/dashboard/designer">브랜드 파트너 화면</Link>
-          <LogoutButton />
-        </div>
-      </div>
+      <WorkspaceAccountCard centerLabel="관리자 콘솔" title={email} detail="운영자 계정" initial={initial} tone="admin" />
     </aside>
   );
 }
