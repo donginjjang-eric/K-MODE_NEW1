@@ -2024,6 +2024,17 @@ export async function getDesignerForUser(userId: string): Promise<Designer | nul
   }
 }
 
+export async function getDesignerForUserAndId(userId: string, designerId: string): Promise<Designer | null> {
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    return null;
+  }
+  return one<Designer>(
+    "SELECT * FROM designers WHERE id = $2 AND user_id = $1",
+    [userId, designerId],
+  );
+}
+
 export async function updateDesignerApprovalStatus(id: string, status: "approved" | "disabled" | "rejected") {
   if (!hasDatabase()) {
     requireDatabaseForProduction();

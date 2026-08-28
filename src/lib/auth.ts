@@ -1,11 +1,13 @@
 import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ensureMasterAdminRole, getCreatorAccountForUser, getDesignerForUser, getOrCreateAdminCreatorAccount, getOrCreateAdminDesignerAccount, getUserByEmail } from "./db";
+import { ensureMasterAdminRole, getCreatorAccountForUser, getDesignerForUser, getDesignerForUserAndId, getOrCreateAdminCreatorAccount, getOrCreateAdminDesignerAccount, getUserByEmail, hasDatabase } from "./db";
 import { hasActiveAgencyGroupRelationship } from "./creator-management";
 import { brandPartnerCenterPath } from "./brand-partner-center";
 import { isMasterAdminEmail } from "./master-admin";
-import type { CreatorAccount, Role, User } from "./types";
+import type { CreatorAccount, Role, User, WorkspaceType } from "./types";
+import { backfillUserWorkspaceMemberships, listUserWorkspaces, resolveUserWorkspace } from "./workspace-access";
+import { authorizeWorkspace, workspaceCookieName } from "./workspace-selection";
 
 export const sessionCookieName = "kmodu_session";
 export const sessionMaxAgeSeconds = 60 * 60 * 24 * 30;
@@ -127,11 +129,68 @@ export async function requireApprovedDesigner(loginDestination = loginEntryUrl("
   return { user, designer };
 }
 
+function workspaceLoginRole(type: WorkspaceType): Role | undefined {
+  if (type === "admin") return "admin";
+  if (type === "creator") return "creator";
+  if (type === "agency") return "agency";
+  return "designer";
+}
+
+export async function requireWorkspace(type: WorkspaceType) {
+  const user = await getCurrentUser();
+  const loginRole = workspaceLoginRole(type);
+  const destination = type === "beauty_partner"
+    ? "/dashboard/beauty"
+    : type === "fashion_partner"
+      ? "/dashboard/designer/brand"
+      : loginEntryUrl(loginRole || "designer");
+  if (!user) redirect(loginRole ? loginPromptUrl(loginRole, destination) : "/login");
+
+  if (!hasDatabase()) return { user, workspace: null };
+
+  let memberships = await listUserWorkspaces(user.id);
+  if (!memberships.some((membership) => membership.workspace_type === type)) {
+    await backfillUserWorkspaceMemberships(user.id, type);
+    memberships = await listUserWorkspaces(user.id);
+  }
+
+  const selectedId = (await cookies()).get(workspaceCookieName)?.value || null;
+  const matching = memberships.filter((membership) => membership.workspace_type === type && membership.status === "active");
+  const membershipId = selectedId && matching.some((membership) => membership.id === selectedId)
+    ? selectedId
+    : matching.length === 1
+      ? matching[0].id
+      : null;
+
+  if (!membershipId) redirect(`/dashboard/workspaces?next=${encodeURIComponent(destination)}`);
+  const membership = await resolveUserWorkspace({ userId: user.id, workspaceType: type, membershipId, requireActive: true });
+  const authorization = authorizeWorkspace({ user, requestedType: type, membership });
+  if (!authorization.ok) redirect(`/dashboard/workspaces?next=${encodeURIComponent(destination)}`);
+  return { user, workspace: authorization.workspace };
+}
+
+export async function requireFashionPartner() {
+  const auth = await requireWorkspace("fashion_partner");
+  if (!auth.workspace?.resource_id) {
+    const legacy = await requireApprovedDesigner("/dashboard/designer/brand");
+    return { ...legacy, workspace: null };
+  }
+  const designer = await getDesignerForUserAndId(auth.user.id, auth.workspace.resource_id);
+  if (!designer) redirect("/dashboard/workspaces?next=%2Fdashboard%2Fdesigner%2Fbrand");
+  return { ...auth, designer };
+}
+
 export async function requireBeautyPartner() {
-  const auth = await requireApprovedDesigner("/dashboard/beauty");
-  const destination = brandPartnerCenterPath(auth.designer.brand_category);
-  if (destination !== "/dashboard/beauty") redirect(destination);
-  return auth;
+  const auth = await requireWorkspace("beauty_partner");
+  if (!auth.workspace?.resource_id) {
+    const legacy = await requireApprovedDesigner("/dashboard/beauty");
+    const destination = brandPartnerCenterPath(legacy.designer.brand_category);
+    if (destination !== "/dashboard/beauty") redirect(destination);
+    return { ...legacy, workspace: null };
+  }
+  const designer = await getDesignerForUserAndId(auth.user.id, auth.workspace.resource_id);
+  if (!designer) redirect("/dashboard/workspaces?next=%2Fdashboard%2Fbeauty");
+  return { ...auth, designer };
 }
 
 export async function getApprovedDesignerForApi() {

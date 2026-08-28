@@ -142,3 +142,62 @@ export async function backfillWorkspaceMemberships(): Promise<void> {
       ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING`);
   });
 }
+
+export async function backfillUserWorkspaceMemberships(userId: string, requestedType?: WorkspaceType): Promise<void> {
+  await withDatabaseTransaction(async (client) => {
+    if (!requestedType || requestedType === "admin") {
+      await client.query(`
+        INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
+        SELECT id, 'admin', NULL, 'active', role = 'admin'
+          FROM users
+         WHERE id = $1 AND role = 'admin'
+        ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING`, [userId]);
+    }
+
+    if (!requestedType || requestedType === "creator") {
+      await client.query(`
+        INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
+        SELECT user_id, 'creator', id,
+               CASE approval_status WHEN 'approved' THEN 'active' WHEN 'disabled' THEN 'disabled' ELSE 'pending' END,
+               false
+          FROM creator_accounts
+         WHERE user_id = $1
+        ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING`, [userId]);
+    }
+
+    if (!requestedType || requestedType === "fashion_partner" || requestedType === "beauty_partner") {
+      await client.query(`
+        INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
+        SELECT designers.user_id, workspace_types.workspace_type, designers.id,
+               CASE designers.approval_status
+                 WHEN 'approved' THEN 'active'
+                 WHEN 'disabled' THEN 'disabled'
+                 WHEN 'rejected' THEN 'rejected'
+                 ELSE 'pending'
+               END,
+               false
+          FROM designers
+          CROSS JOIN LATERAL (
+            SELECT 'fashion_partner'::text AS workspace_type
+             WHERE lower(trim(designers.brand_category)) IN ('k-패션', '패션', 'k-fashion', 'fashion', '미분류', '복합', '하이브리드', 'hybrid', 'both')
+            UNION ALL
+            SELECT 'beauty_partner'::text AS workspace_type
+             WHERE lower(trim(designers.brand_category)) IN ('k-뷰티', '뷰티', 'k-beauty', 'beauty', '복합', '하이브리드', 'hybrid', 'both')
+          ) workspace_types
+         WHERE designers.user_id = $1
+           AND ($2::text IS NULL OR workspace_types.workspace_type = $2)
+        ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING`, [userId, requestedType ?? null]);
+    }
+
+    if (!requestedType || requestedType === "agency") {
+      await client.query(`
+        INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
+        SELECT user_id, 'agency', group_id,
+               CASE invite_status WHEN 'active' THEN 'active' WHEN 'revoked' THEN 'disabled' ELSE 'pending' END,
+               false
+          FROM creator_management_group_users
+         WHERE user_id = $1
+        ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING`, [userId]);
+    }
+  });
+}

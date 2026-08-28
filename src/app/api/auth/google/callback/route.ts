@@ -5,6 +5,7 @@ import { findOrCreateGoogleUser, getCreatorAccountByEmail, linkCreatorAccountToU
 import { activateAgencyInvitationsForLogin } from "@/lib/creator-management";
 import { creatorOnboardingDestination } from "@/lib/creator-onboarding";
 import { brandPartnerCenterPath } from "@/lib/brand-partner-center";
+import { backfillUserWorkspaceMemberships, listUserWorkspaces } from "@/lib/workspace-access";
 import {
   exchangeGoogleCode,
   fetchGoogleProfile,
@@ -91,18 +92,27 @@ export async function GET(request: Request) {
     const dest = nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "";
     // 로그인 성공 피드백(토스트)용 플래그
     const withWelcome = (path: string) => `${origin}${path}${path.includes("?") ? "&" : "?"}welcome=1`;
+    let userWorkspaces = await listUserWorkspaces(sessionUser.id);
+    if (userWorkspaces.length === 0) {
+      await backfillUserWorkspaceMemberships(sessionUser.id);
+      userWorkspaces = await listUserWorkspaces(sessionUser.id);
+    }
+    const activeWorkspaces = userWorkspaces.filter((workspace) => workspace.status === "active");
+    const workspaceDestination = !dest && activeWorkspaces.length > 1 ? "/dashboard/workspaces" : "";
 
     if (approvedCreator) {
-      return Response.redirect(withWelcome(dest || "/dashboard/creator"), 302);
+      const creatorDestination = dest || "/dashboard/creator";
+      return Response.redirect(withWelcome(workspaceDestination || creatorDestination), 302);
     }
     if (sessionUser.role === "admin") {
       return Response.redirect(withWelcome(dest || "/"), 302);
     }
     if (activeAgency) {
-      return Response.redirect(withWelcome(dest || "/dashboard/agency"), 302);
+      const agencyDestination = dest || "/dashboard/agency";
+      return Response.redirect(withWelcome(workspaceDestination || agencyDestination), 302);
     }
     if (designer?.approval_status === "approved") {
-      return Response.redirect(withWelcome(dest || brandPartnerCenterPath(designer.brand_category)), 302);
+      return Response.redirect(withWelcome(dest || workspaceDestination || brandPartnerCenterPath(designer.brand_category)), 302);
     }
     if (designer) {
       // 신청서는 있으나 아직 승인 전

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createSessionToken, loginUser, passwordLoginDestination, sessionCookieName, sessionMaxAgeSeconds } from "@/lib/auth";
 import { getDesignerForUser } from "@/lib/db";
+import { backfillUserWorkspaceMemberships, listUserWorkspaces } from "@/lib/workspace-access";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -27,7 +28,16 @@ export async function POST(request: Request) {
 
   // 명시적인 안전한 복귀 경로가 없으면 역할별 대시보드로 이동한다.
   const designer = user.role === "designer" ? await getDesignerForUser(user.id) : null;
-  const dest = passwordLoginDestination({ ...user, brand_category: designer?.brand_category }, body.next);
+  const requestedDestination = String(body.next || "");
+  let userWorkspaces = await listUserWorkspaces(user.id);
+  if (userWorkspaces.length === 0) {
+    await backfillUserWorkspaceMemberships(user.id);
+    userWorkspaces = await listUserWorkspaces(user.id);
+  }
+  const activeWorkspaces = userWorkspaces.filter((workspace) => workspace.status === "active");
+  const dest = !requestedDestination && activeWorkspaces.length > 1
+    ? "/dashboard/workspaces"
+    : passwordLoginDestination({ ...user, brand_category: designer?.brand_category }, body.next);
 
   return Response.json({
     ok: true,
