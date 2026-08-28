@@ -764,6 +764,7 @@ export async function getAdminDashboardStats() {
   if (!hasDatabase()) {
     return {
       usersTotal: 1,
+      creatorsTotal: 0,
       designersTotal: 1,
       pendingCreators: 0,
       pendingDesigners: 0,
@@ -783,6 +784,7 @@ export async function getAdminDashboardStats() {
 
   const [row] = await query<{
     users_total: string;
+    creators_total: string;
     designers_total: string;
     pending_creators: string;
     pending_designers: string;
@@ -800,6 +802,7 @@ export async function getAdminDashboardStats() {
   }>(
     `SELECT
        (SELECT COUNT(*)::text FROM users) AS users_total,
+       (SELECT COUNT(*)::text FROM creator_accounts WHERE user_id IS NOT NULL) AS creators_total,
        (SELECT COUNT(*)::text FROM designers) AS designers_total,
        (SELECT COUNT(*)::text
           FROM creator_accounts
@@ -828,6 +831,7 @@ export async function getAdminDashboardStats() {
 
   return {
     usersTotal: Number(row?.users_total || 0),
+    creatorsTotal: Number(row?.creators_total || 0),
     designersTotal: Number(row?.designers_total || 0),
     pendingCreators: Number(row?.pending_creators || 0),
     pendingDesigners: Number(row?.pending_designers || 0),

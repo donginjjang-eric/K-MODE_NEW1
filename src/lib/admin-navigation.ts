@@ -13,7 +13,7 @@ export const ADMIN_NAV_GROUPS: Array<{ label: string; items: AdminNavItem[] }> =
   {
     label: "회원·파트너",
     items: [
-      { href: "/dashboard/admin/users", icon: "users", label: "회원·승인 관리", short: "승인" },
+      { href: "/dashboard/admin/users", icon: "users", label: "회원·등급 관리", short: "회원" },
       { href: "/dashboard/admin/creators", icon: "users", label: "크리에이터 관리", short: "크리에이터" },
       { href: "/dashboard/admin/designers", icon: "users", label: "브랜드 파트너 관리", short: "파트너" },
       { href: "/dashboard/admin/creator-groups", icon: "package", label: "관리 그룹·대행사", short: "그룹" },

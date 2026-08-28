@@ -46,3 +46,15 @@ test('onboarding copy opens centers immediately and removes account approval ban
   assert.doesNotMatch(designerLayout, /승인 전/);
   assert.doesNotMatch(beautyLayout, /승인 전/);
 });
+
+test('admin account surfaces use access language instead of approval waiting language', async () => {
+  const [home, nav, usersPage] = await Promise.all([
+    source('../src/app/dashboard/admin/page.tsx'),
+    source('../src/lib/admin-navigation.ts'),
+    source('../src/app/dashboard/admin/users/page.tsx'),
+  ]);
+  for (const content of [home, nav, usersPage]) assert.doesNotMatch(content, /회원·승인|크리에이터 승인|브랜드 파트너 승인|승인 대기/);
+  assert.match(nav, /회원·등급 관리/);
+  assert.match(home, /크리에이터 현황/);
+  assert.match(home, /브랜드 파트너 현황/);
+});

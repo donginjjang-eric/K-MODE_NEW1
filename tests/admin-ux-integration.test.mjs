@@ -6,13 +6,13 @@ async function source(path) {
   return readFile(new URL(path, import.meta.url), "utf8").catch(() => "");
 }
 
-test("admin home exposes a real-data action center for all four review queues", async () => {
+test("admin home separates account status from the two public-content review queues", async () => {
   const [page, db] = await Promise.all([
     source("../src/app/dashboard/admin/page.tsx"),
     source("../src/lib/db.ts"),
   ]);
 
-  for (const field of ["pendingCreators", "pendingDesigners", "pendingProducts", "pendingGeneratedLooks"]) {
+  for (const field of ["creatorsTotal", "designersTotal", "pendingProducts", "pendingGeneratedLooks"]) {
     assert.match(page, new RegExp(`stats\\.${field}`));
     assert.match(db, new RegExp(field));
   }

@@ -6,8 +6,8 @@ export default async function AdminDashboardPage() {
   const stats = await getAdminDashboardStats();
 
   const actions = [
-    { n: stats.pendingCreators, l: "크리에이터 승인", d: "가입 신청 검토", href: "/dashboard/admin/creators" },
-    { n: stats.pendingDesigners, l: "브랜드 파트너 승인", d: "브랜드 신청 검토", href: "/dashboard/admin/designers" },
+    { n: stats.creatorsTotal, l: "크리에이터 현황", d: "가입·활동 계정", href: "/dashboard/admin/creators" },
+    { n: stats.designersTotal, l: "브랜드 파트너 현황", d: "패션·뷰티 브랜드", href: "/dashboard/admin/designers" },
     { n: stats.pendingProducts, l: "상품 검수", d: "비공개 상품 확인", href: "/dashboard/admin/products" },
     { n: stats.pendingGeneratedLooks, l: "AI 콘텐츠 검수", d: "생성 결과 공개 검토", href: "/dashboard/admin/generated-looks" },
   ];

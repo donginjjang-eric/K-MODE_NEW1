@@ -95,7 +95,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "처리에 실패했습니다.");
       setStatusOverrides((current) => ({ ...current, [selected.u.id]: { kind: quickApproval.kind, status: "approved" } }));
-      setToast(`${quickApproval.kind === "creator" ? selected.u.creator_name : selected.u.brand_name || selected.presentation.profileLabel} 승인 완료`);
+      setToast(`${quickApproval.kind === "creator" ? selected.u.creator_name : selected.u.brand_name || selected.presentation.profileLabel} 이용 활성화 완료`);
       setSelectedId(null);
       router.refresh();
     } catch (cause) {
@@ -141,7 +141,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
 
   const holdReview = () => {
     if (!selected) return;
-    setToast(`${selected.presentation.profileLabel} 승인 대기 유지`);
+    setToast(`${selected.presentation.profileLabel} 상태 유지`);
     setSelectedId(null);
   };
 
@@ -157,10 +157,10 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
       <div className="apm-bar">
         <div className="apm-chips">
           {chip("all", "전체", counts.all)}
-          {chip("creator_approved", "승인 크리에이터", counts.creator_approved)}
-          {chip("creator_pending", "크리에이터 승인 대기", counts.creator_pending)}
-          {chip("designer_approved", "승인 브랜드 파트너", counts.designer_approved)}
-          {chip("designer_pending", "브랜드 파트너 승인 대기", counts.designer_pending)}
+          {chip("creator_approved", "크리에이터", counts.creator_approved)}
+          {chip("creator_pending", "크리에이터 등록 처리 중", counts.creator_pending)}
+          {chip("designer_approved", "브랜드 파트너", counts.designer_approved)}
+          {chip("designer_pending", "브랜드 등록 처리 중", counts.designer_pending)}
           {chip("not_applied", "계정만 가입", counts.not_applied)}
           {chip("admin", "관리자", counts.admin)}
           {chip("disabled", "비활성", counts.disabled)}
@@ -189,7 +189,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
               <span>계정</span>
               <span>역할</span>
               <span>브랜드 / 상태</span>
-              <span className="col-action">승인 관리</span>
+              <span className="col-action">권한 관리</span>
               <span className="col-date">가입일</span>
             </div>
             {pageUsers.map(({ u, presentation }) => (
@@ -225,7 +225,7 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
                 </span>
                 <span className="col-action">
                   <button className="aum-review-button" type="button" onClick={(event) => { lastTriggerRef.current = event.currentTarget; setError(""); setSelectedId(u.id); }}>
-                    {adminUserQuickApproval(u) ? "검토·승인" : "권한 관리"}
+                    {adminUserQuickApproval(u) ? "권한 확인" : "권한 관리"}
                   </button>
                 </span>
                 <span className="col-date">{formatAdminJoinDate(u.created_at)}</span>
@@ -240,12 +240,12 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
         <div className="aum-review-layer" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedId(null); }}>
           <aside className="aum-review-drawer" ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby="aum-review-title" tabIndex={-1}>
             <header>
-              <div><span>MEMBER ACCESS</span><h2 id="aum-review-title">회원 승인·작업공간 관리</h2></div>
-              <button type="button" aria-label="승인 패널 닫기" onClick={() => setSelectedId(null)}>×</button>
+              <div><span>MEMBER ACCESS</span><h2 id="aum-review-title">회원 등급·작업공간 관리</h2></div>
+              <button type="button" aria-label="권한 패널 닫기" onClick={() => setSelectedId(null)}>×</button>
             </header>
             <section className="aum-review-identity">
               <div>{(selected.u.email[0] || "?").toUpperCase()}</div>
-              <span><em>{quickApproval ? "승인 대기" : "가입 회원"}</em><strong>{quickApproval?.kind === "creator" ? selected.u.creator_name || "활동명 미입력" : selected.u.brand_name || selected.presentation.profileLabel}</strong><small>{selected.u.email}</small></span>
+              <span><em>{quickApproval ? "등록 처리 중" : "가입 회원"}</em><strong>{quickApproval?.kind === "creator" ? selected.u.creator_name || "활동명 미입력" : selected.u.brand_name || selected.presentation.profileLabel}</strong><small>{selected.u.email}</small></span>
             </section>
             {quickApproval ? <><dl className="aum-review-facts">
               <div><dt>신청 유형</dt><dd>{quickApproval.kind === "creator" ? "크리에이터" : "브랜드 파트너"}</dd></div>
@@ -263,8 +263,8 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
             </dl>
             {error ? <p className="aum-review-error" role="alert">{error}</p> : null}
             <footer>
-              <button className="aum-hold-button" type="button" disabled={busy} onClick={holdReview}>승인 보류</button>
-              <button className="aum-approve-button" type="button" disabled={busy} onClick={review}>{busy ? "처리 중…" : "승인하기"}</button>
+              <button className="aum-hold-button" type="button" disabled={busy} onClick={holdReview}>나중에 처리</button>
+              <button className="aum-approve-button" type="button" disabled={busy} onClick={review}>{busy ? "처리 중…" : "이용 활성화"}</button>
             </footer>
             {selected.presentation.href ? <Link className="aum-full-detail" href={selected.presentation.href}>전체 상세 정보 보기</Link> : null}</> : null}
             <AdminUserWorkspaceManager userId={selected.u.id} email={selected.u.email} onChanged={(message) => { setToast(message); router.refresh(); }} />
