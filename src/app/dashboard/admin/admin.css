@@ -252,6 +252,22 @@ body:has(.admin-studio) .quick-link-stack { display: none !important; }
 .admin-studio .admin-audit-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
 .admin-studio .admin-audit-list li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #eee9e1; padding: 10px 0; color: #514a43; font-size: 11px; }
 .admin-studio .admin-audit-list span { color: #918a80; }
+.admin-studio .auw-manager { margin-top: 20px; border-top: 1px solid #ddd5c9; padding-top: 18px; }
+.admin-studio .auw-manager > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-studio .auw-manager > header span { color: #9a6b20; font-size: 10px; font-weight: 800; letter-spacing: .14em; }
+.admin-studio .auw-manager h3 { margin: 4px 0 0; font-size: 20px; }
+.admin-studio .auw-manager button { border: 1px solid #172033; background: #fff; padding: 9px 12px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.admin-studio .auw-manager button:disabled { cursor: wait; opacity: .5; }
+.admin-studio .auw-create { display: grid; gap: 10px; margin-top: 14px; padding: 14px; background: #f7f2e9; }
+.admin-studio .auw-create label { display: grid; gap: 6px; font-size: 11px; font-weight: 800; }
+.admin-studio .auw-create input { min-width: 0; border: 1px solid #cfc6b8; padding: 10px; font: inherit; }
+.admin-studio .auw-list { display: grid; gap: 8px; margin-top: 14px; }
+.admin-studio .auw-row { display: grid; grid-template-columns: minmax(120px, 1fr) auto; gap: 8px 12px; border: 1px solid #ddd5c9; border-left: 4px solid #d6a13b; padding: 12px; }
+.admin-studio .auw-row.is-active { border-left-color: #269267; }
+.admin-studio .auw-row.is-disabled, .admin-studio .auw-row.is-rejected { border-left-color: #a7a7a7; opacity: .76; }
+.admin-studio .auw-row > div:first-child { display: grid; gap: 3px; }
+.admin-studio .auw-row small, .admin-studio .auw-row > span, .admin-studio .auw-state { color: #6f675d; font-size: 11px; }
+.admin-studio .auw-actions { display: flex; grid-column: 1 / -1; flex-wrap: wrap; gap: 6px; }
 
 @media (max-width: 1180px) {
   .admin-studio .admin-creator-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }

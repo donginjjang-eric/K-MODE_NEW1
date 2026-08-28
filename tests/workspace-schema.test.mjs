@@ -32,9 +32,11 @@ test("workspace backfill never overwrites any existing membership state", async 
   const domain = await readFile(new URL("../src/lib/workspace-access.ts", import.meta.url), "utf8");
   const schemaConflicts = schema.match(/ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING/g) ?? [];
   const runtimeConflicts = domain.match(/ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING/g) ?? [];
+  const runtimeInserts = domain.match(/INSERT INTO user_workspace_memberships/g) ?? [];
 
   assert.equal(schemaConflicts.length, 4);
-  assert.equal(runtimeConflicts.length, 4);
+  assert.equal(runtimeConflicts.length, runtimeInserts.length);
+  assert.ok(runtimeConflicts.length >= 4);
   assert.doesNotMatch(schema, /ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO UPDATE/);
   assert.doesNotMatch(domain, /ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO UPDATE/);
 });

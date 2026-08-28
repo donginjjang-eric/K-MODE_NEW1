@@ -319,6 +319,21 @@ CREATE INDEX IF NOT EXISTS user_workspace_memberships_user_status_idx
 CREATE INDEX IF NOT EXISTS user_workspace_memberships_resource_idx
   ON user_workspace_memberships(workspace_type, resource_id);
 
+-- 기존 중복 기본값은 가장 최근 항목 하나만 보존한 뒤 DB 수준에서 재발을 차단한다.
+WITH ranked_defaults AS (
+  SELECT id, row_number() OVER (PARTITION BY user_id ORDER BY updated_at DESC, created_at DESC, id DESC) AS rank
+    FROM user_workspace_memberships
+   WHERE is_default = true AND status = 'active'
+)
+UPDATE user_workspace_memberships memberships
+   SET is_default = false, updated_at = now()
+  FROM ranked_defaults
+ WHERE memberships.id = ranked_defaults.id AND ranked_defaults.rank > 1;
+
+CREATE UNIQUE INDEX IF NOT EXISTS user_workspace_memberships_one_active_default_idx
+  ON user_workspace_memberships(user_id)
+  WHERE is_default = true AND status = 'active';
+
 -- 기존 기본 역할은 새 권한을 추가할 뿐 다른 작업공간을 제거하지 않는다.
 INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
 SELECT id, 'admin', NULL, 'active', role = 'admin'

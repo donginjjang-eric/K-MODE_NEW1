@@ -854,6 +854,14 @@ export async function updateManagedCreatorPublicProfile(actorUserId: string, cre
         after.instagramHandle, after.instagramUrl, after.instagramFollowers, after.tiktokHandle, after.tiktokUrl,
         after.tiktokFollowers, after.followersVerifiedAt],
     );
+    if (before.user_id && patch.approvalStatus) {
+      await client.query(
+        `UPDATE user_workspace_memberships
+            SET status = $3, is_default = CASE WHEN $3 = 'active' THEN is_default ELSE false END, updated_at = now()
+          WHERE user_id = $1 AND resource_id = $2 AND workspace_type = 'creator'`,
+        [before.user_id, before.id, patch.approvalStatus === "approved" ? "active" : patch.approvalStatus],
+      );
+    }
     if (after.approvalStatus === "approved" && before.user_id) {
       await client.query(
         `UPDATE users

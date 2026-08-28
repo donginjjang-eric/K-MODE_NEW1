@@ -1,10 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
-import { createDesignerApplication, getCreatorAccountForUser, getDesignerLinkUserId, getUserById } from "@/lib/db";
-import { designerApplicationRoleGuard } from "@/lib/creator-onboarding";
-
-function requiredText(value: unknown) {
-  return typeof value === "string" ? value.trim() : "";
-}
+import { getCreatorAccountForUser, getUserById, withDatabaseTransaction } from "@/lib/db";
+import { createPartnerApplication, designerApplicationRoleGuard, validatePartnerApplicationInput } from "@/lib/creator-onboarding";
 
 export async function POST(request: Request) {
   // 신청은 구글 로그인 후에만 가능 (화면 게이트와 동일한 규칙을 서버에서도 강제 — 스팸 차단)
@@ -25,35 +21,20 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "Invalid application payload." }, { status: 400 });
   }
 
-  const brandName = requiredText((body as { brand?: unknown }).brand);
-  const designerName = requiredText((body as { designer?: unknown }).designer);
-  const email = requiredText((body as { email?: unknown }).email).toLowerCase();
-  const phone = requiredText((body as { phone?: unknown }).phone);
-  const headline = requiredText((body as { headline?: unknown }).headline);
-  const category = requiredText((body as { category?: unknown }).category);
-
-  if (!brandName || !designerName || !email || !phone || !["K-뷰티", "K-패션", "복합"].includes(category)) {
-    return Response.json({ ok: false, error: "브랜드 정보와 분야(K-뷰티·K-패션·복합)를 모두 입력해 주세요." }, { status: 400 });
-  }
-
-  // 신청 이메일과 같은 회원 계정이 있으면 그 회원에 연결하고, 없으면 같은 로그인 계정일 때만 연결한다.
-  const linkUserId = await getDesignerLinkUserId({
-    sessionUserId: accountUser.id,
-    sessionUserEmail: accountUser.email,
-    contactEmail: email,
-  });
+  const validated = validatePartnerApplicationInput(body);
+  if (!validated.ok) return Response.json({ ok: false, error: validated.error }, { status: 400 });
+  const { brandName, designerName, contactEmail, contactPhone, description, category } = validated.value;
 
   try {
-    const designer = await createDesignerApplication({
-      brand_name: brandName,
-      designer_name: designerName,
-      contact_email: email,
-      contact_phone: phone,
-      description: headline,
-      brand_category: category,
-      country: "South Korea",
-      user_id: linkUserId,
-    });
+    const { designer } = await withDatabaseTransaction((client) => createPartnerApplication(client, {
+      userId: accountUser.id,
+      brandName,
+      designerName,
+      contactEmail,
+      contactPhone,
+      description,
+      category,
+    }));
     return Response.json({ ok: true, designer });
   } catch (error) {
     console.error("[applications] create failed:", error instanceof Error ? error.message : error);

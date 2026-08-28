@@ -256,7 +256,11 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
         ) : isAgency ? (
           <><p className="login-google-hint">관리 대행사 계정으로 로그인되어 있어요.</p><a className="generate-button login-status-cta" href="/dashboard/agency">대행사 조회 화면 열기</a></>
         ) : isCreator ? (
-          <><p className="login-google-hint">{me.creator?.displayName || "크리에이터"} 계정으로 로그인되어 있어요.</p><a className="generate-button login-status-cta" href="/dashboard/creator">크리에이터 센터 열기</a></>
+          <>
+            <p className="login-google-hint">{me.creator?.displayName || "크리에이터"} 계정으로 로그인되어 있어요.</p>
+            <a className="generate-button login-status-cta" href="/dashboard/creator">크리에이터 센터 열기</a>
+            <a className="login-email-toggle" href="/apply">뷰티·패션 브랜드 작업공간 신청하기</a>
+          </>
         ) : isCreatorPending ? (
           <div className="login-onboard"><p className="login-onboard-title">크리에이터 신청 검토 중</p><p className="login-google-hint"><b>{me.creator?.displayName}</b>님의 SNS와 프로필을 운영팀이 확인하고 있어요. 승인 후 같은 Google 계정으로 로그인하면 크리에이터 센터가 열립니다.</p><ol className="login-steps"><li className="is-done"><span>✓</span><div><b>크리에이터 신청</b><small>접수 완료</small></div></li><li className="is-active"><span>2</span><div><b>관리자 승인</b><small>프로필·SNS 확인 중</small></div></li><li><span>3</span><div><b>크리에이터 센터 오픈</b><small>캠페인·거래·정산 관리</small></div></li></ol></div>
         ) : isApproved ? (

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminPagination from "@/components/AdminPagination";
+import AdminUserWorkspaceManager from "@/components/AdminUserWorkspaceManager";
 import type { AdminUserRow } from "@/lib/db";
 import { paginateAdminItems } from "@/lib/admin-list-utils";
 import { adminUserPresentation, adminUserQuickApproval, formatAdminJoinDate, type AdminUserSegment } from "@/lib/admin-user-presentation";
@@ -223,11 +224,9 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
                   )}
                 </span>
                 <span className="col-action">
-                  {adminUserQuickApproval(u) ? (
-                    <button className="aum-review-button" type="button" onClick={(event) => { lastTriggerRef.current = event.currentTarget; setError(""); setSelectedId(u.id); }}>검토·승인</button>
-                  ) : presentation.href ? (
-                    <Link className="aum-detail-link" href={presentation.href}>상세 보기</Link>
-                  ) : <em className="brand-empty">-</em>}
+                  <button className="aum-review-button" type="button" onClick={(event) => { lastTriggerRef.current = event.currentTarget; setError(""); setSelectedId(u.id); }}>
+                    {adminUserQuickApproval(u) ? "검토·승인" : "권한 관리"}
+                  </button>
                 </span>
                 <span className="col-date">{formatAdminJoinDate(u.created_at)}</span>
               </article>
@@ -237,18 +236,18 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
       ) : (
         <div className="st-empty compact"><p>조건에 맞는 회원이 없습니다.</p></div>
       )}
-      {selected && quickApproval ? (
+      {selected ? (
         <div className="aum-review-layer" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedId(null); }}>
           <aside className="aum-review-drawer" ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby="aum-review-title" tabIndex={-1}>
             <header>
-              <div><span>QUICK APPROVAL</span><h2 id="aum-review-title">{quickApproval.kind === "creator" ? "크리에이터" : "브랜드 파트너"} 승인 검토</h2></div>
+              <div><span>MEMBER ACCESS</span><h2 id="aum-review-title">회원 승인·작업공간 관리</h2></div>
               <button type="button" aria-label="승인 패널 닫기" onClick={() => setSelectedId(null)}>×</button>
             </header>
             <section className="aum-review-identity">
               <div>{(selected.u.email[0] || "?").toUpperCase()}</div>
-              <span><em>승인 대기</em><strong>{quickApproval.kind === "creator" ? selected.u.creator_name || "활동명 미입력" : selected.u.brand_name || "브랜드명 미입력"}</strong><small>{selected.u.email}</small></span>
+              <span><em>{quickApproval ? "승인 대기" : "가입 회원"}</em><strong>{quickApproval?.kind === "creator" ? selected.u.creator_name || "활동명 미입력" : selected.u.brand_name || selected.presentation.profileLabel}</strong><small>{selected.u.email}</small></span>
             </section>
-            <dl className="aum-review-facts">
+            {quickApproval ? <><dl className="aum-review-facts">
               <div><dt>신청 유형</dt><dd>{quickApproval.kind === "creator" ? "크리에이터" : "브랜드 파트너"}</dd></div>
               <div><dt>가입일</dt><dd>{formatAdminJoinDate(selected.u.created_at)}</dd></div>
               {quickApproval.kind === "creator" ? <>
@@ -267,7 +266,8 @@ export default function AdminUsersManager({ users }: { users: AdminUserRow[] }) 
               <button className="aum-hold-button" type="button" disabled={busy} onClick={holdReview}>승인 보류</button>
               <button className="aum-approve-button" type="button" disabled={busy} onClick={review}>{busy ? "처리 중…" : "승인하기"}</button>
             </footer>
-            <Link className="aum-full-detail" href={selected.presentation.href || "#"}>전체 상세 정보 보기</Link>
+            {selected.presentation.href ? <Link className="aum-full-detail" href={selected.presentation.href}>전체 상세 정보 보기</Link> : null}</> : null}
+            <AdminUserWorkspaceManager userId={selected.u.id} email={selected.u.email} onChanged={(message) => { setToast(message); router.refresh(); }} />
           </aside>
         </div>
       ) : null}
