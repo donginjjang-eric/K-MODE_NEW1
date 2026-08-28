@@ -31,3 +31,15 @@ test("workspace account cards clearly identify the active center", async () => {
   assert.match(fashion, /centerLabel="패션 브랜드 센터"/);
   assert.match(beauty, /centerLabel="뷰티 브랜드 센터"/);
 });
+
+test("master preview sidebars keep the account card inside the viewport", async () => {
+  const [creatorCss, studioCss, beautyCss] = await Promise.all([
+    readFile(new URL("../src/app/dashboard/creator/creator.css", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/dashboard/designer/studio.css", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/dashboard/beauty/beauty.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(creatorCss, /creator-center:has\(\.master-workspace-bar\).*creator-rail/);
+  assert.match(studioCss, /studio:has\(> \.master-workspace-bar\).*st-side/);
+  assert.match(beautyCss, /beauty-partner:has\(> \.master-workspace-bar\).*beauty-side/);
+});

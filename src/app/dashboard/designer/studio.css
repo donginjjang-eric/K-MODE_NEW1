@@ -30,6 +30,8 @@
 
 .st-shell { display: grid; grid-template-columns: 230px minmax(0,1fr); max-width: 1240px; margin: 0 auto; }
 .st-side { padding: 22px 14px; position: sticky; top: 61px; align-self: start; height: calc(100vh - 61px); display: flex; flex-direction: column; }
+.studio:has(> .master-workspace-bar) .st-side { top: 110px; height: calc(100dvh - 110px); }
+.st-side > nav { min-height: 0; overflow-y: auto; }
 .st-side nav { display: flex; flex-direction: column; gap: 4px; }
 .admin-nav-group { display: grid; gap: 3px; padding: 0 0 12px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
 .admin-nav-group:last-child { margin-bottom: 0; border-bottom: 0; }
