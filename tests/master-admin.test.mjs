@@ -11,11 +11,12 @@ test("the designated owner account is recognized as master admin", () => {
   assert.equal(isMasterAdminEmail("other@example.com"), false);
 });
 
-test("master admin can switch among all three service surfaces", () => {
+test("master admin can switch among all four service surfaces", () => {
   assert.deepEqual(masterRoleDestinations, [
     { key: "admin", label: "관리자 콘솔", href: "/dashboard/admin" },
     { key: "creator", label: "크리에이터 화면", href: "/dashboard/creator" },
-    { key: "designer", label: "브랜드 파트너 센터", href: "/dashboard/designer/brand" },
+    { key: "fashion_partner", label: "패션 브랜드 센터", href: "/dashboard/designer/brand" },
+    { key: "beauty_partner", label: "뷰티 브랜드 센터", href: "/dashboard/beauty" },
   ]);
-  assert.equal(getMasterRoleDestinations("K-뷰티")[2].href, "/dashboard/beauty");
+  assert.equal(getMasterRoleDestinations("K-뷰티")[3].href, "/dashboard/beauty");
 });

@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const source = (path) => readFile(new URL(path, import.meta.url), "utf8");
-const normalizedHash = (value) => createHash("sha256").update(value.replaceAll("\r\n", "\n")).digest("hex");
 
 test("beauty routes use the guarded partner identity and owner-scoped existing data", async () => {
   const [layout, home, brand, products] = await Promise.all([
@@ -46,23 +44,29 @@ test("beauty shell is distinct, responsive, and exposes only real current data",
   assert.match(css, /@media \(max-width: 760px\)/);
 });
 
-test("designer studio route shell and navigation remain byte-for-byte at the Task 3 baseline", async () => {
+test("fashion studio shell resolves the selected fashion workspace", async () => {
   const [layout, nav] = await Promise.all([
     source("../src/app/dashboard/designer/layout.tsx"),
     source("../src/components/StudioNav.tsx"),
   ]);
-  assert.equal(normalizedHash(layout), "fb8e3696a063c8aeb961944258981d9579f615a6ecb94c9b9d805a9f16f24ecc");
-  assert.equal(normalizedHash(nav), "534c66c1994d75891efe74dd7100e3e12ace1aba04027c8044627fa6dee34f0b");
+  assert.match(layout, /requireFashionPartner\(\)/);
+  assert.doesNotMatch(layout, /requireApprovedDesigner\(/);
+  assert.match(layout, /active="fashion_partner"/);
+  assert.match(nav, /\/dashboard\/designer\/brand/);
+  assert.doesNotMatch(nav, /\/dashboard\/beauty/);
 });
 
-test("existing product mutations remain authenticated and owner-scoped", async () => {
+test("existing product mutations use the selected workspace owner guard", async () => {
   const [collection, item] = await Promise.all([
     source("../src/app/api/products/route.ts"),
     source("../src/app/api/products/[id]/route.ts"),
   ]);
-  assert.match(collection, /getApprovedDesignerForApi\(\)/);
+  assert.match(collection, /getSelectedPartnerForApi\(request\)/);
+  assert.doesNotMatch(collection, /getApprovedDesignerForApi/);
   assert.match(collection, /createProductForDesigner\(\{[\s\S]*designerId:\s*designer\.id/);
-  assert.match(item, /getApprovedDesignerForApi\(\)/);
+  assert.match(item, /getSelectedPartnerForApi\(request\)/);
+  assert.doesNotMatch(item, /getApprovedDesignerForApi/);
+  assert.match(item, /getProductForDesigner\(designer\.id, id\)/);
   assert.match(item, /updateProductForDesigner\(designer\.id, id/);
   assert.match(item, /updateProductForDesigner\(designer\.id, id, \{ status: "hidden" \}\)/);
 });

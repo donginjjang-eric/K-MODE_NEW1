@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 const source = (path) => readFile(new URL(path, import.meta.url), "utf8");
 const exists = async (path) => (await stat(new URL(path, import.meta.url))).isFile();
-const normalizedHash = (value) => createHash("sha256").update(value.replaceAll("\r\n", "\n")).digest("hex");
 
 const pages = ["campaigns", "proposals", "content", "orders", "settlements"];
 const mutationRoutes = [
@@ -87,11 +85,14 @@ test("beauty primary navigation contains all eight active destinations and fits 
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*?\.beauty-mobile-nav\s*{[\s\S]*?grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\)/);
 });
 
-test("existing fashion designer shell remains byte-for-byte unchanged", async () => {
+test("fashion designer shell uses the selected fashion workspace contract", async () => {
   const [layout, nav] = await Promise.all([
     source("../src/app/dashboard/designer/layout.tsx"),
     source("../src/components/StudioNav.tsx"),
   ]);
-  assert.equal(normalizedHash(layout), "fb8e3696a063c8aeb961944258981d9579f615a6ecb94c9b9d805a9f16f24ecc");
-  assert.equal(normalizedHash(nav), "534c66c1994d75891efe74dd7100e3e12ace1aba04027c8044627fa6dee34f0b");
+  assert.match(layout, /requireFashionPartner\(\)/);
+  assert.doesNotMatch(layout, /requireApprovedDesigner\(/);
+  assert.match(layout, /active="fashion_partner"/);
+  assert.match(nav, /\/dashboard\/designer\/products/);
+  assert.doesNotMatch(nav, /\/dashboard\/beauty/);
 });
