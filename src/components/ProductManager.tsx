@@ -54,9 +54,9 @@ const emptyForm = (mode: "fashion" | "beauty"): FormState => ({
   visibility: "active",
 });
 
-export default function ProductManager({ initialProducts, mode = "fashion" }: { initialProducts: Product[]; mode?: "fashion" | "beauty" }) {
+export default function ProductManager({ initialProducts, mode = "fashion", membershipId }: { initialProducts: Product[]; mode?: "fashion" | "beauty"; membershipId: string }) {
   const workspaceType = mode === "beauty" ? "beauty_partner" : "fashion_partner";
-  const workspaceHeaders = { "x-kmodu-workspace": workspaceType };
+  const workspaceHeaders = { "x-kmodu-workspace": workspaceType, "x-kmodu-membership": membershipId };
   const productKinds = mode === "beauty" ? BEAUTY_PRODUCT_KINDS : FASHION_PRODUCT_KINDS;
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [activeCategory, setActiveCategory] = useState("전체");

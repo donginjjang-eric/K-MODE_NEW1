@@ -224,7 +224,8 @@ export async function getSelectedPartnerForApi(request: Request) {
 
   const workspaceType = parsePartnerWorkspaceType(request.headers.get("x-kmodu-workspace"));
   if (!workspaceType) return { ok: false as const, status: 400, error: "패션 또는 뷰티 작업공간을 확인해주세요." };
-  const membershipId = (await cookies()).get(workspaceCookieName)?.value || null;
+  const requestedMembershipId = request.headers.get("x-kmodu-membership")?.trim() || null;
+  const membershipId = requestedMembershipId || (await cookies()).get(workspaceCookieName)?.value || null;
   if (!membershipId) return { ok: false as const, status: 403, error: "선택된 브랜드 작업공간이 없습니다." };
 
   const workspace = await resolveUserWorkspace({
