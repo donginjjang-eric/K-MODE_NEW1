@@ -299,6 +299,70 @@ CREATE TABLE IF NOT EXISTS creator_management_group_users (
   UNIQUE (group_id, invited_email)
 );
 
+-- 한 계정이 관리자·크리에이터·패션·뷰티·대행사 권한을 독립적으로 보유하는 권한 원장.
+CREATE TABLE IF NOT EXISTS user_workspace_memberships (
+  id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  workspace_type text NOT NULL CHECK (workspace_type IN ('admin', 'creator', 'fashion_partner', 'beauty_partner', 'agency')),
+  resource_id text,
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'disabled', 'rejected')),
+  is_default boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT user_workspace_memberships_identity_key
+    UNIQUE NULLS NOT DISTINCT (user_id, workspace_type, resource_id)
+);
+
+CREATE INDEX IF NOT EXISTS user_workspace_memberships_user_status_idx
+  ON user_workspace_memberships(user_id, status);
+
+CREATE INDEX IF NOT EXISTS user_workspace_memberships_resource_idx
+  ON user_workspace_memberships(workspace_type, resource_id);
+
+-- 기존 기본 역할은 새 권한을 추가할 뿐 다른 작업공간을 제거하지 않는다.
+INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
+SELECT id, 'admin', NULL, 'active', role = 'admin'
+  FROM users
+ WHERE role = 'admin'
+ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING;
+
+INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
+SELECT user_id, 'creator', id,
+       CASE approval_status WHEN 'approved' THEN 'active' WHEN 'disabled' THEN 'disabled' ELSE 'pending' END,
+       false
+  FROM creator_accounts
+ WHERE user_id IS NOT NULL
+ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING;
+
+-- 복합 브랜드는 동일 designer 리소스에 패션·뷰티 작업공간을 각각 만든다.
+INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
+SELECT designers.user_id, workspace_types.workspace_type, designers.id,
+       CASE designers.approval_status
+         WHEN 'approved' THEN 'active'
+         WHEN 'disabled' THEN 'disabled'
+         WHEN 'rejected' THEN 'rejected'
+         ELSE 'pending'
+       END,
+       false
+  FROM designers
+  CROSS JOIN LATERAL (
+    SELECT 'fashion_partner'::text AS workspace_type
+     WHERE lower(trim(designers.brand_category)) IN ('k-패션', '패션', 'k-fashion', 'fashion', '미분류', '복합', '하이브리드', 'hybrid', 'both')
+    UNION ALL
+    SELECT 'beauty_partner'::text AS workspace_type
+     WHERE lower(trim(designers.brand_category)) IN ('k-뷰티', '뷰티', 'k-beauty', 'beauty', '복합', '하이브리드', 'hybrid', 'both')
+  ) workspace_types
+ WHERE designers.user_id IS NOT NULL
+ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING;
+
+INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
+SELECT user_id, 'agency', group_id,
+       CASE invite_status WHEN 'active' THEN 'active' WHEN 'revoked' THEN 'disabled' ELSE 'pending' END,
+       false
+  FROM creator_management_group_users
+ WHERE user_id IS NOT NULL
+ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS creator_management_audit_logs (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
   actor_user_id text NOT NULL REFERENCES users(id),

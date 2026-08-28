@@ -1,4 +1,16 @@
 export type Role = "admin" | "designer" | "creator" | "agency";
+export type WorkspaceType = "admin" | "creator" | "fashion_partner" | "beauty_partner" | "agency";
+export type WorkspaceStatus = "pending" | "active" | "disabled" | "rejected";
+export type UserWorkspaceMembership = {
+  id: string;
+  user_id: string;
+  workspace_type: WorkspaceType;
+  resource_id: string | null;
+  status: WorkspaceStatus;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+};
 export type ApprovalStatus = "pending" | "approved" | "rejected" | "disabled";
 export type CreatorApprovalStatus = "pending" | "approved" | "disabled";
 export type CreatorOnboardingSource = "self_registered" | "admin";
