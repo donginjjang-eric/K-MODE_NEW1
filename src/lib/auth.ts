@@ -126,7 +126,7 @@ export async function requireApprovedDesigner(loginDestination = loginEntryUrl("
     if (!adminDesigner) redirect("/login?notice=studio_profile_required");
     return { user, designer: adminDesigner };
   }
-  if (!designer || designer.approval_status !== "approved") redirect("/login?error=approval_required");
+  if (!designer || designer.approval_status === "disabled" || designer.approval_status === "rejected") redirect("/login?error=designer_required");
   return { user, designer };
 }
 
@@ -256,8 +256,8 @@ export async function getApprovedDesignerForApi() {
     }
     return { ok: true as const, user, designer };
   }
-  if (!designer || designer.approval_status !== "approved") {
-    return { ok: false as const, status: 403, error: "승인된 디자이너 계정만 사용할 수 있습니다." };
+  if (!designer || designer.approval_status === "disabled" || designer.approval_status === "rejected") {
+    return { ok: false as const, status: 403, error: "사용 가능한 디자이너 계정이 필요합니다." };
   }
 
   return { ok: true as const, user, designer };
@@ -265,7 +265,7 @@ export async function getApprovedDesignerForApi() {
 
 export async function requireApprovedCreator(): Promise<{ user: SessionUser; creator: CreatorAccount }> {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "creator" && user.role !== "admin")) redirect("/login?error=creator_required");
+  if (!user) redirect("/login?error=creator_required");
 
   if (user.role === "admin") {
     const adminCreator = await getOrCreateAdminCreatorAccount(user.id, user.email);
@@ -275,13 +275,13 @@ export async function requireApprovedCreator(): Promise<{ user: SessionUser; cre
 
   const creator = await getCreatorAccountForUser(user.id);
   if (!creator) redirect("/login?error=creator_required");
-  if (creator.approval_status !== "approved") redirect("/login?error=creator_approval_required");
+  if (creator.approval_status === "disabled") redirect("/login?error=creator_required");
   return { user, creator };
 }
 
 export async function getApprovedCreatorForApi() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "creator" && user.role !== "admin")) {
+  if (!user) {
     return { ok: false as const, status: 401, error: "Creator authentication is required." };
   }
 
@@ -291,8 +291,8 @@ export async function getApprovedCreatorForApi() {
   if (!creator) {
     return { ok: false as const, status: 403, error: "Creator account is required." };
   }
-  if (creator.approval_status !== "approved") {
-    return { ok: false as const, status: 403, error: "Creator approval is required." };
+  if (creator.approval_status === "disabled") {
+    return { ok: false as const, status: 403, error: "An active creator account is required." };
   }
   return { ok: true as const, user, creator };
 }

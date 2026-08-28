@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getActiveWorkspaceDestinations, getMasterRoleDestinations, isMasterAdminEmail } from "@/lib/master-admin";
 import { listUserWorkspaces } from "@/lib/workspace-access";
+import { accountRoleBadgeLabel } from "@/lib/account-role-badge";
 
 export default async function MasterRoleSwitcher({
   userId,
@@ -19,6 +20,7 @@ export default async function MasterRoleSwitcher({
   return (
     <div className="master-workspace-bar">
       <div className="master-access-control">
+        <span className={`account-role-badge is-${active}`}>{accountRoleBadgeLabel(email, active)}</span>
         {isMaster ? <span className="master-access-badge">마스터 권한</span> : null}
         <nav className="master-workspace-switcher" aria-label="마스터 관리자 화면 전환">
           <span className="master-workspace-label">화면 전환</span>

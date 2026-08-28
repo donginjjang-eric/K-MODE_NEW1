@@ -75,7 +75,7 @@ export async function createPartnerApplication(client: DatabaseTransactionClient
   const designerResult = await client.query(
     `INSERT INTO designers
        (brand_name, designer_name, contact_email, contact_phone, description, brand_category, mood, country, approval_status, user_id)
-     VALUES ($1, $2, $3, $4, $5, $6, '', 'South Korea', 'pending', $7)
+     VALUES ($1, $2, $3, $4, $5, $6, '', 'South Korea', 'approved', $7)
      RETURNING *`,
     [input.brandName, input.designerName, input.contactEmail, input.contactPhone, input.description, input.category, input.userId],
   );
@@ -87,7 +87,7 @@ export async function createPartnerApplication(client: DatabaseTransactionClient
       `INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
        VALUES ($1, $2, $3, $4, false)
        ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key DO NOTHING`,
-      [input.userId, workspaceType, designer.id, "pending"],
+      [input.userId, workspaceType, designer.id, "active"],
     );
   }
   await client.query(

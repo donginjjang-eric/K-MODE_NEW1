@@ -1636,13 +1636,21 @@ export async function createCreatorApplication(input: import("./creator-onboardi
     `INSERT INTO creator_accounts
        (user_id, creator_key, display_name, google_email, approval_status, platform, market, categories,
         onboarding_source, claim_state, bio, instagram_handle, instagram_url, tiktok_handle, tiktok_url)
-     VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7::jsonb,
+     VALUES ($1, $2, $3, $4, 'approved', $5, $6, $7::jsonb,
              'self_registered', 'claimed', $8, $9, $10, $11, $12)
      RETURNING *`,
     [input.userId, creatorKey, input.displayName, input.email, platform, input.market, JSON.stringify([input.category]),
       input.bio || null, instagramHandle, input.instagramUrl || null, tiktokHandle, input.tiktokUrl || null],
   );
   if (!creator) throw new Error("Failed to create creator application.");
+  await query("UPDATE users SET role = 'creator', updated_at = now() WHERE id = $1 AND role NOT IN ('admin', 'agency')", [input.userId]);
+  await query(
+    `INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
+     VALUES ($1, 'creator', $2, 'active', false)
+     ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key
+     DO UPDATE SET status = 'active', updated_at = now()`,
+    [input.userId, creator.id],
+  );
   return creator;
 }
 
@@ -2023,6 +2031,37 @@ export async function getDesignerForUser(userId: string): Promise<Designer | nul
     if (!canUseDemoData()) throw error;
     return null;
   }
+}
+
+export type PublicBeautyProduct = Product & {
+  brand_name: string;
+  brand_country: string;
+};
+
+/** Public catalogue: only products explicitly published by an approved beauty workspace. */
+export async function getPublicBeautyProducts(limit = 100): Promise<PublicBeautyProduct[]> {
+  if (!hasDatabase()) {
+    requireDatabaseForProduction();
+    return [];
+  }
+
+  return query<PublicBeautyProduct>(
+    `SELECT products.*, designers.brand_name, designers.country AS brand_country
+       FROM products
+       JOIN designers ON designers.id = products.designer_id
+      WHERE products.status = 'active'
+        AND designers.approval_status = 'approved'
+        AND EXISTS (
+          SELECT 1
+            FROM user_workspace_memberships memberships
+           WHERE memberships.resource_id = designers.id
+             AND memberships.workspace_type = 'beauty_partner'
+             AND memberships.status = 'active'
+        )
+      ORDER BY products.created_at DESC
+      LIMIT $1`,
+    [Math.max(1, Math.min(limit, 100))],
+  );
 }
 
 export type MasterPartnerWorkspace = UserWorkspaceMembership & {

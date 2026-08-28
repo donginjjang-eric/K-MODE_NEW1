@@ -29,10 +29,6 @@ export default async function BeautyPartnerLayout({ children }: { children: Reac
         </div>
       </header>
 
-      {designer.approval_status !== "approved" ? (
-        <div className="beauty-approval-banner" role="status">이 브랜드 프로필은 승인 전이며 공개 영역에 노출되지 않습니다.</div>
-      ) : null}
-
       <div className="beauty-shell">
         <BeautyPartnerSideNav
           brandName={designer.brand_name}

@@ -111,12 +111,8 @@ export async function GET(request: Request) {
       const agencyDestination = dest || "/dashboard/agency";
       return Response.redirect(withWelcome(workspaceDestination || agencyDestination), 302);
     }
-    if (designer?.approval_status === "approved") {
+    if (designer && designer.approval_status !== "disabled" && designer.approval_status !== "rejected") {
       return Response.redirect(withWelcome(dest || workspaceDestination || brandPartnerCenterPath(designer.brand_category)), 302);
-    }
-    if (designer) {
-      // 신청서는 있으나 아직 승인 전
-      return Response.redirect(`${origin}/login?notice=approval_pending`, 302);
     }
     if (creator) return Response.redirect(`${origin}${creatorOnboardingDestination(creator)}`, 302);
     // 신청 내역이 없는 신규 계정은 크리에이터/디자이너 유형을 먼저 선택한다.

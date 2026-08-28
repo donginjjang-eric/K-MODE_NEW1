@@ -698,6 +698,21 @@ p {
   white-space: nowrap;
 }
 
+.account-role-badge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #141a28;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
+.account-role-badge.is-creator { background: #0c7b73; }
+.account-role-badge.is-fashion_partner { background: #5e6f30; }
+.account-role-badge.is-beauty_partner { background: #9f526f; }
+
 .master-workspace-switcher {
   display: inline-flex;
   align-items: center;
@@ -735,6 +750,7 @@ p {
 @media (max-width: 760px) {
   .master-workspace-bar { min-height: 44px; padding: 5px 10px; overflow-x: auto; justify-content: flex-start; }
   .master-access-badge, .master-workspace-label { display: none; }
+  .account-role-badge { padding: 5px 8px; font-size: 9px; }
   .master-access-control { gap: 0; min-width: 0; }
   .master-workspace-switcher a { padding: 6px 7px; font-size: 9px; }
 }

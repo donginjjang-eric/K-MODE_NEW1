@@ -182,8 +182,8 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "신청을 접수하지 못했습니다.");
-      setMe((current) => ({ ...current, creator: { id: body.creator.id, displayName: creatorForm.displayName.trim(), approvalStatus: "pending" } }));
-      setMessage("크리에이터 신청이 접수됐어요. 관리자 승인 후 센터가 열립니다.");
+      setMe((current) => ({ ...current, user: current.user ? { ...current.user, role: "creator" } : null, creator: { id: body.creator.id, displayName: creatorForm.displayName.trim(), approvalStatus: "approved" } }));
+      setMessage("등록 완료! 크리에이터 센터를 바로 이용할 수 있어요.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "신청을 접수하지 못했습니다.");
     } finally {
@@ -282,7 +282,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
           </div>
         ) : onboardingType === "creator" ? (
           <form className="login-onboard creator-application-form" onSubmit={submitCreatorApplication} noValidate>
-            <div><button className="login-back-button" type="button" onClick={() => setOnboardingType("")}>← 유형 다시 선택</button><p className="login-onboard-title">크리에이터 등록 신청</p><p className="login-google-hint">공개 프로필과 SNS를 입력하면 운영팀 확인 후 크리에이터 센터가 열립니다.</p></div>
+            <div><button className="login-back-button" type="button" onClick={() => setOnboardingType("")}>← 유형 다시 선택</button><p className="login-onboard-title">크리에이터 등록</p><p className="login-google-hint">공개 프로필과 SNS를 입력하면 크리에이터 센터가 바로 열립니다.</p></div>
             <div className="creator-application-grid">
               <label className="login-field"><span>활동명 *</span><input required value={creatorForm.displayName} onChange={(e) => setCreatorForm({ ...creatorForm, displayName: e.target.value })} /></label>
               <label className="login-field"><span>활동 국가 *</span><input required placeholder="예: Malaysia" value={creatorForm.market} onChange={(e) => setCreatorForm({ ...creatorForm, market: e.target.value })} /></label>
@@ -293,7 +293,7 @@ export default function LoginForm({ googleEnabled = false, previewRoleSelection 
             </div>
             <p className="creator-social-requirement">Instagram 또는 TikTok 중 하나만 입력해도 신청할 수 있어요.</p>
             {creatorSocialErrors.form ? <p className="creator-social-requirement is-error" role="alert">{creatorSocialErrors.form}</p> : null}
-            <button className="generate-button login-status-cta" type="submit" disabled={submitting}>{submitting ? "접수 중…" : "크리에이터 신청하기"}</button>
+            <button className="generate-button login-status-cta" type="submit" disabled={submitting}>{submitting ? "등록 중…" : "크리에이터로 시작하기"}</button>
           </form>
         ) : onboardingType === "designer" ? (
           <div className="login-onboard">

@@ -334,6 +334,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS user_workspace_memberships_one_active_default_
   ON user_workspace_memberships(user_id)
   WHERE is_default = true AND status = 'active';
 
+-- 한시적 오픈 정책: 사람 계정은 별도 승인 대기 없이 즉시 센터를 사용한다.
+-- disabled/rejected와 상품·콘텐츠 공개 검수 상태는 변경하지 않는다.
+ALTER TABLE designers ALTER COLUMN approval_status SET DEFAULT 'approved';
+ALTER TABLE creator_accounts ALTER COLUMN approval_status SET DEFAULT 'approved';
+ALTER TABLE user_workspace_memberships ALTER COLUMN status SET DEFAULT 'active';
+UPDATE creator_accounts SET approval_status = 'approved' WHERE approval_status = 'pending';
+UPDATE designers SET approval_status = 'approved' WHERE approval_status = 'pending';
+UPDATE user_workspace_memberships SET status = 'active' WHERE status = 'pending' AND workspace_type IN ('creator', 'fashion_partner', 'beauty_partner');
+
 -- 기존 기본 역할은 새 권한을 추가할 뿐 다른 작업공간을 제거하지 않는다.
 INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
 SELECT id, 'admin', NULL, 'active', role = 'admin'

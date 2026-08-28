@@ -42,14 +42,14 @@ async function mutate(request: Request, userId: string) {
         const designerResult = await client.query(
           `INSERT INTO designers
              (brand_name, designer_name, contact_email, contact_phone, description, brand_category, mood, country, approval_status, user_id)
-           VALUES ($1, $1, $2, '', '', 'K-뷰티', '', 'South Korea', 'pending', $3)
+           VALUES ($1, $1, $2, '', '', 'K-뷰티', '', 'South Korea', 'approved', $3)
            RETURNING id, brand_name`,
           [brandName, contactEmail, userId],
         );
         const designer = designerResult.rows[0];
         const membershipResult = await client.query(
           `INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
-           VALUES ($1, 'beauty_partner', $2, 'pending', false)
+           VALUES ($1, 'beauty_partner', $2, 'active', false)
            RETURNING *`,
           [userId, designer.id],
         );

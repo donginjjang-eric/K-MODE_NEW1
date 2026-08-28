@@ -35,16 +35,16 @@ export const BEAUTY_PRODUCTS = [
   { id: 'moonlight-glitter-liner', name: 'Moonlight Glitter Liner', category: 'makeup', categoryLabel: 'MAKEUP · EYE', markets: ['VN', 'TW', 'US'], keywords: ['포인트 글리터', '페스티벌', '지속력'], formats: ['Eye Look', 'Night Wear Test'], slots: 21, image: image('beauty-product-collection-b.webp'), sprite: { x: 0, y: 1 }, description: '빛에 따라 반짝이는 포인트와 지속력을 보여주는 글리터 라이너입니다.' },
 ];
 
-export function getMatchingProducts({ category = 'all', market = 'all' } = {}) {
-  return BEAUTY_PRODUCTS.filter((product) => {
+export function getMatchingProducts({ category = 'all', market = 'all' } = {}, products = BEAUTY_PRODUCTS) {
+  return products.filter((product) => {
     const categoryMatch = category === 'all' || product.category === category;
-    const marketMatch = market === 'all' || product.markets.includes(market);
+    const marketMatch = market === 'all' || product.markets.length === 0 || product.markets.includes(market);
     return categoryMatch && marketMatch;
   });
 }
 
-export function getVisibleProductState(filters = {}, visibleLimit = PAGE_SIZE) {
-  const matchingProducts = getMatchingProducts(filters);
+export function getVisibleProductState(filters = {}, visibleLimit = PAGE_SIZE, products = BEAUTY_PRODUCTS) {
+  const matchingProducts = getMatchingProducts(filters, products);
   const safeLimit = Math.max(PAGE_SIZE, visibleLimit);
   const visibleProducts = matchingProducts.slice(0, safeLimit);
 
@@ -56,6 +56,40 @@ export function getVisibleProductState(filters = {}, visibleLimit = PAGE_SIZE) {
 }
 
 const MARKET_NAMES = { VN: '베트남', TW: '대만', US: '미국' };
+
+const normalizeCategory = (value = '') => {
+  const category = String(value).trim().toLowerCase();
+  if (category.includes('스킨') || /skin|cleanser|serum|cream|sun/.test(category)) return 'skincare';
+  if (category.includes('메이크업') || /makeup|lip|eye|base|cheek/.test(category)) return 'makeup';
+  if (category.includes('헤어') || category.includes('바디') || /hair|body|fragrance/.test(category)) return 'hair-body';
+  return 'other';
+};
+
+const categoryLabel = (category) => ({
+  skincare: 'SKINCARE',
+  makeup: 'MAKEUP',
+  'hair-body': 'HAIR · BODY',
+  other: 'BEAUTY',
+})[category] || 'BEAUTY';
+
+export function normalizePublicBeautyProduct(product) {
+  const category = normalizeCategory(product.category);
+  const details = [product.color, product.price ? `${product.price}원` : ''].filter(Boolean);
+  return {
+    id: product.id,
+    name: product.name,
+    category,
+    categoryLabel: `${categoryLabel(category)} · ${product.brandName || 'K-MODU'}`,
+    markets: [],
+    keywords: details.length ? details : ['브랜드 등록 상품'],
+    formats: ['등록 상품'],
+    slots: 0,
+    image: product.imageUrl,
+    description: product.description || `${product.brandName || 'K-MODU'}의 공개 뷰티 상품입니다.`,
+    brandName: product.brandName || 'K-MODU',
+    isPublicProduct: true,
+  };
+}
 
 function createProductCard(product, index) {
   const article = document.createElement('article');
@@ -69,17 +103,21 @@ function createProductCard(product, index) {
   button.setAttribute('aria-label', `${product.name} 매칭 상세보기`);
   const spriteClass = product.sprite ? ' class="is-sprite"' : '';
   const spriteStyle = product.sprite ? ` style="--sprite-offset-x:${product.sprite.x * -25}%;--sprite-offset-y:${product.sprite.y * -50}%"` : '';
+  const safe = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+  const marketLabel = product.markets.length ? product.markets.join(' · ') : 'GLOBAL';
+  const statusLabel = product.isPublicProduct ? '공개 상품' : `${product.slots} CREATOR TEAMS`;
+  const actionLabel = product.isPublicProduct ? '제품 상세보기 →' : '매칭 상세보기 →';
   button.innerHTML = `
     <span class="beauty-product-image">
-      <img${spriteClass}${spriteStyle} src="${product.image}" alt="${product.name} 제품 이미지" width="720" height="720" ${index > 4 ? 'loading="lazy"' : ''} decoding="async" />
-      <span class="beauty-recruiting-badge">RECRUITING</span>
+      <img${spriteClass}${spriteStyle} src="${safe(product.image)}" alt="${safe(product.name)} 제품 이미지" width="720" height="720" ${index > 4 ? 'loading="lazy"' : ''} decoding="async" />
+      <span class="beauty-recruiting-badge">${product.isPublicProduct ? 'NEW PRODUCT' : 'RECRUITING'}</span>
       <span class="beauty-save-mark" aria-hidden="true">♡</span>
     </span>
-    <span class="beauty-product-meta"><b>${product.categoryLabel.split(' · ')[0]}</b><em>${product.markets.join(' · ')}</em></span>
-    <strong>${product.name}</strong>
-    <small>${product.keywords.join(' · ')}</small>
-    <span class="beauty-product-format">${product.formats.slice(0, 2).map((format) => `<i>${format}</i>`).join('')}</span>
-    <span class="beauty-product-status"><b>${product.slots} CREATOR TEAMS</b><em>매칭 상세보기 →</em></span>
+    <span class="beauty-product-meta"><b>${safe(product.categoryLabel.split(' · ')[0])}</b><em>${safe(marketLabel)}</em></span>
+    <strong>${safe(product.name)}</strong>
+    <small>${safe(product.keywords.join(' · '))}</small>
+    <span class="beauty-product-format">${product.formats.slice(0, 2).map((format) => `<i>${safe(format)}</i>`).join('')}</span>
+    <span class="beauty-product-status"><b>${safe(statusLabel)}</b><em>${safe(actionLabel)}</em></span>
   `;
 
   article.append(button);
@@ -114,6 +152,7 @@ export function initBeautyProductBoard() {
   let category = 'all';
   let visibleLimit = PAGE_SIZE;
   let lastTrigger = null;
+  let boardProducts = BEAUTY_PRODUCTS;
 
   const closeSheet = () => {
     sheet.classList.remove('is-open');
@@ -134,9 +173,9 @@ export function initBeautyProductBoard() {
     fields.category.textContent = product.categoryLabel;
     fields.name.textContent = product.name;
     fields.description.textContent = product.description;
-    fields.markets.textContent = product.markets.map((market) => MARKET_NAMES[market]).join(' · ');
+    fields.markets.textContent = product.markets.length ? product.markets.map((market) => MARKET_NAMES[market]).join(' · ') : '글로벌 협업 가능';
     fields.format.textContent = product.formats.join(' · ');
-    fields.slots.textContent = String(product.slots);
+    fields.slots.textContent = product.isPublicProduct ? '문의' : String(product.slots);
     fields.apply.href = `mailto:hello@markbridge.co?subject=${encodeURIComponent(`K-MODU 뷰티 제품 협업 문의 · ${product.name}`)}`;
     sheet.classList.add('is-open');
     sheet.setAttribute('aria-hidden', 'false');
@@ -145,7 +184,7 @@ export function initBeautyProductBoard() {
   };
 
   const render = () => {
-    const state = getVisibleProductState({ category, market: marketSelect.value }, visibleLimit);
+    const state = getVisibleProductState({ category, market: marketSelect.value }, visibleLimit, boardProducts);
     grid.replaceChildren();
 
     state.visibleProducts.forEach((product, index) => {
@@ -194,6 +233,22 @@ export function initBeautyProductBoard() {
 
   results.tabIndex = -1;
   render();
+
+  fetch('/api/public/beauty-products', { cache: 'no-store' })
+    .then((response) => response.ok ? response.json() : Promise.reject(new Error('상품 목록을 불러오지 못했습니다.')))
+    .then((payload) => {
+      const publicProducts = Array.isArray(payload.products)
+        ? payload.products.filter((product) => product?.id && product?.name && product?.imageUrl).map(normalizePublicBeautyProduct)
+        : [];
+      if (publicProducts.length > 0) {
+        boardProducts = publicProducts;
+        visibleLimit = PAGE_SIZE;
+        render();
+      }
+    })
+    .catch(() => {
+      // 공개 API가 일시적으로 실패하면 기존 큐레이션 상품을 유지한다.
+    });
 }
 
 if (typeof document !== 'undefined') {
