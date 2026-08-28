@@ -9,6 +9,7 @@ import type { AdminProduct } from "@/lib/db";
 import { paginateAdminItems, reconcilePageSelection } from "@/lib/admin-list-utils";
 
 type Status = "active" | "draft" | "hidden";
+type ProductField = "beauty" | "fashion";
 
 // 패션과 뷰티 상품을 같은 관리자 화면에서 원래 분류 그대로 보여준다.
 function groupCategory(category: string) {
@@ -23,8 +24,19 @@ function groupCategory(category: string) {
   return "악세서리";
 }
 
+const BEAUTY_CATEGORIES = ["스킨케어", "메이크업", "헤어·바디", "기타"];
+const FASHION_CATEGORIES = ["상의", "하의", "악세서리"];
+
+// 현재 products 테이블에서 모든 상품에 공통으로 저장되는 category를 기준으로 분야를 판별한다.
+function productField(product: AdminProduct): ProductField {
+  return BEAUTY_CATEGORIES.includes(groupCategory(product.category)) ? "beauty" : "fashion";
+}
+
 const STATUS_LABEL: Record<Status, string> = { active: "공개 중", draft: "비공개", hidden: "숨김" };
-const CATEGORIES = ["스킨케어", "메이크업", "헤어·바디", "기타", "상의", "하의", "악세서리"];
+const FIELD_LABEL: Record<ProductField, { ko: string; en: string }> = {
+  beauty: { ko: "K-뷰티", en: "BEAUTY" },
+  fashion: { ko: "K-패션", en: "FASHION" },
+};
 
 export default function AdminProductsManager({ products }: { products: AdminProduct[] }) {
   const [statusMap, setStatusMap] = useState<Record<string, Status>>(
@@ -32,6 +44,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
   );
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
+  const [productFieldFilter, setProductFieldFilter] = useState<"all" | ProductField>("all");
   const [brandFilter, setBrandFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -44,10 +57,27 @@ export default function AdminProductsManager({ products }: { products: AdminProd
   const hoverRef = useRef<HTMLDivElement | null>(null);
   const hoverImg = useRef<HTMLImageElement | null>(null);
 
-  const brands = useMemo(
-    () => Array.from(new Set(products.map((p) => p.designer_brand_name || "Unknown"))).sort(),
-    [products],
+  const productsInField = useMemo(
+    () => productFieldFilter === "all" ? products : products.filter((p) => productField(p) === productFieldFilter),
+    [productFieldFilter, products],
   );
+
+  const brands = useMemo(
+    () => Array.from(new Set(productsInField.map((p) => p.designer_brand_name || "Unknown"))).sort(),
+    [productsInField],
+  );
+
+  const categories = productFieldFilter === "beauty"
+    ? BEAUTY_CATEGORIES
+    : productFieldFilter === "fashion"
+      ? FASHION_CATEGORIES
+      : [...BEAUTY_CATEGORIES, ...FASHION_CATEGORIES];
+
+  const fieldCounts = useMemo(() => ({
+    all: products.length,
+    beauty: products.filter((p) => productField(p) === "beauty").length,
+    fashion: products.filter((p) => productField(p) === "fashion").length,
+  }), [products]);
 
   const counts = useMemo(() => {
     const c = { all: products.length, active: 0, draft: 0, hidden: 0 };
@@ -60,12 +90,13 @@ export default function AdminProductsManager({ products }: { products: AdminProd
     return products.filter((p) => {
       const st = statusMap[p.id];
       if (statusFilter !== "all" && st !== statusFilter) return false;
+      if (productFieldFilter !== "all" && productField(p) !== productFieldFilter) return false;
       if (brandFilter !== "all" && (p.designer_brand_name || "Unknown") !== brandFilter) return false;
       if (categoryFilter !== "all" && groupCategory(p.category) !== categoryFilter) return false;
       if (q && !(`${p.name} ${p.designer_brand_name}`.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [products, statusMap, statusFilter, brandFilter, categoryFilter, search]);
+  }, [products, statusMap, statusFilter, productFieldFilter, brandFilter, categoryFilter, search]);
   const pageProducts = useMemo(() => paginateAdminItems(filtered, currentPage), [currentPage, filtered]);
   const pageProductIds = useMemo(() => pageProducts.map((product) => product.id), [pageProducts]);
   const selectedOnPage = useMemo(
@@ -164,9 +195,32 @@ export default function AdminProductsManager({ products }: { products: AdminProd
     </button>
   );
 
+  const fieldChip = (key: "all" | ProductField, label: string, n: number) => (
+    <button
+      type="button"
+      className={`apm-field-chip${productFieldFilter === key ? " is-active" : ""}${key !== "all" ? ` is-${key}` : ""}`}
+      onClick={() => {
+        setProductFieldFilter(key);
+        setBrandFilter("all");
+        setCategoryFilter("all");
+        resetPage();
+      }}
+    >
+      {label} <b>{n}</b>
+    </button>
+  );
+
   return (
     <div className="apm">
       <div className="apm-bar">
+        <div className="apm-field-filter" aria-label="상품 분야 필터">
+          <span className="apm-field-title">상품 분야</span>
+          <div className="apm-field-chips">
+            {fieldChip("all", "전체", fieldCounts.all)}
+            {fieldChip("beauty", "K-뷰티", fieldCounts.beauty)}
+            {fieldChip("fashion", "K-패션", fieldCounts.fashion)}
+          </div>
+        </div>
         <div className="apm-chips">
           {filterChip("all", "전체", counts.all)}
           {filterChip("active", "공개", counts.active)}
@@ -187,7 +241,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
           </select>
           <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); resetPage(); }} aria-label="카테고리 필터">
             <option value="all">전체 분류</option>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
           <button type="button" className={`apm-toggle${groupByBrand ? " is-active" : ""}`} onClick={() => { setGroupByBrand((v) => !v); resetPage(); }}>
             브랜드별 묶기
@@ -208,6 +262,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
             <div className={viewMode === "grid" ? "admin-gallery admin-products" : "apm-list"}>
               {items.map((p) => {
                 const st = statusMap[p.id];
+                const field = productField(p);
                 const isPublic = st === "active";
                 const checked = selectedOnPage.has(p.id);
                 return viewMode === "grid" ? (
@@ -222,6 +277,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
                       <span className={`badge ${isPublic ? "pub" : "priv"}`}>{STATUS_LABEL[st]}</span>
                     </div>
                     <div className="b">
+                      <span className={`apm-field-badge is-${field}`} title={FIELD_LABEL[field].ko}>{FIELD_LABEL[field].en}</span>
                       <div className="c">
                         {p.designer_id ? <Link href={`/dashboard/admin/designers/${p.designer_id}`}>{p.designer_brand_name || "Unknown"}</Link> : (p.designer_brand_name || "Unknown")}
                       </div>
@@ -246,7 +302,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
                     <div className="apm-row-thumb" onMouseEnter={(e) => showHover(e, p.image_url)} onMouseLeave={hideHover}>
                       <AdminImageWithFallback src={p.image_url} alt={`${p.name} 상품 이미지`} width={96} height={96} />
                     </div>
-                    <div className="apm-row-name">{p.name}</div>
+                    <div className="apm-row-name"><span className={`apm-field-badge is-${field}`} title={FIELD_LABEL[field].ko}>{FIELD_LABEL[field].en}</span>{p.name}</div>
                     <div className="apm-row-brand">{p.designer_brand_name || "Unknown"}</div>
                     <div className="apm-row-cat">{groupCategory(p.category)}</div>
                     <span className={`status-badge ${isPublic ? "approved" : st === "hidden" ? "disabled" : "pending"}`}>{STATUS_LABEL[st]}</span>

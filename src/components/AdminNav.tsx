@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import NavIcon from "@/components/NavIcons";
@@ -22,14 +21,53 @@ export function AdminSideNav({ email, badges = {} }: { email: string; badges?: A
 
   return (
     <aside className="st-side">
-      <figure className="admin-console-identity">
-        <Image
-          alt="관리자 콘솔 운영 화면"
-          height={512}
-          priority
-          src="/images/admin-console-operator.webp"
-          width={768}
-        />
+      <figure className="admin-console-identity" aria-label="관리자 콘솔 전용 표지">
+        <svg
+          className="admin-console-identity-mark"
+          viewBox="0 0 320 220"
+          role="img"
+          aria-labelledby="admin-console-title admin-console-description"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <title id="admin-console-title">ADMIN CONSOLE 관리자 운영</title>
+          <desc id="admin-console-description">네이비와 골드 색상의 모니터, 운영 차트, 설정 아이콘으로 구성된 관리자 콘솔 표지</desc>
+          <defs>
+            <linearGradient id="admin-console-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#101f35" />
+              <stop offset="1" stopColor="#07111f" />
+            </linearGradient>
+            <linearGradient id="admin-console-gold" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#f2d58d" />
+              <stop offset="1" stopColor="#b99145" />
+            </linearGradient>
+          </defs>
+          <rect width="320" height="220" rx="22" fill="url(#admin-console-bg)" />
+          <path d="M0 166C65 140 111 182 173 157c55-22 87-10 147-40v103H0Z" fill="#142b45" opacity=".72" />
+          <circle cx="270" cy="42" r="58" fill="#c9a45c" opacity=".08" />
+          <g className="admin-console-identity-emblem">
+            <rect x="32" y="30" width="58" height="58" rx="16" fill="url(#admin-console-gold)" />
+            <path d="M51 46v27M70 46v27M51 59h17M73 47 62 59l12 14" fill="none" stroke="#0b1728" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+          </g>
+          <g className="admin-console-identity-dashboard" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="130" y="29" width="153" height="104" rx="13" fill="#0d1c30" stroke="#d2ae62" strokeWidth="3" />
+            <path d="M151 106V83m26 23V68m26 38V76m26 30V54m25 52V88" stroke="#d2ae62" strokeWidth="8" />
+            <path d="m151 66 26-17 26 9 26-20 25 7" stroke="#f1d68e" strokeWidth="3" />
+            <circle cx="151" cy="66" r="4" fill="#f1d68e" stroke="none" />
+            <circle cx="177" cy="49" r="4" fill="#f1d68e" stroke="none" />
+            <circle cx="203" cy="58" r="4" fill="#f1d68e" stroke="none" />
+            <circle cx="229" cy="38" r="4" fill="#f1d68e" stroke="none" />
+            <circle cx="254" cy="45" r="4" fill="#f1d68e" stroke="none" />
+            <path d="M184 134v12m-22 0h87" stroke="#d2ae62" strokeWidth="4" />
+          </g>
+          <g className="admin-console-identity-gear" transform="translate(250 134)">
+            <path d="m22 0 4 8 9 1 2 9 8 5-3 9 3 9-8 5-2 9-9 1-4 8-9-4-9 4-4-8-9-1-2-9-8-5 3-9-3-9 8-5 2-9 9-1 4-8 9 4Z" fill="#d2ae62" />
+            <circle cx="13" cy="32" r="11" fill="#0b1728" />
+            <circle cx="13" cy="32" r="5" fill="#f1d68e" />
+          </g>
+          <text x="32" y="172" fill="#f5e5bd" fontSize="22" fontWeight="900" letterSpacing="2.3">ADMIN CONSOLE</text>
+          <text x="32" y="198" fill="#fff" fontSize="16" fontWeight="800">관리자 운영</text>
+          <path d="M142 192h141" stroke="#d2ae62" strokeWidth="2" opacity=".55" />
+        </svg>
       </figure>
       <nav>
         {ADMIN_NAV_GROUPS.map((group) => (

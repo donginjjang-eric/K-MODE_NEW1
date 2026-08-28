@@ -69,6 +69,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   // 수정 중인 상품 id (null이면 신규 등록 모드). 같은 폼을 등록/수정에 재사용한다.
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const productCategories = useMemo(() => {
@@ -205,7 +206,6 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
   };
 
   const remove = async (product: Product) => {
-    if (!window.confirm("이 상품을 삭제할까요?")) return;
     try {
       const res = await fetch(`/api/products/${product.id}`, { method: "DELETE", headers: workspaceHeaders });
       if (!res.ok) {
@@ -213,6 +213,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
         throw new Error(result.error || "삭제에 실패했어요. 잠시 후 다시 시도해주세요.");
       }
       setProducts((current) => current.filter((item) => item.id !== product.id));
+      setPendingDelete(null);
     } catch (error) {
       setMsg({ text: error instanceof Error ? error.message : "삭제에 실패했어요.", ok: false });
     }
@@ -372,7 +373,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
                       <div className="row">
                         <button type="button" onClick={() => startEdit(product)}>수정</button>
                         <button type="button" onClick={() => toggleVisibility(product)}>{isPublic ? "비공개로 전환" : "다시 공개"}</button>
-                        <button type="button" onClick={() => remove(product)}>삭제</button>
+                        <button type="button" onClick={() => setPendingDelete(product)}>삭제</button>
                       </div>
                     </div>
                   </article>
@@ -387,6 +388,20 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
           )}
         </div>
       </div>
+      {pendingDelete ? (
+        <div className="ai-notice-modal" role="alertdialog" aria-modal="true" aria-labelledby="productDeleteTitle" aria-describedby="productDeleteDesc">
+          <button type="button" className="ai-notice-backdrop" aria-label="삭제 취소" onClick={() => setPendingDelete(null)} />
+          <div className="ai-notice-card warning">
+            <span className="ai-notice-mark" aria-hidden="true">!</span>
+            <h2 id="productDeleteTitle">상품을 삭제할까요?</h2>
+            <p id="productDeleteDesc"><b>{pendingDelete.name}</b> 상품이 파트너센터와 공개 페이지에서 내려갑니다.</p>
+            <div className="ai-notice-actions">
+              <button type="button" className="ai-notice-ghost" onClick={() => setPendingDelete(null)}>취소</button>
+              <button type="button" onClick={() => remove(pendingDelete)}>삭제하기</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
