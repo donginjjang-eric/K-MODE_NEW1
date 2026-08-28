@@ -1,11 +1,11 @@
-import { requireApprovedDesigner } from "@/lib/auth";
+import { requireFashionPartner } from "@/lib/auth";
 import { getProductsForDesigner, getModelTemplates, getGeneratedLooksForDesigner } from "@/lib/db";
 import { getDesignerDefaultModelImage } from "@/lib/designer-defaults";
 import StylingBoard from "@/components/StylingBoard";
 import DesignerGeneratedLooks from "@/components/DesignerGeneratedLooks";
 
 export default async function DesignerAiLookPage() {
-  const { designer } = await requireApprovedDesigner();
+  const { designer } = await requireFashionPartner();
   const [products, templates, looks] = await Promise.all([
     getProductsForDesigner(designer.id),
     getModelTemplates(),

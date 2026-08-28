@@ -1,5 +1,5 @@
 // 룩북 만들기: 승인된 룩·포트폴리오·공개 상품을 골라 공개 링크 룩북으로 묶는 화면
-import { requireApprovedDesigner } from "@/lib/auth";
+import { requireFashionPartner } from "@/lib/auth";
 import {
   getApprovedGeneratedLooksForDesigner,
   getApprovedPortfolioImagesForDesigner,
@@ -9,7 +9,7 @@ import {
 import LookbookManager from "@/components/LookbookManager";
 
 export default async function DesignerLookbooksPage() {
-  const { designer } = await requireApprovedDesigner();
+  const { designer } = await requireFashionPartner();
   const [looks, portfolioImages, products, lookbooks] = await Promise.all([
     getApprovedGeneratedLooksForDesigner(designer.id, 60),
     getApprovedPortfolioImagesForDesigner(designer.id),

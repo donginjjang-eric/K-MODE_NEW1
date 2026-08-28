@@ -1,8 +1,8 @@
-import { getApprovedDesignerForApi } from "@/lib/auth";
+import { getSelectedPartnerForApi } from "@/lib/auth";
 import { readImageFormFile, saveStorageImage } from "@/lib/storage";
 
 export async function POST(request: Request) {
-  const auth = await getApprovedDesignerForApi();
+  const auth = await getSelectedPartnerForApi(request);
   if (!auth.ok) return Response.json({ ok: false, error: auth.error }, { status: auth.status });
 
   try {

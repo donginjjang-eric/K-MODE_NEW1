@@ -1,8 +1,6 @@
 import "./creator.css";
 import Link from "next/link";
 import { requireApprovedCreator } from "@/lib/auth";
-import { getDesignerForUser } from "@/lib/db";
-import { isMasterAdminEmail } from "@/lib/master-admin";
 import { CreatorSideNav, CreatorTabBar } from "@/components/CreatorNav";
 import { CreatorDemoControls } from "@/components/CreatorDemoControls";
 import { CreatorPersonaSwitch } from "@/components/CreatorPersonaSwitch";
@@ -10,13 +8,9 @@ import MasterRoleSwitcher from "@/components/MasterRoleSwitcher";
 
 export default async function CreatorCenterLayout({ children }: { children: React.ReactNode }) {
   const { user, creator } = await requireApprovedCreator();
-  const masterDesigner = isMasterAdminEmail(user.email)
-    ? await getDesignerForUser(user.id).catch(() => null)
-    : null;
-
   return (
     <div className="creator-center">
-      <MasterRoleSwitcher email={user.email} active="creator" brandCategory={masterDesigner?.brand_category} />
+      <MasterRoleSwitcher userId={user.id} email={user.email} active="creator" />
       {user.role === "admin" ? (
         <div className="creator-admin-preview">
           <div className="creator-admin-preview-copy" role="status">

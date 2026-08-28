@@ -7,7 +7,7 @@ import {
   normalizeBrandCategory,
 } from "../src/lib/brand-partner-center";
 import { loginEntryUrl, passwordLoginDestination } from "../src/lib/auth";
-import { getMasterRoleDestinations, resolveMasterPartnerDestination } from "../src/lib/master-admin";
+import { getActiveWorkspaceDestinations, getMasterRoleDestinations, resolveMasterPartnerDestination } from "../src/lib/master-admin";
 
 test("normalizes Korean and English partner categories with a fashion-safe legacy fallback", () => {
   for (const value of ["K-뷰티", "k beauty", "K뷰티", "beauty", "뷰티 브랜드"]) {
@@ -52,14 +52,24 @@ test("defines all eight active beauty partner destinations", () => {
   );
 });
 
-test("master workspace keeps three clear labels and selects the partner center by category", () => {
+test("master workspace exposes separate fashion and beauty destinations", () => {
   assert.deepEqual(getMasterRoleDestinations("K-뷰티"), [
     { key: "admin", label: "관리자 콘솔", href: "/dashboard/admin" },
     { key: "creator", label: "크리에이터 화면", href: "/dashboard/creator" },
-    { key: "designer", label: "브랜드 파트너 센터", href: "/dashboard/beauty" },
+    { key: "fashion_partner", label: "패션 브랜드 센터", href: "/dashboard/designer/brand" },
+    { key: "beauty_partner", label: "뷰티 브랜드 센터", href: "/dashboard/beauty" },
   ]);
-  assert.equal(getMasterRoleDestinations("복합")[2].href, "/dashboard/beauty");
-  assert.equal(getMasterRoleDestinations(undefined)[2].href, "/dashboard/designer/brand");
+});
+
+test("regular workspace destinations exclude pending and disabled memberships", () => {
+  const memberships = [
+    { workspace_type: "creator", status: "active" },
+    { workspace_type: "fashion_partner", status: "disabled" },
+    { workspace_type: "beauty_partner", status: "pending" },
+  ] as Parameters<typeof getActiveWorkspaceDestinations>[0];
+  assert.deepEqual(getActiveWorkspaceDestinations(memberships), [
+    { key: "creator", label: "크리에이터 화면", href: "/dashboard/creator" },
+  ]);
 });
 
 test("resolves the master partner destination from a linked brand category with fashion fallback", () => {

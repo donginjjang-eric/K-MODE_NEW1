@@ -1,8 +1,8 @@
-import { getApprovedDesignerForApi } from "@/lib/auth";
+import { getSelectedPartnerForApi } from "@/lib/auth";
 import { createProductForDesigner, getProductsForDesigner } from "@/lib/db";
 
-export async function GET() {
-  const auth = await getApprovedDesignerForApi();
+export async function GET(request: Request) {
+  const auth = await getSelectedPartnerForApi(request);
   if (!auth.ok) return Response.json({ ok: false, error: auth.error }, { status: auth.status });
   const { designer } = auth;
   const products = await getProductsForDesigner(designer.id);
@@ -10,7 +10,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await getApprovedDesignerForApi();
+  const auth = await getSelectedPartnerForApi(request);
   if (!auth.ok) return Response.json({ ok: false, error: auth.error }, { status: auth.status });
   const { designer } = auth;
   const body = await request.json().catch(() => ({}));

@@ -1,13 +1,14 @@
 import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { ensureMasterAdminRole, getCreatorAccountForUser, getDesignerForUser, getDesignerForUserAndId, getOrCreateAdminCreatorAccount, getOrCreateAdminDesignerAccount, getUserByEmail, hasDatabase } from "./db";
+import { ensureMasterAdminRole, ensureMasterPartnerWorkspace, getCreatorAccountForUser, getDesignerForUser, getDesignerForUserAndId, getOrCreateAdminCreatorAccount, getOrCreateAdminDesignerAccount, getUserByEmail, hasDatabase } from "./db";
 import { hasActiveAgencyGroupRelationship } from "./creator-management";
 import { brandPartnerCenterPath } from "./brand-partner-center";
 import { isMasterAdminEmail } from "./master-admin";
 import type { CreatorAccount, Role, User, WorkspaceType } from "./types";
 import { backfillUserWorkspaceMemberships, listUserWorkspaces, resolveUserWorkspace } from "./workspace-access";
 import { authorizeWorkspace, workspaceCookieName } from "./workspace-selection";
+import { authorizePartnerResource, parsePartnerWorkspaceType } from "./partner-workspace-access";
 
 export const sessionCookieName = "kmodu_session";
 export const sessionMaxAgeSeconds = 60 * 60 * 24 * 30;
@@ -154,13 +155,36 @@ export async function requireWorkspace(type: WorkspaceType) {
     memberships = await listUserWorkspaces(user.id);
   }
 
+  let provisionedMembershipId: string | null = null;
+  if ((type === "fashion_partner" || type === "beauty_partner") && isMasterAdminEmail(user.email)) {
+    const oppositeType = type === "fashion_partner" ? "beauty_partner" : "fashion_partner";
+    const activeForType = memberships.filter((membership) => membership.workspace_type === type && membership.status === "active");
+    const oppositeResourceIds = new Set(memberships
+      .filter((membership) => membership.workspace_type === oppositeType && membership.status === "active")
+      .map((membership) => membership.resource_id));
+    const hasDedicatedWorkspace = activeForType.some((membership) => !oppositeResourceIds.has(membership.resource_id));
+    if (!hasDedicatedWorkspace) {
+      const provisioned = await ensureMasterPartnerWorkspace({
+        userId: user.id,
+        email: user.email,
+        workspaceType: type,
+        allowMasterProvision: true,
+      });
+      provisionedMembershipId = provisioned.id;
+      memberships = await listUserWorkspaces(user.id);
+    }
+  }
+
   const selectedId = (await cookies()).get(workspaceCookieName)?.value || null;
   const matching = memberships.filter((membership) => membership.workspace_type === type && membership.status === "active");
-  const membershipId = selectedId && matching.some((membership) => membership.id === selectedId)
+  const membershipId = provisionedMembershipId
+    || (selectedId && matching.some((membership) => membership.id === selectedId)
     ? selectedId
     : matching.length === 1
       ? matching[0].id
-      : null;
+      : isMasterAdminEmail(user.email) && matching.length > 0
+        ? matching[0].id
+        : null);
 
   if (!membershipId) redirect(`/dashboard/workspaces?next=${encodeURIComponent(destination)}`);
   const membership = await resolveUserWorkspace({ userId: user.id, workspaceType: type, membershipId, requireActive: true });
@@ -191,6 +215,31 @@ export async function requireBeautyPartner() {
   const designer = await getDesignerForUserAndId(auth.user.id, auth.workspace.resource_id);
   if (!designer) redirect("/dashboard/workspaces?next=%2Fdashboard%2Fbeauty");
   return { ...auth, designer };
+}
+
+export async function getSelectedPartnerForApi(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false as const, status: 401, error: "로그인이 만료되었습니다. 다시 로그인해주세요." };
+  if (!hasDatabase()) return { ok: false as const, status: 503, error: "데이터베이스 연결이 필요합니다." };
+
+  const workspaceType = parsePartnerWorkspaceType(request.headers.get("x-kmodu-workspace"));
+  if (!workspaceType) return { ok: false as const, status: 400, error: "패션 또는 뷰티 작업공간을 확인해주세요." };
+  const membershipId = (await cookies()).get(workspaceCookieName)?.value || null;
+  if (!membershipId) return { ok: false as const, status: 403, error: "선택된 브랜드 작업공간이 없습니다." };
+
+  const workspace = await resolveUserWorkspace({
+    userId: user.id,
+    workspaceType,
+    membershipId,
+    requireActive: true,
+  });
+  const authorization = authorizeWorkspace({ user, requestedType: workspaceType, membership: workspace });
+  if (!authorization.ok) return { ok: false as const, status: 403, error: "이 브랜드 작업공간에 접근할 수 없습니다." };
+  const resource = authorizePartnerResource({ workspaceType, workspaceResourceId: authorization.workspace.resource_id });
+  if (!resource.ok) return { ok: false as const, status: resource.status, error: "브랜드 작업공간 소유권을 확인할 수 없습니다." };
+  const designer = await getDesignerForUserAndId(user.id, resource.designerId);
+  if (!designer) return { ok: false as const, status: 403, error: "브랜드 작업공간 소유권을 확인할 수 없습니다." };
+  return { ok: true as const, user, designer, workspace: authorization.workspace };
 }
 
 export async function getApprovedDesignerForApi() {

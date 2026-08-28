@@ -1,10 +1,10 @@
 import Link from "next/link";
 import NavIcon from "@/components/NavIcons";
-import { requireApprovedDesigner } from "@/lib/auth";
+import { requireFashionPartner } from "@/lib/auth";
 import { getProductsForDesigner, getGeneratedLooksForDesigner, getPortfolioImagesForDesigner } from "@/lib/db";
 
 export default async function DesignerHome() {
-  const { designer } = await requireApprovedDesigner();
+  const { designer } = await requireFashionPartner();
   const [products, looks, portfolio] = await Promise.all([
     getProductsForDesigner(designer.id),
     getGeneratedLooksForDesigner(designer.id),

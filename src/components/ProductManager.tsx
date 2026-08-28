@@ -55,6 +55,8 @@ const emptyForm = (mode: "fashion" | "beauty"): FormState => ({
 });
 
 export default function ProductManager({ initialProducts, mode = "fashion" }: { initialProducts: Product[]; mode?: "fashion" | "beauty" }) {
+  const workspaceType = mode === "beauty" ? "beauty_partner" : "fashion_partner";
+  const workspaceHeaders = { "x-kmodu-workspace": workspaceType };
   const productKinds = mode === "beauty" ? BEAUTY_PRODUCT_KINDS : FASHION_PRODUCT_KINDS;
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [activeCategory, setActiveCategory] = useState("전체");
@@ -93,7 +95,7 @@ export default function ProductManager({ initialProducts, mode = "fashion" }: { 
     try {
       const body = new FormData();
       body.append("image", file);
-      const res = await fetch("/api/uploads/product-image", { method: "POST", body });
+      const res = await fetch("/api/uploads/product-image", { method: "POST", headers: workspaceHeaders, body });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "사진 업로드에 실패했습니다.");
       setImageUrl(result.imageUrl);
@@ -157,12 +159,12 @@ export default function ProductManager({ initialProducts, mode = "fashion" }: { 
       const res = editingId
         ? await fetch(`/api/products/${editingId}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...workspaceHeaders },
             body: JSON.stringify(payload),
           })
         : await fetch("/api/products", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...workspaceHeaders },
             body: JSON.stringify(payload),
           });
       const result = await res.json();
@@ -191,7 +193,7 @@ export default function ProductManager({ initialProducts, mode = "fashion" }: { 
     try {
       const res = await fetch(`/api/products/${product.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...workspaceHeaders },
         body: JSON.stringify({ status: next }),
       });
       const result = await res.json().catch(() => ({}));
@@ -205,7 +207,7 @@ export default function ProductManager({ initialProducts, mode = "fashion" }: { 
   const remove = async (product: Product) => {
     if (!window.confirm("이 상품을 삭제할까요?")) return;
     try {
-      const res = await fetch(`/api/products/${product.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/products/${product.id}`, { method: "DELETE", headers: workspaceHeaders });
       if (!res.ok) {
         const result = await res.json().catch(() => ({}));
         throw new Error(result.error || "삭제에 실패했어요. 잠시 후 다시 시도해주세요.");

@@ -1,10 +1,10 @@
 // 브랜드 프로필: 편집(기본 정보·대표 사진·포트폴리오)과 공개 카드 미리보기를 한 화면에서
-import { requireApprovedDesigner } from "@/lib/auth";
+import { requireFashionPartner } from "@/lib/auth";
 import { getGeneratedLooksForDesigner, getPortfolioImagesForDesigner } from "@/lib/db";
 import BrandProfileStudio from "@/components/BrandProfileStudio";
 
 export default async function DesignerBrandPage() {
-  const { designer } = await requireApprovedDesigner();
+  const { designer } = await requireFashionPartner();
   const [portfolioImages, looks] = await Promise.all([
     getPortfolioImagesForDesigner(designer.id),
     getGeneratedLooksForDesigner(designer.id),

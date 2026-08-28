@@ -1,6 +1,6 @@
 // 디자이너 스튜디오: 받은 의뢰함 (공개 보드에서 크리에이터가 보낸 샘플 요청/협업 제안)
 import CollabRequestActions from "@/components/CollabRequestActions";
-import { requireApprovedDesigner } from "@/lib/auth";
+import { requireFashionPartner } from "@/lib/auth";
 import { getCollabRequestsForDesigner } from "@/lib/db";
 
 const TYPE_LABELS: Record<string, string> = { sample: "샘플 요청", collab: "협업 제안" };
@@ -19,7 +19,7 @@ function formatDate(value: string) {
 }
 
 export default async function DesignerOrdersPage() {
-  const { designer } = await requireApprovedDesigner();
+  const { designer } = await requireFashionPartner();
   const requests = await getCollabRequestsForDesigner(designer.id);
   const newCount = requests.filter((item) => item.status === "new").length;
 

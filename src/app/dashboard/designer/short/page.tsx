@@ -1,11 +1,11 @@
 // 디자이너 숏폼 제작 페이지 — 내 AI 룩을 실제 Veo로 9:16 숏폼 영상으로 만들고 모아보는 화면
-import { requireApprovedDesigner } from "@/lib/auth";
+import { requireFashionPartner } from "@/lib/auth";
 import { getGeneratedLooksForDesigner, countDailyVeoForDesigner } from "@/lib/db";
 import NavIcon from "@/components/NavIcons";
 import ShortformStudio from "@/components/ShortformStudio";
 
 export default async function DesignerShortPage() {
-  const { designer } = await requireApprovedDesigner();
+  const { designer } = await requireFashionPartner();
   const [looks, usedToday] = await Promise.all([
     getGeneratedLooksForDesigner(designer.id),
     countDailyVeoForDesigner(designer.id),

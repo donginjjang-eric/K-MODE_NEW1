@@ -1,8 +1,8 @@
-import { getApprovedDesignerForApi } from "@/lib/auth";
+import { getSelectedPartnerForApi } from "@/lib/auth";
 import { getProductForDesigner, updateProductForDesigner } from "@/lib/db";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await getApprovedDesignerForApi();
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getSelectedPartnerForApi(request);
   if (!auth.ok) return Response.json({ ok: false, error: auth.error }, { status: auth.status });
   const { designer } = auth;
   const { id } = await params;
@@ -12,7 +12,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await getApprovedDesignerForApi();
+  const auth = await getSelectedPartnerForApi(request);
   if (!auth.ok) return Response.json({ ok: false, error: auth.error }, { status: auth.status });
   const { designer } = auth;
   const { id } = await params;
@@ -36,8 +36,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   return Response.json({ ok: true, product });
 }
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await getApprovedDesignerForApi();
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getSelectedPartnerForApi(request);
   if (!auth.ok) return Response.json({ ok: false, error: auth.error }, { status: auth.status });
   const { designer } = auth;
   const { id } = await params;

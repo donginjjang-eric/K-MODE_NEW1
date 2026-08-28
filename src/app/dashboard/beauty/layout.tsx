@@ -14,7 +14,7 @@ export default async function BeautyPartnerLayout({ children }: { children: Reac
   return (
     <div className="studio beauty-partner">
       <ScrollResetOnLoad />
-      <MasterRoleSwitcher email={user.email} active="designer" brandCategory={designer.brand_category} />
+      <MasterRoleSwitcher userId={user.id} email={user.email} active="beauty_partner" />
       <header className="st-top beauty-topbar">
         <Link className="brand" href="/dashboard/beauty">
           <b>K-MODU</b>

@@ -36,7 +36,7 @@ test("designer studio shell remains isolated from creator center work", async ()
   );
   assert.equal(
     normalizedHash(designerLayout),
-    "fb8e3696a063c8aeb961944258981d9579f615a6ecb94c9b9d805a9f16f24ecc",
+    "0f052836beb3bc9374939ff2d022148e5a09e6e8ff0167eb6dc7586408569de7",
     "designer/layout.tsx changed; verify the existing designer studio before accepting a new hash",
   );
 });

@@ -1,20 +1,20 @@
 import "./studio.css";
 import Link from "next/link";
-import { requireApprovedDesigner } from "@/lib/auth";
+import { requireFashionPartner } from "@/lib/auth";
 import { StudioSideNav, StudioTabBar } from "@/components/StudioNav";
 import LogoutButton from "@/components/LogoutButton";
 import ScrollResetOnLoad from "@/components/ScrollResetOnLoad";
 import MasterRoleSwitcher from "@/components/MasterRoleSwitcher";
 
 export default async function DesignerStudioLayout({ children }: { children: React.ReactNode }) {
-  const { user, designer } = await requireApprovedDesigner();
+  const { user, designer } = await requireFashionPartner();
   // 공개 화면 = 크리에이터가 보는 보드 모달 (딥링크로 자동 오픈)
   const publicHref = `/designers?open=${designer.id}`;
 
   return (
     <div className="studio designer-studio">
       <ScrollResetOnLoad />
-      <MasterRoleSwitcher email={user.email} active="designer" brandCategory={designer.brand_category} />
+      <MasterRoleSwitcher userId={user.id} email={user.email} active="fashion_partner" />
       <header className="st-top">
         <Link className="brand" href="/dashboard/designer/brand">
           <b>K-MODU</b>

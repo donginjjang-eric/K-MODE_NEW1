@@ -335,6 +335,10 @@ test("updates only allowed imported creator public fields under actor and creato
       client.statements.push({ text, params });
       return { rows: [], rowCount: 1 };
     }
+    if (text.includes("UPDATE user_workspace_memberships") && text.includes("workspace_type = 'creator'")) {
+      client.statements.push({ text, params });
+      return { rows: [], rowCount: 1 };
+    }
     return originalQuery(text, params);
   };
   activeClient = client;
@@ -352,6 +356,8 @@ test("updates only allowed imported creator public fields under actor and creato
   assert.doesNotMatch(update.text, /user_id|onboarding_source|claim_state|google_email|creator_key|created_by_admin_id/);
   const roleUpdate = client.statements.find(({ text }) => text.includes("UPDATE users") && text.includes("role = 'creator'"));
   assert.deepEqual(roleUpdate?.params, ["creator-user"]);
+  const workspaceUpdate = client.statements.find(({ text }) => text.includes("UPDATE user_workspace_memberships"));
+  assert.deepEqual(workspaceUpdate?.params, ["creator-user", "creator-db-only", "active"]);
   assert.ok(indexOf(client, "FROM users") < indexOf(client, "creator_key = $1 OR id = $1"));
   assert.ok(indexOf(client, "creator_key = $1 OR id = $1") < indexOf(client, "UPDATE creator_accounts"));
   const audit = audits(client).at(-1);

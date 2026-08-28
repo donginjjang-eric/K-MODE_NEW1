@@ -1,22 +1,25 @@
 import Link from "next/link";
-import { getMasterRoleDestinations, isMasterAdminEmail } from "@/lib/master-admin";
+import { getActiveWorkspaceDestinations, getMasterRoleDestinations, isMasterAdminEmail } from "@/lib/master-admin";
+import { listUserWorkspaces } from "@/lib/workspace-access";
 
-export default function MasterRoleSwitcher({
+export default async function MasterRoleSwitcher({
+  userId,
   email,
   active,
-  brandCategory,
 }: {
+  userId: string;
   email: string;
-  active: "admin" | "creator" | "designer";
-  brandCategory?: unknown;
+  active: "admin" | "creator" | "fashion_partner" | "beauty_partner";
 }) {
-  if (!isMasterAdminEmail(email)) return null;
-  const destinations = getMasterRoleDestinations(brandCategory);
+  const isMaster = isMasterAdminEmail(email);
+  const memberships = isMaster ? [] : await listUserWorkspaces(userId);
+  const destinations = isMaster ? getMasterRoleDestinations() : getActiveWorkspaceDestinations(memberships);
+  if (destinations.length < 2) return null;
 
   return (
     <div className="master-workspace-bar">
       <div className="master-access-control">
-        <span className="master-access-badge">마스터 권한</span>
+        {isMaster ? <span className="master-access-badge">마스터 권한</span> : null}
         <nav className="master-workspace-switcher" aria-label="마스터 관리자 화면 전환">
           <span className="master-workspace-label">화면 전환</span>
           {destinations.map((item) => (

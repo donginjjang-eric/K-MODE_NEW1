@@ -6,7 +6,8 @@ import type { PoolClient, QueryResultRow } from "pg";
 import { designer as phaseDesigner, modelTemplates as phaseTemplates, products as phaseProducts } from "./phase1-data";
 import { summarizeCreatorSettlementRewards, toCreatorSettlementItems } from "./creator-rewards";
 import type { CreatorRewardSummary, CreatorSettlementItem, CreatorSettlementLedgerRow } from "./creator-rewards";
-import type { ApprovalStatus, CampaignEvent, CampaignParticipation, CampaignPerformance, CollabRequest, CollabRequestStatus, CollabRequestType, ContentSubmission, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User } from "./types";
+import type { ApprovalStatus, CampaignEvent, CampaignParticipation, CampaignPerformance, CollabRequest, CollabRequestStatus, CollabRequestType, ContentSubmission, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User, UserWorkspaceMembership } from "./types";
+import type { PartnerWorkspaceType } from "./partner-workspace-access";
 
 let pool: Pool | null = null;
 
@@ -2022,6 +2023,115 @@ export async function getDesignerForUser(userId: string): Promise<Designer | nul
     if (!canUseDemoData()) throw error;
     return null;
   }
+}
+
+export type MasterPartnerWorkspace = UserWorkspaceMembership & {
+  brand_category: string;
+  designer_user_id: string;
+};
+
+export async function ensureMasterPartnerWorkspace(input: {
+  userId: string;
+  email: string;
+  workspaceType: PartnerWorkspaceType;
+  allowMasterProvision: boolean;
+}): Promise<MasterPartnerWorkspace> {
+  if (!input.allowMasterProvision) throw new Error("Master workspace provisioning is not allowed.");
+  if (!hasDatabase()) throw new Error("DATABASE_URL is required for master workspace provisioning.");
+
+  const category = input.workspaceType === "fashion_partner" ? "K-패션" : "K-뷰티";
+  const oppositeType = input.workspaceType === "fashion_partner" ? "beauty_partner" : "fashion_partner";
+  const brandName = input.workspaceType === "fashion_partner" ? "K-MODU MASTER FASHION" : "K-MODU MASTER BEAUTY";
+
+  return withDatabaseTransaction(async (client) => {
+    await client.query(
+      `UPDATE user_workspace_memberships requested
+          SET status = 'disabled', is_default = false, updated_at = now()
+        WHERE requested.user_id = $1
+          AND requested.workspace_type = $2
+          AND EXISTS (
+            SELECT 1 FROM user_workspace_memberships opposite
+             WHERE opposite.user_id = requested.user_id
+               AND opposite.workspace_type = $3
+               AND opposite.resource_id = requested.resource_id
+               AND opposite.status = 'active'
+          )`,
+      [input.userId, input.workspaceType, oppositeType],
+    );
+
+    const existingResult = await client.query<MasterPartnerWorkspace>(
+      `SELECT memberships.*, designers.brand_category, designers.user_id AS designer_user_id
+         FROM user_workspace_memberships memberships
+         JOIN designers
+           ON designers.id = memberships.resource_id
+          AND designers.user_id = memberships.user_id
+        WHERE memberships.user_id = $1
+          AND memberships.workspace_type = $2
+          AND memberships.status = 'active'
+          AND designers.brand_category = $3
+        ORDER BY memberships.created_at ASC
+        LIMIT 1`,
+      [input.userId, input.workspaceType, category],
+    );
+    if (existingResult.rows[0]) return existingResult.rows[0];
+
+    const candidateResult = await client.query<Designer>(
+      `SELECT designers.*
+         FROM designers
+        WHERE designers.user_id = $1
+          AND designers.brand_category = $2
+          AND NOT EXISTS (
+            SELECT 1 FROM user_workspace_memberships opposite
+             WHERE opposite.user_id = designers.user_id
+               AND opposite.workspace_type = $3
+               AND opposite.resource_id = designers.id
+               AND opposite.status = 'active'
+          )
+        ORDER BY designers.created_at ASC
+        LIMIT 1`,
+      [input.userId, category, oppositeType],
+    );
+    let designer = candidateResult.rows[0];
+    if (!designer) {
+      const inserted = await client.query<Designer>(
+        `INSERT INTO designers
+          (user_id, brand_name, designer_name, contact_email, contact_phone, description, brand_category, mood, country, approval_status)
+         VALUES ($1, $2, 'K-MODU 운영자', $3, '', $4, $5, $6, 'South Korea', 'approved')
+         RETURNING *`,
+        [input.userId, brandName, input.email.trim().toLowerCase(), `${category} 운영 검증용 전용 브랜드`, category, category],
+      );
+      designer = inserted.rows[0];
+    }
+    if (!designer || designer.user_id !== input.userId || designer.brand_category !== category) {
+      throw new Error("Master partner resource ownership validation failed.");
+    }
+
+    await client.query(
+      `INSERT INTO user_workspace_memberships (user_id, workspace_type, resource_id, status, is_default)
+       VALUES ($1, $2, $3, 'active', false)
+       ON CONFLICT ON CONSTRAINT user_workspace_memberships_identity_key
+       DO UPDATE SET status = 'active', updated_at = now()`,
+      [input.userId, input.workspaceType, designer.id],
+    );
+
+    const verified = await client.query<MasterPartnerWorkspace>(
+      `SELECT memberships.*, designers.brand_category, designers.user_id AS designer_user_id
+         FROM user_workspace_memberships memberships
+         JOIN designers
+           ON designers.id = memberships.resource_id
+          AND designers.user_id = memberships.user_id
+        WHERE memberships.user_id = $1
+          AND memberships.workspace_type = $2
+          AND memberships.resource_id = $3
+          AND memberships.status = 'active'
+          AND designers.brand_category = $4
+          AND designers.user_id = $1
+        LIMIT 1`,
+      [input.userId, input.workspaceType, designer.id, category],
+    );
+    if (!verified.rows[0]) throw new Error("Master partner workspace verification failed.");
+    return verified.rows[0];
+  });
 }
 
 export async function getDesignerForUserAndId(userId: string, designerId: string): Promise<Designer | null> {
