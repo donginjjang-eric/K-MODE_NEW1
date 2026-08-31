@@ -21,6 +21,9 @@ test("schema, persistence, and public API carry detail images separately", async
   assert.match(createRoute, /detailImageUrls/);
   assert.match(updateRoute, /detailImageUrls/);
   assert.match(publicRoute, /detailImageUrls/);
+  assert.match(schema, /jsonb_array_length\(p\.detail_image_urls\) = 0/);
+  assert.match(schema, /LOWER\(d\.brand_category\) IN \('beauty', 'k-beauty', '뷰티', 'k-뷰티'\)/);
+  assert.match(schema, /SET detail_image_urls = p\.image_urls/);
 });
 
 test("beauty partner editor has a separate fifteen-image detail section", async () => {

@@ -80,6 +80,19 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS detail_image_urls jsonb NOT NULL D
 -- 현재 운영 정책은 자동 승인. 기존 상품도 승인 완료로 안전하게 백필된다.
 ALTER TABLE products ADD COLUMN IF NOT EXISTS approval_status text NOT NULL DEFAULT 'approved';
 
+-- 상세페이지 기능 도입 전에 등록된 뷰티 상품은 기존 갤러리를 상세 영역에도 표시한다.
+-- 이미 상세 이미지를 등록한 상품과 패션 브랜드 상품은 변경하지 않는다.
+UPDATE products AS p
+SET detail_image_urls = p.image_urls,
+    updated_at = now()
+FROM designers AS d
+WHERE d.id = p.designer_id
+  AND LOWER(d.brand_category) IN ('beauty', 'k-beauty', '뷰티', 'k-뷰티')
+  AND jsonb_typeof(p.detail_image_urls) = 'array'
+  AND jsonb_array_length(p.detail_image_urls) = 0
+  AND jsonb_typeof(p.image_urls) = 'array'
+  AND jsonb_array_length(p.image_urls) > 0;
+
 CREATE TABLE IF NOT EXISTS model_templates (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
   name text NOT NULL,
