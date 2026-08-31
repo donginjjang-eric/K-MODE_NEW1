@@ -46,6 +46,8 @@ test("public product sheet includes gallery controls and restrained title sizes"
     readFile("platform.css", "utf8"),
   ]);
   assert.match(html, /beautySheetThumbs/);
+  assert.match(html, /platform\.css\?v=20260831-product-gallery/);
+  assert.match(html, /beauty-products\.js\?v=20260831-product-gallery/);
   assert.match(script, /imageUrls/);
   assert.match(script, /beautySheetThumbs/);
   assert.match(css, /\.beauty-product-sheet-thumbs/);
