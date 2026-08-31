@@ -74,6 +74,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const additionalFileRef = useRef<HTMLInputElement>(null);
   const detailFileRef = useRef<HTMLInputElement>(null);
 
   const productCategories = useMemo(() => {
@@ -105,21 +106,20 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
 
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return;
-    const limit = mode === "beauty" ? 8 : 1;
-    const selected = Array.from(files).slice(0, Math.max(0, limit - imageUrls.length));
+    const selected = Array.from(files).slice(0, 1);
     if (!selected.length) {
-      setMsg({ text: `이미지는 최대 ${limit}장까지 올릴 수 있어요.`, ok: false });
+      setMsg({ text: "이미지를 한 장 선택해주세요.", ok: false });
       return;
     }
     setUploading(true);
     setMsg(null);
     try {
       const uploaded = (await Promise.all(selected.map(uploadOne))).filter((item): item is { imageUrl: string; imageHash: string } => Boolean(item));
-      const next = mode === "beauty" ? [...imageUrls, ...uploaded.map((item) => item.imageUrl)].slice(0, 8) : uploaded.slice(-1).map((item) => item.imageUrl);
+      const next = uploaded.slice(-1).map((item) => item.imageUrl);
       setImageUrls(next);
       setImageUrl(next[0] || "");
       setImageHash(uploaded[0]?.imageHash || imageHash);
-      setMsg({ text: `${uploaded.length}장의 사진이 올라갔어요. 첫 번째 사진이 대표 이미지예요.`, ok: true });
+      setMsg({ text: "대표 이미지가 올라갔어요.", ok: true });
     } catch (error) {
       setMsg({ text: error instanceof Error ? error.message : "사진 업로드에 실패했습니다.", ok: false });
     } finally {
@@ -128,14 +128,49 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
     }
   };
 
-  const makeCover = (index: number) => {
-    setImageUrls((current) => {
-      const next = [...current];
-      const [cover] = next.splice(index, 1);
-      next.unshift(cover);
-      setImageUrl(cover);
-      return next;
-    });
+  const onCoverFile = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    setMsg(null);
+    try {
+      const uploaded = await uploadOne(files[0]);
+      if (!uploaded) return;
+      setImageUrls((current) => [uploaded.imageUrl, ...current.slice(1, 5)]);
+      setImageUrl(uploaded.imageUrl);
+      setImageHash(uploaded.imageHash || imageHash);
+      setMsg({ text: "대표 썸네일이 등록됐어요.", ok: true });
+    } catch (error) {
+      setMsg({ text: error instanceof Error ? error.message : "대표 썸네일 업로드에 실패했습니다.", ok: false });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const onAdditionalFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    if (!imageUrl) {
+      setMsg({ text: "대표 썸네일을 먼저 등록해주세요.", ok: false });
+      return;
+    }
+    const additionalCount = Math.max(0, imageUrls.length - 1);
+    const selected = Array.from(files).slice(0, Math.max(0, 4 - additionalCount));
+    if (!selected.length) {
+      setMsg({ text: "추가 상품 이미지는 최대 4장까지 올릴 수 있어요.", ok: false });
+      return;
+    }
+    setUploading(true);
+    setMsg(null);
+    try {
+      const uploaded = (await Promise.all(selected.map(uploadOne))).filter((item): item is { imageUrl: string; imageHash: string } => Boolean(item));
+      setImageUrls((current) => [current[0], ...current.slice(1), ...uploaded.map((item) => item.imageUrl)].filter(Boolean).slice(0, 5));
+      setMsg({ text: `추가 상품 이미지 ${uploaded.length}장이 올라갔어요.`, ok: true });
+    } catch (error) {
+      setMsg({ text: error instanceof Error ? error.message : "추가 상품 이미지 업로드에 실패했습니다.", ok: false });
+    } finally {
+      setUploading(false);
+      if (additionalFileRef.current) additionalFileRef.current.value = "";
+    }
   };
 
   const removeImage = (index: number) => {
@@ -188,7 +223,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
       description: product.description || "",
       visibility: product.status === "draft" ? "draft" : "active",
     });
-    const existingImages = product.image_urls?.length ? product.image_urls : [product.image_url].filter(Boolean);
+    const existingImages = (product.image_urls?.length ? product.image_urls : [product.image_url].filter(Boolean)).slice(0, 5);
     setImageUrls(existingImages);
     setDetailImageUrls(product.detail_image_urls || []);
     setImageUrl(existingImages[0] || "");
@@ -338,52 +373,58 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
           </div>
 
           <div className="st-step" style={{ marginTop: 24 }}><span className="num">2</span> 사진 업로드</div>
-          <div
-            className={`st-dz${drag ? " drag" : ""}${imageUrl ? " has-file" : ""}`}
-            onClick={() => fileRef.current?.click()}
-            onDragOver={(event) => {
-              event.preventDefault();
-              setDrag(true);
-            }}
-            onDragLeave={() => setDrag(false)}
-            onDrop={(event) => {
-              event.preventDefault();
-              setDrag(false);
-              onFiles(event.dataTransfer.files);
-            }}
-          >
-            <span className="dz-kind">현재 분류: <b>{form.category}</b></span>
-            <div className="ic" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="3" />
-                <circle cx="8.6" cy="8.8" r="1.9" />
-                <path d="m3 17.2 5.2-5.2 4.1 4.1 2.8-2.8L21 19" />
-              </svg>
-            </div>
-            <div className="big">{uploading ? "업로드 중..." : imageUrl ? `${imageUrls.length}장 선택되었습니다` : "사진을 클릭하거나 끌어와서 업로드"}</div>
-            <div className="small">{mode === "beauty" ? "최대 8장 · 첫 번째 사진이 대표 이미지 · 장당 8MB 이하" : "JPG·PNG·WEBP·HEIC(아이폰), 8MB 이하"}</div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
-              hidden
-              multiple={mode === "beauty"}
-              onChange={(event) => onFiles(event.target.files)}
-            />
-          </div>
-          {imageUrls.length ? (
-            <div className="product-gallery-preview" aria-label="업로드 이미지 미리보기">
-              {imageUrls.map((url, index) => (
-                <div className={`product-gallery-preview-item${index === 0 ? " is-cover" : ""}`} key={`${url}-${index}`} style={{ backgroundImage: `url('${url}')` }}>
-                  <span>{index === 0 ? "대표 이미지" : `${index + 1}번째`}</span>
-                  <div>
-                    {index > 0 ? <button type="button" onClick={() => makeCover(index)}>대표 지정</button> : null}
-                    <button type="button" aria-label={`${index + 1}번째 이미지 삭제`} onClick={() => removeImage(index)}>삭제</button>
+          {mode === "beauty" ? (
+            <div className="beauty-gallery-upload">
+              <section>
+                <h4>대표 썸네일 <b>1장</b></h4>
+                <p>상품 목록과 상세페이지에서 가장 먼저 보이는 정사각형 이미지예요.</p>
+                <button className={`beauty-cover-upload${imageUrl ? " has-image" : ""}`} type="button" onClick={() => fileRef.current?.click()}>
+                  {imageUrl ? <img src={imageUrl} alt="등록된 대표 썸네일" /> : <span>대표 썸네일 선택</span>}
+                  <small>{uploading ? "업로드 중..." : imageUrl ? "클릭해서 교체" : "JPG·PNG·WEBP·HEIC · 8MB 이하"}</small>
+                </button>
+                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" hidden onChange={(event) => onCoverFile(event.target.files)} />
+              </section>
+              <section>
+                <h4>추가 상품 이미지 <b>{Math.max(0, imageUrls.length - 1)}/4장</b></h4>
+                <p>제품의 다른 각도·제형·패키지를 보여주세요. 상세페이지 이미지와는 별도예요.</p>
+                <button className="product-detail-upload-button" type="button" disabled={uploading || !imageUrl || imageUrls.length >= 5} onClick={() => additionalFileRef.current?.click()}>
+                  추가 상품 이미지 선택
+                  <small>최대 4장 · 여러 장 동시 선택</small>
+                </button>
+                <input ref={additionalFileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden onChange={(event) => onAdditionalFiles(event.target.files)} />
+                {imageUrls.length > 1 ? (
+                  <div className="product-gallery-preview is-additional" aria-label="추가 상품 이미지 미리보기">
+                    {imageUrls.slice(1).map((url, index) => (
+                      <div className="product-gallery-preview-item" key={`${url}-${index}`} style={{ backgroundImage: `url('${url}')` }}>
+                        <span>추가 {index + 1}</span>
+                        <div><button type="button" aria-label={`추가 ${index + 1} 이미지 삭제`} onClick={() => removeImage(index + 1)}>삭제</button></div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
+                ) : null}
+              </section>
             </div>
-          ) : null}
+          ) : (
+            <>
+              <div
+                className={`st-dz${drag ? " drag" : ""}${imageUrl ? " has-file" : ""}`}
+                onClick={() => fileRef.current?.click()}
+                onDragOver={(event) => { event.preventDefault(); setDrag(true); }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={(event) => { event.preventDefault(); setDrag(false); onFiles(event.dataTransfer.files); }}
+              >
+                <span className="dz-kind">현재 분류: <b>{form.category}</b></span>
+                <div className="big">{uploading ? "업로드 중..." : imageUrl ? "사진이 선택되었습니다" : "사진을 클릭하거나 끌어와서 업로드"}</div>
+                <div className="small">JPG·PNG·WEBP·HEIC(아이폰), 8MB 이하</div>
+                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" hidden onChange={(event) => onFiles(event.target.files)} />
+              </div>
+              {imageUrl ? (
+                <div className="product-gallery-preview" aria-label="업로드 이미지 미리보기">
+                  <div className="product-gallery-preview-item is-cover" style={{ backgroundImage: `url('${imageUrl}')` }}><span>대표 이미지</span></div>
+                </div>
+              ) : null}
+            </>
+          )}
 
           {mode === "beauty" ? (
             <section className="product-detail-upload">

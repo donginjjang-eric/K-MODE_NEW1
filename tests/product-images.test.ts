@@ -3,11 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { normalizeProductImages } from "../src/lib/product-images";
 
-test("normalizes an ordered product gallery and limits it to eight unique images", () => {
+test("normalizes one cover and four additional product images", () => {
   const input = [" /one.webp ", "/two.webp", "/one.webp", ...Array.from({ length: 10 }, (_, index) => `/extra-${index}.webp`)];
   assert.deepEqual(normalizeProductImages(input), [
-    "/one.webp", "/two.webp", "/extra-0.webp", "/extra-1.webp",
-    "/extra-2.webp", "/extra-3.webp", "/extra-4.webp", "/extra-5.webp",
+    "/one.webp", "/two.webp", "/extra-0.webp", "/extra-1.webp", "/extra-2.webp",
   ]);
 });
 
@@ -31,11 +30,13 @@ test("product persistence and APIs carry the gallery while preserving the cover"
   assert.match(publicRoute, /imageUrls/);
 });
 
-test("beauty upload UI accepts multiple images and exposes gallery controls", async () => {
+test("beauty upload UI separates one cover from four additional images", async () => {
   const source = await readFile("src/components/ProductManager.tsx", "utf8");
-  assert.match(source, /multiple/);
-  assert.match(source, /최대 8장/);
-  assert.match(source, /대표 이미지/);
+  assert.match(source, /대표 썸네일/);
+  assert.match(source, /추가 상품 이미지/);
+  assert.match(source, /최대 4장/);
+  assert.match(source, /onCoverFile/);
+  assert.match(source, /onAdditionalFiles/);
   assert.match(source, /imageUrls/);
 });
 

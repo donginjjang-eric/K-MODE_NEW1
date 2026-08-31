@@ -1,4 +1,5 @@
-export const MAX_PRODUCT_IMAGES = 8;
+// 공개 상품 갤러리: 대표 썸네일 1장 + 추가 상품 이미지 4장.
+export const MAX_PRODUCT_IMAGES = 5;
 
 export function normalizeProductImages(imageUrls: unknown, fallback = ""): string[] {
   const candidates = Array.isArray(imageUrls) ? imageUrls : [];
