@@ -1,4 +1,4 @@
-export const MAX_PRODUCT_DETAIL_IMAGES = 15;
+export const MAX_PRODUCT_DETAIL_IMAGES = 20;
 
 export function normalizeProductDetailImages(value: unknown): string[] {
   if (!Array.isArray(value)) return [];

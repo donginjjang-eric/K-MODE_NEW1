@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { Product } from "@/lib/types";
+import { MAX_PRODUCT_DETAIL_IMAGES } from "@/lib/product-detail-images";
 import DraggableTabs from "./DraggableTabs";
 
 // 용어 사전: 브랜드 사진 관리와 동일한 분류 카드 UX. 상품은 사진과 달리 정보 입력 단계가 추가된다.
@@ -183,16 +184,16 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
 
   const onDetailFiles = async (files: FileList | null) => {
     if (!files?.length) return;
-    const selected = Array.from(files).slice(0, Math.max(0, 15 - detailImageUrls.length));
+    const selected = Array.from(files).slice(0, Math.max(0, MAX_PRODUCT_DETAIL_IMAGES - detailImageUrls.length));
     if (!selected.length) {
-      setMsg({ text: "상세페이지 이미지는 최대 15장까지 올릴 수 있어요.", ok: false });
+      setMsg({ text: "상세페이지 이미지는 최대 20장까지 올릴 수 있어요.", ok: false });
       return;
     }
     setDetailUploading(true);
     setMsg(null);
     try {
       const uploaded = (await Promise.all(selected.map(uploadOne))).filter((item): item is { imageUrl: string; imageHash: string } => Boolean(item));
-      setDetailImageUrls((current) => [...current, ...uploaded.map((item) => item.imageUrl)].slice(0, 15));
+      setDetailImageUrls((current) => [...current, ...uploaded.map((item) => item.imageUrl)].slice(0, MAX_PRODUCT_DETAIL_IMAGES));
       setMsg({ text: `상세페이지 이미지 ${uploaded.length}장이 올라갔어요. 위에서부터 순서대로 보여요.`, ok: true });
     } catch (error) {
       setMsg({ text: error instanceof Error ? error.message : "상세페이지 이미지 업로드에 실패했습니다.", ok: false });
@@ -430,9 +431,9 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
             <section className="product-detail-upload">
               <div className="st-step" style={{ marginTop: 24 }}><span className="num">3</span> 상세페이지 이미지</div>
               <p className="st-substep">성분·효능·제형·사용법 이미지를 올리면 쇼핑몰 상세페이지처럼 위에서부터 이어서 보여요.</p>
-              <button className="product-detail-upload-button" type="button" disabled={detailUploading || detailImageUrls.length >= 15} onClick={() => detailFileRef.current?.click()}>
-                {detailUploading ? "업로드 중..." : `상세페이지 이미지 추가 (${detailImageUrls.length}/15)`}
-                <small>최대 15장 · 여러 장 동시 선택 · 장당 8MB 이하</small>
+              <button className="product-detail-upload-button" type="button" disabled={detailUploading || detailImageUrls.length >= MAX_PRODUCT_DETAIL_IMAGES} onClick={() => detailFileRef.current?.click()}>
+                {detailUploading ? "업로드 중..." : `상세페이지 이미지 추가 (${detailImageUrls.length}/${MAX_PRODUCT_DETAIL_IMAGES})`}
+                <small>최대 20장 · 여러 장 동시 선택 · 장당 8MB 이하</small>
               </button>
               <input ref={detailFileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden onChange={(event) => onDetailFiles(event.target.files)} />
               {detailImageUrls.length ? (

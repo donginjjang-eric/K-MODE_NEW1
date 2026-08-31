@@ -3,10 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { normalizeProductDetailImages } from "../src/lib/product-detail-images";
 
-test("normalizes ordered detail images and limits them to fifteen unique entries", () => {
-  const values = [" /detail-1.webp ", "/detail-2.webp", "/detail-1.webp", ...Array.from({ length: 20 }, (_, i) => `/extra-${i}.webp`)];
+test("normalizes ordered detail images and limits them to twenty unique entries", () => {
+  const values = [" /detail-1.webp ", "/detail-2.webp", "/detail-1.webp", ...Array.from({ length: 25 }, (_, i) => `/extra-${i}.webp`)];
   const result = normalizeProductDetailImages(values);
-  assert.equal(result.length, 15);
+  assert.equal(result.length, 20);
   assert.deepEqual(result.slice(0, 3), ["/detail-1.webp", "/detail-2.webp", "/extra-0.webp"]);
 });
 
@@ -26,10 +26,10 @@ test("schema, persistence, and public API carry detail images separately", async
   assert.match(schema, /SET detail_image_urls = p\.image_urls/);
 });
 
-test("beauty partner editor has a separate fifteen-image detail section", async () => {
+test("beauty partner editor has a separate twenty-image detail section", async () => {
   const source = await readFile("src/components/ProductManager.tsx", "utf8");
   assert.match(source, /상세페이지 이미지/);
-  assert.match(source, /최대 15장/);
+  assert.match(source, /최대 20장/);
   assert.match(source, /detailImageUrls/);
   assert.match(source, /위로/);
   assert.match(source, /아래로/);
