@@ -700,14 +700,16 @@ body.dark-theme .brand img {
 .beauty-product-sheet-card {
   position: relative;
   width: min(1120px, 96vw);
-  max-height: min(760px, calc(100dvh - 40px));
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(400px, .95fr);
+  height: min(820px, calc(100dvh - 40px));
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border-radius: 20px;
   background: var(--paper);
   box-shadow: 0 30px 90px rgba(0, 0, 0, .28);
 }
+.beauty-product-sheet-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.beauty-product-sheet-top { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(400px, .95fr); }
 
 .beauty-product-sheet-close {
   position: absolute;
@@ -727,7 +729,7 @@ body.dark-theme .brand img {
 }
 
 .beauty-product-sheet-visual {
-  min-height: 600px;
+  min-height: 640px;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -783,7 +785,6 @@ body.dark-theme .brand img {
 
 .beauty-product-sheet-content {
   min-width: 0;
-  overflow-y: auto;
   padding: 70px 54px 44px;
 }
 
@@ -802,6 +803,14 @@ body.dark-theme .brand img {
   font-size: var(--fs-body);
   line-height: 1.72;
 }
+.beauty-sheet-commerce { margin: 0 0 22px; border-top: 2px solid #111; border-bottom: 1px solid var(--line); }
+.beauty-sheet-commerce > div { display: grid; grid-template-columns: 110px 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.beauty-sheet-commerce > div:last-child { border-bottom: 0; }
+.beauty-sheet-commerce dt { color: var(--muted); font-size: 12px; }
+.beauty-sheet-commerce dd { margin: 0; font-size: 15px; font-weight: 850; }
+.beauty-sheet-collab { margin: 0 0 22px; padding: 18px; border-radius: 12px; background: #111; color: #fff; }
+.beauty-sheet-collab strong { display: block; font-size: 11px; letter-spacing: .12em; }
+.beauty-sheet-collab p { margin: 8px 0 0; color: rgba(255,255,255,.75); font-size: 13px; line-height: 1.55; }
 
 .beauty-sheet-facts {
   margin: 0 0 26px;
@@ -837,6 +846,16 @@ body.dark-theme .brand img {
 .beauty-product-sheet-content .pill {
   width: 100%;
 }
+.beauty-sheet-detail { padding: 70px max(24px, 10vw) 110px; border-top: 1px solid var(--line); background: #fff; text-align: center; }
+.beauty-sheet-detail h3 { margin: 7px 0 36px; font-size: clamp(30px, 4vw, 52px); letter-spacing: -.05em; }
+.beauty-sheet-detail-images { width: min(860px, 100%); margin: 0 auto; display: grid; gap: 0; }
+.beauty-sheet-detail-images img { width: 100%; height: auto; display: block; }
+.beauty-sheet-detail-empty { width: min(680px, 100%); margin: 0 auto; padding: 70px 20px; border: 1px dashed var(--line); color: var(--muted); line-height: 1.7; }
+.beauty-sheet-sticky-action { flex: 0 0 auto; min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 13px 54px; border-top: 1px solid var(--line); background: rgba(255,255,255,.96); box-shadow: 0 -12px 30px rgba(0,0,0,.06); }
+.beauty-sheet-sticky-action p { display: grid; gap: 3px; margin: 0; }
+.beauty-sheet-sticky-action b { font-size: 14px; }
+.beauty-sheet-sticky-action span { color: var(--muted); font-size: 11px; }
+.beauty-sheet-sticky-action .pill { min-width: 270px; padding: 15px 24px; text-align: center; }
 
 @media (max-width: 1180px) {
   .beauty-product-grid {
@@ -868,6 +887,7 @@ body.dark-theme .brand img {
   .beauty-product-sheet-card {
     grid-template-columns: minmax(0, .95fr) minmax(340px, 1.05fr);
   }
+  .beauty-product-sheet-top { grid-template-columns: minmax(0, .95fr) minmax(340px, 1.05fr); }
 }
 
 @media (max-width: 760px) {
@@ -1030,12 +1050,10 @@ body.dark-theme .brand img {
 
   .beauty-product-sheet-card {
     width: 100%;
-    max-height: 92dvh;
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(250px, 39dvh) minmax(0, 1fr);
-    overflow-y: auto;
+    height: 94dvh;
     border-radius: 22px 22px 0 0;
   }
+  .beauty-product-sheet-top { grid-template-columns: 1fr; }
 
   .beauty-product-sheet-visual {
     min-height: 0;
@@ -1047,7 +1065,6 @@ body.dark-theme .brand img {
   }
 
   .beauty-product-sheet-content {
-    overflow: visible;
     padding: 36px 24px 32px;
   }
 
@@ -1057,6 +1074,13 @@ body.dark-theme .brand img {
   }
   .beauty-product-sheet-thumbs { right: 14px; bottom: 14px; left: 14px; overflow-x: auto; justify-content: flex-start; }
   .beauty-product-sheet-thumbs button { flex: 0 0 46px; width: 46px; height: 46px; }
+  .beauty-sheet-detail { padding: 48px 0 86px; }
+  .beauty-sheet-detail > .eyebrow, .beauty-sheet-detail h3 { padding-right: 20px; padding-left: 20px; }
+  .beauty-sheet-detail h3 { margin-bottom: 24px; font-size: 32px; }
+  .beauty-sheet-detail-empty { width: calc(100% - 40px); }
+  .beauty-sheet-sticky-action { min-height: 70px; padding: 10px 14px; }
+  .beauty-sheet-sticky-action p { display: none; }
+  .beauty-sheet-sticky-action .pill { width: 100%; min-width: 0; padding: 14px 16px; }
 
   .beauty-sheet-facts > div {
     grid-template-columns: 104px 1fr;

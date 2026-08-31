@@ -86,6 +86,9 @@ export function normalizePublicBeautyProduct(product) {
     slots: 0,
     image: product.imageUrl,
     imageUrls: Array.isArray(product.imageUrls) && product.imageUrls.length ? product.imageUrls : [product.imageUrl],
+    detailImageUrls: Array.isArray(product.detailImageUrls) ? product.detailImageUrls : [],
+    price: product.price || '',
+    option: product.color || '',
     description: product.description || `${product.brandName || 'K-MODU'}의 공개 뷰티 상품입니다.`,
     brandName: product.brandName || 'K-MODU',
     isPublicProduct: true,
@@ -145,6 +148,10 @@ export function initBeautyProductBoard() {
     category: document.getElementById('beautySheetCategory'),
     name: document.getElementById('beautySheetName'),
     description: document.getElementById('beautySheetDescription'),
+    price: document.getElementById('beautySheetPrice'),
+    option: document.getElementById('beautySheetOption'),
+    detailImages: document.getElementById('beautySheetDetailImages'),
+    detailEmpty: document.getElementById('beautySheetDetailEmpty'),
     markets: document.getElementById('beautySheetMarkets'),
     format: document.getElementById('beautySheetFormat'),
     slots: document.getElementById('beautySheetSlots'),
@@ -190,6 +197,20 @@ export function initBeautyProductBoard() {
     fields.category.textContent = product.categoryLabel;
     fields.name.textContent = product.name;
     fields.description.textContent = product.description;
+    const numericPrice = String(product.price || '').replace(/[^0-9]/g, '');
+    fields.price.textContent = product.price ? (numericPrice ? `${Number(numericPrice).toLocaleString('ko-KR')}원` : product.price) : '협업 시 안내';
+    fields.option.textContent = product.option || '상품 정보 확인';
+    const detailImageUrls = product.detailImageUrls || [];
+    fields.detailImages.replaceChildren();
+    detailImageUrls.forEach((url, index) => {
+      const image = document.createElement('img');
+      image.src = url;
+      image.alt = `${product.name} 상세페이지 ${index + 1}`;
+      image.loading = index > 1 ? 'lazy' : 'eager';
+      image.decoding = 'async';
+      fields.detailImages.append(image);
+    });
+    fields.detailEmpty.hidden = detailImageUrls.length > 0;
     fields.markets.textContent = product.markets.length ? product.markets.map((market) => MARKET_NAMES[market]).join(' · ') : '글로벌 협업 가능';
     fields.format.textContent = product.formats.join(' · ');
     fields.slots.textContent = product.isPublicProduct ? '문의' : String(product.slots);

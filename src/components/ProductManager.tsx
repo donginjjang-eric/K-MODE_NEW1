@@ -63,8 +63,10 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
   const [form, setForm] = useState<FormState>(() => emptyForm(mode));
   const [imageUrl, setImageUrl] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [detailImageUrls, setDetailImageUrls] = useState<string[]>([]);
   const [imageHash, setImageHash] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [detailUploading, setDetailUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [drag, setDrag] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
@@ -72,6 +74,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const detailFileRef = useRef<HTMLInputElement>(null);
 
   const productCategories = useMemo(() => {
     return ["전체", ...productKinds.map((kind) => kind.value)];
@@ -143,6 +146,37 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
     });
   };
 
+  const onDetailFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const selected = Array.from(files).slice(0, Math.max(0, 15 - detailImageUrls.length));
+    if (!selected.length) {
+      setMsg({ text: "상세페이지 이미지는 최대 15장까지 올릴 수 있어요.", ok: false });
+      return;
+    }
+    setDetailUploading(true);
+    setMsg(null);
+    try {
+      const uploaded = (await Promise.all(selected.map(uploadOne))).filter((item): item is { imageUrl: string; imageHash: string } => Boolean(item));
+      setDetailImageUrls((current) => [...current, ...uploaded.map((item) => item.imageUrl)].slice(0, 15));
+      setMsg({ text: `상세페이지 이미지 ${uploaded.length}장이 올라갔어요. 위에서부터 순서대로 보여요.`, ok: true });
+    } catch (error) {
+      setMsg({ text: error instanceof Error ? error.message : "상세페이지 이미지 업로드에 실패했습니다.", ok: false });
+    } finally {
+      setDetailUploading(false);
+      if (detailFileRef.current) detailFileRef.current.value = "";
+    }
+  };
+
+  const moveDetailImage = (index: number, direction: -1 | 1) => {
+    setDetailImageUrls((current) => {
+      const target = index + direction;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
   const startEdit = (product: Product) => {
     setEditingId(product.id);
     setForm({
@@ -156,6 +190,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
     });
     const existingImages = product.image_urls?.length ? product.image_urls : [product.image_url].filter(Boolean);
     setImageUrls(existingImages);
+    setDetailImageUrls(product.detail_image_urls || []);
     setImageUrl(existingImages[0] || "");
     setImageHash(product.image_hash || "");
     setMsg(null);
@@ -169,6 +204,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
     setForm(emptyForm(mode));
     setImageUrl("");
     setImageUrls([]);
+    setDetailImageUrls([]);
     setImageHash("");
     setMsg(null);
   };
@@ -186,6 +222,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
       description: form.description,
       imageUrl,
       imageUrls,
+      detailImageUrls,
       imageHash,
       status: form.visibility,
     };
@@ -215,6 +252,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
       setForm({ ...emptyForm(mode), category: form.category });
       setImageUrl("");
       setImageUrls([]);
+      setDetailImageUrls([]);
       setImageHash("");
     } catch (error) {
       setMsg({ text: error instanceof Error ? error.message : "저장에 실패했습니다.", ok: false });
@@ -347,7 +385,34 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
             </div>
           ) : null}
 
-          <div className="st-step" style={{ marginTop: 24 }}><span className="num">3</span> 상품 정보</div>
+          {mode === "beauty" ? (
+            <section className="product-detail-upload">
+              <div className="st-step" style={{ marginTop: 24 }}><span className="num">3</span> 상세페이지 이미지</div>
+              <p className="st-substep">성분·효능·제형·사용법 이미지를 올리면 쇼핑몰 상세페이지처럼 위에서부터 이어서 보여요.</p>
+              <button className="product-detail-upload-button" type="button" disabled={detailUploading || detailImageUrls.length >= 15} onClick={() => detailFileRef.current?.click()}>
+                {detailUploading ? "업로드 중..." : `상세페이지 이미지 추가 (${detailImageUrls.length}/15)`}
+                <small>최대 15장 · 여러 장 동시 선택 · 장당 8MB 이하</small>
+              </button>
+              <input ref={detailFileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden onChange={(event) => onDetailFiles(event.target.files)} />
+              {detailImageUrls.length ? (
+                <div className="product-detail-preview" aria-label="상세페이지 이미지 순서">
+                  {detailImageUrls.map((url, index) => (
+                    <article key={`${url}-${index}`}>
+                      <img src={url} alt={`상세페이지 ${index + 1}번째 이미지`} />
+                      <span>{index + 1}</span>
+                      <div>
+                        <button type="button" disabled={index === 0} onClick={() => moveDetailImage(index, -1)}>위로</button>
+                        <button type="button" disabled={index === detailImageUrls.length - 1} onClick={() => moveDetailImage(index, 1)}>아래로</button>
+                        <button type="button" onClick={() => setDetailImageUrls((current) => current.filter((_, itemIndex) => itemIndex !== index))}>삭제</button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          <div className="st-step" style={{ marginTop: 24 }}><span className="num">{mode === "beauty" ? "4" : "3"}</span> 상품 정보</div>
           <div className="st-field">
             <label>상품 이름</label>
             <input value={form.name} onChange={(event) => setField("name", event.target.value)} placeholder={mode === "beauty" ? "예: 장벽 케어 세럼" : "예: 블랙 니트 가디건"} />

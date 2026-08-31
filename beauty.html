@@ -14,7 +14,7 @@
   <title>K-Beauty Product Market | K-MODU</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-  <link rel="stylesheet" href="/platform.css?v=20260831-product-gallery" />
+  <link rel="stylesheet" href="/platform.css?v=20260831-product-detail" />
 </head>
 <body>
   <main class="platform beauty-market">
@@ -233,23 +233,43 @@
   <div class="beauty-product-sheet" id="beautyProductSheet" aria-hidden="true">
     <div class="beauty-product-sheet-card" role="dialog" aria-modal="true" aria-labelledby="beautySheetName">
       <button class="beauty-product-sheet-close" id="beautySheetClose" type="button" aria-label="닫기">×</button>
-      <div class="beauty-product-sheet-visual">
-        <span>PRODUCT PREVIEW</span>
-        <img id="beautySheetImage" src="/assets/beauty-products/barrier-serum.webp" alt="" width="720" height="720" decoding="async" />
-        <div class="beauty-product-sheet-thumbs" id="beautySheetThumbs" aria-label="상품 이미지 선택"></div>
+      <div class="beauty-product-sheet-scroll">
+        <div class="beauty-product-sheet-top">
+          <div class="beauty-product-sheet-visual">
+            <span>PRODUCT GALLERY</span>
+            <img id="beautySheetImage" src="/assets/beauty-products/barrier-serum.webp" alt="" width="720" height="720" decoding="async" />
+            <div class="beauty-product-sheet-thumbs" id="beautySheetThumbs" aria-label="상품 이미지 선택"></div>
+          </div>
+          <div class="beauty-product-sheet-content">
+            <p class="eyebrow" id="beautySheetCategory">SKINCARE · SERUM</p>
+            <h2 id="beautySheetName">Barrier Recovery Serum</h2>
+            <p class="beauty-sheet-description" id="beautySheetDescription"></p>
+            <dl class="beauty-sheet-commerce">
+              <div><dt>판매가</dt><dd id="beautySheetPrice">협업 시 안내</dd></div>
+              <div><dt>용량·옵션</dt><dd id="beautySheetOption">상품 정보 확인</dd></div>
+            </dl>
+            <div class="beauty-sheet-collab">
+              <strong>K-MODU GLOBAL COLLABORATION</strong>
+              <p>상품을 이해한 글로벌 크리에이터와 콘텐츠 제작부터 공동 판매까지 연결합니다.</p>
+            </div>
+            <dl class="beauty-sheet-facts">
+              <div><dt>판매 희망 국가</dt><dd id="beautySheetMarkets"></dd></div>
+              <div><dt>추천 콘텐츠</dt><dd id="beautySheetFormat"></dd></div>
+              <div><dt>모집 규모</dt><dd><span id="beautySheetSlots"></span>팀</dd></div>
+              <div><dt>공급사</dt><dd>협업 승인 후 공개</dd></div>
+            </dl>
+          </div>
+        </div>
+        <section class="beauty-sheet-detail">
+          <p class="eyebrow">PRODUCT DETAILS</p>
+          <h3>제품 상세정보</h3>
+          <div class="beauty-sheet-detail-images" id="beautySheetDetailImages"></div>
+          <p class="beauty-sheet-detail-empty" id="beautySheetDetailEmpty">등록된 상세 이미지가 없습니다. 위 상품 이미지와 설명을 확인해주세요.</p>
+        </section>
       </div>
-      <div class="beauty-product-sheet-content">
-        <p class="eyebrow" id="beautySheetCategory">SKINCARE · SERUM</p>
-        <h2 id="beautySheetName">Barrier Recovery Serum</h2>
-        <p class="beauty-sheet-description" id="beautySheetDescription"></p>
-        <dl class="beauty-sheet-facts">
-          <div><dt>판매 희망 국가</dt><dd id="beautySheetMarkets"></dd></div>
-          <div><dt>추천 콘텐츠</dt><dd id="beautySheetFormat"></dd></div>
-          <div><dt>모집 규모</dt><dd><span id="beautySheetSlots"></span>팀</dd></div>
-          <div><dt>공급사</dt><dd>협업 승인 후 공개</dd></div>
-        </dl>
-        <p class="beauty-sheet-note">제품과 크리에이터의 국가·콘텐츠 방향을 먼저 확인한 뒤 K-MODU 운영팀이 공급사와 연결합니다.</p>
-        <a class="pill" id="beautySheetApply" href="#">이 제품 판매 협업 문의하기</a>
+      <div class="beauty-sheet-sticky-action">
+        <p><b>콘텐츠 제작·공동판매 협업</b><span>국가와 채널에 맞는 크리에이터를 연결합니다.</span></p>
+        <a class="pill" id="beautySheetApply" href="#">이 제품 협업 문의하기</a>
       </div>
     </div>
   </div>
@@ -338,7 +358,7 @@
       });
     })();
   </script>
-  <script type="module" src="/beauty-products.js?v=20260831-product-gallery"></script>
+  <script type="module" src="/beauty-products.js?v=20260831-product-detail"></script>
   <script src="/site-i18n.js?v=20260808-ms2" defer></script>
   <script src="/auth-nav.js?v=20260822-pending-hint" defer></script>
 </body>

@@ -1,6 +1,7 @@
 import { getSelectedPartnerForApi } from "@/lib/auth";
 import { createProductForDesigner, getProductsForDesigner } from "@/lib/db";
 import { normalizeProductImages } from "@/lib/product-images";
+import { normalizeProductDetailImages } from "@/lib/product-detail-images";
 
 export async function GET(request: Request) {
   const auth = await getSelectedPartnerForApi(request);
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
   const category = String(body.category || "").trim();
   const imageUrls = normalizeProductImages(body.imageUrls ?? body.image_urls, String(body.imageUrl || body.image_url || ""));
   const imageUrl = imageUrls[0] || "";
+  const detailImageUrls = normalizeProductDetailImages(body.detailImageUrls ?? body.detail_image_urls);
   if (!name || !category || !imageUrl) {
     return Response.json({ ok: false, error: "name, category, and imageUrl are required." }, { status: 400 });
   }
@@ -35,6 +37,7 @@ export async function POST(request: Request) {
       description: body.description ? String(body.description) : null,
       imageUrl,
       imageUrls,
+      detailImageUrls,
       tryonImageUrl: body.tryonImageUrl ? String(body.tryonImageUrl) : null,
       imageHash: body.imageHash ? String(body.imageHash) : null,
       mood: body.mood ? String(body.mood) : null,
