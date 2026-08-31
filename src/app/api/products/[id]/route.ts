@@ -1,5 +1,6 @@
 import { getSelectedPartnerForApi } from "@/lib/auth";
 import { getProductForDesigner, updateProductForDesigner } from "@/lib/db";
+import { normalizeProductImages } from "@/lib/product-images";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getSelectedPartnerForApi(request);
@@ -17,6 +18,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { designer } = auth;
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
+  const hasImageUrls = Object.hasOwn(body, "imageUrls") || Object.hasOwn(body, "image_urls");
+  const imageUrls = hasImageUrls ? normalizeProductImages(body.imageUrls ?? body.image_urls, body.imageUrl || "") : undefined;
 
   const product = await updateProductForDesigner(designer.id, id, {
     name: body.name ? String(body.name).trim() : undefined,
@@ -25,7 +28,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     supplyPrice: (body.supplyPrice ?? body.supply_price) ? String(body.supplyPrice ?? body.supply_price) : undefined,
     color: body.color ? String(body.color) : undefined,
     description: body.description ? String(body.description) : undefined,
-    imageUrl: body.imageUrl ? String(body.imageUrl) : undefined,
+    imageUrl: imageUrls?.[0] || (body.imageUrl ? String(body.imageUrl) : undefined),
+    imageUrls,
     tryonImageUrl: body.tryonImageUrl ? String(body.tryonImageUrl) : undefined,
     imageHash: body.imageHash ? String(body.imageHash) : undefined,
     mood: body.mood ? String(body.mood) : undefined,

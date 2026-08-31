@@ -62,6 +62,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
   const [activeCategory, setActiveCategory] = useState("전체");
   const [form, setForm] = useState<FormState>(() => emptyForm(mode));
   const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [imageHash, setImageHash] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -82,36 +83,64 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
 
   const setField = (key: keyof FormState, value: string) => setForm((current) => ({ ...current, [key]: value }));
 
-  const upload = async (file: File) => {
+  const uploadOne = async (file: File) => {
     if (file.type && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
       setMsg({ text: "JPG, PNG, WEBP, HEIC 이미지만 업로드할 수 있습니다.", ok: false });
-      return;
+      return null;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
       setMsg({ text: "이미지 용량이 너무 큽니다. 8MB 이하로 줄여서 다시 올려주세요.", ok: false });
+      return null;
+    }
+    const body = new FormData();
+    body.append("image", file);
+    const res = await fetch("/api/uploads/product-image", { method: "POST", headers: workspaceHeaders, body });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || "사진 업로드에 실패했습니다.");
+    return { imageUrl: String(result.imageUrl), imageHash: String(result.imageHash || "") };
+  };
+
+  const onFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    const limit = mode === "beauty" ? 8 : 1;
+    const selected = Array.from(files).slice(0, Math.max(0, limit - imageUrls.length));
+    if (!selected.length) {
+      setMsg({ text: `이미지는 최대 ${limit}장까지 올릴 수 있어요.`, ok: false });
       return;
     }
     setUploading(true);
     setMsg(null);
     try {
-      const body = new FormData();
-      body.append("image", file);
-      const res = await fetch("/api/uploads/product-image", { method: "POST", headers: workspaceHeaders, body });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "사진 업로드에 실패했습니다.");
-      setImageUrl(result.imageUrl);
-      setImageHash(result.imageHash);
-      setMsg({ text: "사진이 선택됐어요. 상품 정보를 채우고 등록하면 바로 반영돼요.", ok: true });
+      const uploaded = (await Promise.all(selected.map(uploadOne))).filter((item): item is { imageUrl: string; imageHash: string } => Boolean(item));
+      const next = mode === "beauty" ? [...imageUrls, ...uploaded.map((item) => item.imageUrl)].slice(0, 8) : uploaded.slice(-1).map((item) => item.imageUrl);
+      setImageUrls(next);
+      setImageUrl(next[0] || "");
+      setImageHash(uploaded[0]?.imageHash || imageHash);
+      setMsg({ text: `${uploaded.length}장의 사진이 올라갔어요. 첫 번째 사진이 대표 이미지예요.`, ok: true });
     } catch (error) {
       setMsg({ text: error instanceof Error ? error.message : "사진 업로드에 실패했습니다.", ok: false });
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
-  const onFiles = (files: FileList | null) => {
-    const file = files?.[0];
-    if (file) upload(file);
+  const makeCover = (index: number) => {
+    setImageUrls((current) => {
+      const next = [...current];
+      const [cover] = next.splice(index, 1);
+      next.unshift(cover);
+      setImageUrl(cover);
+      return next;
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImageUrls((current) => {
+      const next = current.filter((_, itemIndex) => itemIndex !== index);
+      setImageUrl(next[0] || "");
+      return next;
+    });
   };
 
   const startEdit = (product: Product) => {
@@ -125,7 +154,9 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
       description: product.description || "",
       visibility: product.status === "draft" ? "draft" : "active",
     });
-    setImageUrl(product.image_url || "");
+    const existingImages = product.image_urls?.length ? product.image_urls : [product.image_url].filter(Boolean);
+    setImageUrls(existingImages);
+    setImageUrl(existingImages[0] || "");
     setImageHash(product.image_hash || "");
     setMsg(null);
     if (typeof document !== "undefined") {
@@ -137,6 +168,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
     setEditingId(null);
     setForm(emptyForm(mode));
     setImageUrl("");
+    setImageUrls([]);
     setImageHash("");
     setMsg(null);
   };
@@ -153,6 +185,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
       color: form.color,
       description: form.description,
       imageUrl,
+      imageUrls,
       imageHash,
       status: form.visibility,
     };
@@ -181,6 +214,7 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
       setEditingId(null);
       setForm({ ...emptyForm(mode), category: form.category });
       setImageUrl("");
+      setImageUrls([]);
       setImageHash("");
     } catch (error) {
       setMsg({ text: error instanceof Error ? error.message : "저장에 실패했습니다.", ok: false });
@@ -288,20 +322,28 @@ export default function ProductManager({ initialProducts, mode = "fashion", memb
                 <path d="m3 17.2 5.2-5.2 4.1 4.1 2.8-2.8L21 19" />
               </svg>
             </div>
-            <div className="big">{uploading ? "업로드 중..." : imageUrl ? "사진이 선택되었습니다" : "사진을 클릭하거나 끌어와서 업로드"}</div>
-            <div className="small">{imageUrl ? "다른 사진으로 바꾸려면 다시 클릭하거나 끌어오세요" : "JPG·PNG·WEBP·HEIC(아이폰), 8MB 이하"}</div>
+            <div className="big">{uploading ? "업로드 중..." : imageUrl ? `${imageUrls.length}장 선택되었습니다` : "사진을 클릭하거나 끌어와서 업로드"}</div>
+            <div className="small">{mode === "beauty" ? "최대 8장 · 첫 번째 사진이 대표 이미지 · 장당 8MB 이하" : "JPG·PNG·WEBP·HEIC(아이폰), 8MB 이하"}</div>
             <input
               ref={fileRef}
               type="file"
               accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
               hidden
+              multiple={mode === "beauty"}
               onChange={(event) => onFiles(event.target.files)}
             />
           </div>
-          {imageUrl ? (
-            <div className="portfolio-preview" style={{ backgroundImage: `url('${imageUrl}')` }}>
-              <span className="pending-chip">등록 대기</span>
-              <button type="button" onClick={() => { setImageUrl(""); setImageHash(""); }}>X</button>
+          {imageUrls.length ? (
+            <div className="product-gallery-preview" aria-label="업로드 이미지 미리보기">
+              {imageUrls.map((url, index) => (
+                <div className={`product-gallery-preview-item${index === 0 ? " is-cover" : ""}`} key={`${url}-${index}`} style={{ backgroundImage: `url('${url}')` }}>
+                  <span>{index === 0 ? "대표 이미지" : `${index + 1}번째`}</span>
+                  <div>
+                    {index > 0 ? <button type="button" onClick={() => makeCover(index)}>대표 지정</button> : null}
+                    <button type="button" aria-label={`${index + 1}번째 이미지 삭제`} onClick={() => removeImage(index)}>삭제</button>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : null}
 

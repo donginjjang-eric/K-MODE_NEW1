@@ -8,6 +8,7 @@ import { summarizeCreatorSettlementRewards, toCreatorSettlementItems } from "./c
 import type { CreatorRewardSummary, CreatorSettlementItem, CreatorSettlementLedgerRow } from "./creator-rewards";
 import type { ApprovalStatus, CampaignEvent, CampaignParticipation, CampaignPerformance, CollabRequest, CollabRequestStatus, CollabRequestType, ContentSubmission, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User, UserWorkspaceMembership } from "./types";
 import type { PartnerWorkspaceType } from "./partner-workspace-access";
+import { normalizeProductImages } from "./product-images";
 
 let pool: Pool | null = null;
 
@@ -101,6 +102,7 @@ export function toDemoProducts(): Product[] {
     color: null,
     description: product.status,
     image_url: product.image,
+    image_urls: [product.image],
     tryon_image_url: null,
     image_hash: `${product.id}-demo-v1`,
     mood: phaseDesigner.mood,
@@ -629,17 +631,19 @@ export async function createProductForDesigner(input: {
   color?: string | null;
   description?: string | null;
   imageUrl: string;
+  imageUrls?: string[];
   tryonImageUrl?: string | null;
   imageHash?: string | null;
   mood?: string | null;
   status?: Product["status"];
 }) {
   if (!hasDatabase()) throw new Error("DATABASE_URL is required for product creation.");
+  const imageUrls = normalizeProductImages(input.imageUrls, input.imageUrl);
   return one<Product>(
     `INSERT INTO products (
-       designer_id, name, category, price, supply_price, color, description, image_url, tryon_image_url, image_hash, mood, status
+       designer_id, name, category, price, supply_price, color, description, image_url, image_urls, tryon_image_url, image_hash, mood, status
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12, $13)
      RETURNING *`,
     [
       input.designerId,
@@ -649,7 +653,8 @@ export async function createProductForDesigner(input: {
       input.supplyPrice || null,
       input.color || null,
       input.description || null,
-      input.imageUrl,
+      imageUrls[0],
+      JSON.stringify(imageUrls),
       input.tryonImageUrl || null,
       input.imageHash || null,
       input.mood || null,
@@ -666,12 +671,14 @@ export async function updateProductForDesigner(designerId: string, productId: st
   color: string | null;
   description: string | null;
   imageUrl: string;
+  imageUrls: string[];
   tryonImageUrl: string | null;
   imageHash: string | null;
   mood: string | null;
   status: Product["status"];
 }>) {
   if (!hasDatabase()) throw new Error("DATABASE_URL is required for product updates.");
+  const imageUrls = input.imageUrls === undefined ? undefined : normalizeProductImages(input.imageUrls, input.imageUrl);
   return one<Product>(
     `UPDATE products
      SET name = COALESCE($3, name),
@@ -681,10 +688,11 @@ export async function updateProductForDesigner(designerId: string, productId: st
          color = COALESCE($7, color),
          description = COALESCE($8, description),
          image_url = COALESCE($9, image_url),
-         tryon_image_url = COALESCE($10, tryon_image_url),
-         image_hash = COALESCE($11, image_hash),
-         mood = COALESCE($12, mood),
-         status = COALESCE($13, status),
+         image_urls = COALESCE($10::jsonb, image_urls),
+         tryon_image_url = COALESCE($11, tryon_image_url),
+         image_hash = COALESCE($12, image_hash),
+         mood = COALESCE($13, mood),
+         status = COALESCE($14, status),
          updated_at = now()
      WHERE designer_id = $1 AND id = $2
      RETURNING *`,
@@ -697,7 +705,8 @@ export async function updateProductForDesigner(designerId: string, productId: st
       input.supplyPrice ?? null,
       input.color ?? null,
       input.description ?? null,
-      input.imageUrl ?? null,
+      imageUrls?.[0] ?? input.imageUrl ?? null,
+      imageUrls ? JSON.stringify(imageUrls) : null,
       input.tryonImageUrl ?? null,
       input.imageHash ?? null,
       input.mood ?? null,

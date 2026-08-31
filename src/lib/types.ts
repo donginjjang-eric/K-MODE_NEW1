@@ -182,6 +182,7 @@ export type Product = {
   color: string | null;
   description: string | null;
   image_url: string;
+  image_urls: string[];
   tryon_image_url: string | null;
   image_hash: string | null;
   mood: string | null;

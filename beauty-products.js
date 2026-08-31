@@ -85,6 +85,7 @@ export function normalizePublicBeautyProduct(product) {
     formats: ['등록 상품'],
     slots: 0,
     image: product.imageUrl,
+    imageUrls: Array.isArray(product.imageUrls) && product.imageUrls.length ? product.imageUrls : [product.imageUrl],
     description: product.description || `${product.brandName || 'K-MODU'}의 공개 뷰티 상품입니다.`,
     brandName: product.brandName || 'K-MODU',
     isPublicProduct: true,
@@ -140,6 +141,7 @@ export function initBeautyProductBoard() {
   const fields = {
     visual: sheet.querySelector('.beauty-product-sheet-visual'),
     image: document.getElementById('beautySheetImage'),
+    thumbs: document.getElementById('beautySheetThumbs'),
     category: document.getElementById('beautySheetCategory'),
     name: document.getElementById('beautySheetName'),
     description: document.getElementById('beautySheetDescription'),
@@ -163,8 +165,23 @@ export function initBeautyProductBoard() {
 
   const openSheet = (product, trigger) => {
     lastTrigger = trigger;
-    fields.image.src = product.image;
-    fields.image.alt = `${product.name} 제품 이미지`;
+    const imageUrls = product.imageUrls?.length ? product.imageUrls : [product.image];
+    const selectImage = (url, index) => {
+      fields.image.src = url;
+      fields.image.alt = `${product.name} 제품 이미지 ${index + 1}`;
+      [...fields.thumbs.children].forEach((button, buttonIndex) => button.classList.toggle('is-active', buttonIndex === index));
+    };
+    fields.thumbs.replaceChildren();
+    imageUrls.forEach((url, index) => {
+      const thumb = document.createElement('button');
+      thumb.type = 'button';
+      thumb.setAttribute('aria-label', `${index + 1}번째 상품 이미지 보기`);
+      thumb.style.backgroundImage = `url("${url}")`;
+      thumb.addEventListener('click', () => selectImage(url, index));
+      fields.thumbs.append(thumb);
+    });
+    fields.thumbs.hidden = imageUrls.length < 2;
+    selectImage(imageUrls[0], 0);
     fields.image.classList.remove('is-sprite');
     fields.visual.classList.toggle('has-sprite', Boolean(product.sprite));
     fields.visual.style.backgroundImage = product.sprite ? `url("${product.image}")` : '';

@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS products (
   color text,
   description text,
   image_url text NOT NULL,
+  image_urls jsonb NOT NULL DEFAULT '[]'::jsonb,
   tryon_image_url text,
   image_hash text,
   mood text,
@@ -72,6 +73,7 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- 기존 DB 마이그레이션: 컬럼이 없으면 추가 (price=판매가, supply_price=공급가)
 ALTER TABLE products ADD COLUMN IF NOT EXISTS supply_price text;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS image_urls jsonb NOT NULL DEFAULT '[]'::jsonb;
 
 CREATE TABLE IF NOT EXISTS model_templates (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,
