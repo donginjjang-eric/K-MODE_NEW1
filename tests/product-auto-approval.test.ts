@@ -32,5 +32,6 @@ test("admin product management shows approval and can approve pending products",
   ]);
   assert.match(manager, /승인 완료/);
   assert.match(manager, /승인하기/);
+  assert.match(manager, /상세.*MAX_PRODUCT_DETAIL_IMAGES/);
   assert.match(route, /approvalStatus/);
 });

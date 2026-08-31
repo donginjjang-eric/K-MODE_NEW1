@@ -11,7 +11,7 @@ test("admin navigation separates operations by task", () => {
     "콘텐츠 검수",
   ]);
   assert.deepEqual(ADMIN_NAV_GROUPS[1].items.map((item) => item.label), [
-    "회원·승인 관리",
+    "회원·등급 관리",
     "크리에이터 관리",
     "브랜드 파트너 관리",
     "관리 그룹·대행사",
@@ -19,5 +19,5 @@ test("admin navigation separates operations by task", () => {
 });
 
 test("mobile navigation exposes the primary destinations before the full menu", () => {
-  assert.deepEqual(ADMIN_MOBILE_NAV.map((item) => item.short), ["홈", "승인", "크리에이터", "캠페인", "상품"]);
+  assert.deepEqual(ADMIN_MOBILE_NAV.map((item) => item.short), ["홈", "회원", "크리에이터", "캠페인", "상품"]);
 });

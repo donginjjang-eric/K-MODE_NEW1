@@ -24,7 +24,7 @@ test("approved creator login card keeps creator center and exposes brand partner
   assert.match(approvedCreatorBranch, /뷰티·패션 브랜드/);
 });
 
-test("brand application creates its designer and pending beauty membership in one transaction callback", async () => {
+test("brand application creates its designer and immediately active beauty membership in one transaction callback", async () => {
   const statements: Array<{ text: string; params: unknown[] }> = [];
   const client = {
     async query(text: string, params: unknown[] = []) {
@@ -48,7 +48,7 @@ test("brand application creates its designer and pending beauty membership in on
 
   assert.equal(result.designer.id, "beauty-1");
   const membership = statements.find(({ text }) => text.includes("INSERT INTO user_workspace_memberships"));
-  assert.deepEqual(membership?.params.slice(0, 4), ["u1", "beauty_partner", "beauty-1", "pending"]);
+  assert.deepEqual(membership?.params.slice(0, 4), ["u1", "beauty_partner", "beauty-1", "active"]);
   assert.ok(statements.some(({ text, params }) => text.includes("creator_management_audit_logs") && params.includes("partner_application_created")));
 });
 

@@ -7,6 +7,7 @@ import AdminImageWithFallback from "@/components/AdminImageWithFallback";
 import AdminPagination from "@/components/AdminPagination";
 import type { AdminProduct } from "@/lib/db";
 import { paginateAdminItems, reconcilePageSelection } from "@/lib/admin-list-utils";
+import { MAX_PRODUCT_DETAIL_IMAGES } from "@/lib/product-detail-images";
 
 type Status = "active" | "draft" | "hidden";
 type ProductField = "beauty" | "fashion";
@@ -301,6 +302,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
                     <div className="b">
                       <span className={`apm-field-badge is-${field}`} title={FIELD_LABEL[field].ko}>{FIELD_LABEL[field].en}</span>
                       <span className={`status-badge ${isApproved ? "approved" : "pending"}`}>{isApproved ? "승인 완료" : "승인 대기"}</span>
+                      <span className="status-badge approved">상세 {p.detail_image_urls?.length || 0}/{MAX_PRODUCT_DETAIL_IMAGES}</span>
                       <div className="c">
                         {p.designer_id ? <Link href={`/dashboard/admin/designers/${p.designer_id}`}>{p.designer_brand_name || "Unknown"}</Link> : (p.designer_brand_name || "Unknown")}
                       </div>
@@ -326,7 +328,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
                     <div className="apm-row-thumb" onMouseEnter={(e) => showHover(e, p.image_url)} onMouseLeave={hideHover}>
                       <AdminImageWithFallback src={p.image_url} alt={`${p.name} 상품 이미지`} width={96} height={96} />
                     </div>
-                    <div className="apm-row-name"><span className={`apm-field-badge is-${field}`} title={FIELD_LABEL[field].ko}>{FIELD_LABEL[field].en}</span>{p.name}</div>
+                    <div className="apm-row-name"><span className={`apm-field-badge is-${field}`} title={FIELD_LABEL[field].ko}>{FIELD_LABEL[field].en}</span>{p.name}<small>상세 {p.detail_image_urls?.length || 0}/{MAX_PRODUCT_DETAIL_IMAGES}</small></div>
                     <div className="apm-row-brand">{p.designer_brand_name || "Unknown"}</div>
                     <div className="apm-row-cat">{groupCategory(p.category)}</div>
                     <span className={`status-badge ${isPublic ? "approved" : st === "hidden" ? "disabled" : "pending"}`}>{STATUS_LABEL[st]}</span>
