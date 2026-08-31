@@ -187,6 +187,7 @@ export type Product = {
   image_hash: string | null;
   mood: string | null;
   status: ProductStatus;
+  approval_status: ApprovalStatus;
   created_at: string;
   updated_at: string;
 };

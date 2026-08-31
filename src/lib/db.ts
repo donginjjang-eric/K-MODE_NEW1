@@ -9,6 +9,7 @@ import type { CreatorRewardSummary, CreatorSettlementItem, CreatorSettlementLedg
 import type { ApprovalStatus, CampaignEvent, CampaignParticipation, CampaignPerformance, CollabRequest, CollabRequestStatus, CollabRequestType, ContentSubmission, CreatorAccount, CreatorCollabProposal, CreatorProposalStatus, CreatorProposalType, Designer, DesignerPortfolioImage, GeneratedLook, Lookbook, LookbookItem, LookbookLayout, ModelTemplate, PortfolioImageStatus, Product, Role, User, UserWorkspaceMembership } from "./types";
 import type { PartnerWorkspaceType } from "./partner-workspace-access";
 import { normalizeProductImages } from "./product-images";
+import { initialProductApprovalStatus } from "./product-approval";
 
 let pool: Pool | null = null;
 
@@ -107,6 +108,7 @@ export function toDemoProducts(): Product[] {
     image_hash: `${product.id}-demo-v1`,
     mood: phaseDesigner.mood,
     status: "active",
+    approval_status: "approved",
     created_at: now,
     updated_at: now,
   }));
@@ -488,17 +490,19 @@ export async function getProductForDesigner(designerId: string, productId: strin
 
 export async function updateProductForAdmin(productId: string, input: Partial<{
   status: Product["status"];
+  approvalStatus: ApprovalStatus;
 }>) {
   if (!hasDatabase()) throw new Error("DATABASE_URL is required for product updates.");
   return one<AdminProduct>(
     `UPDATE products
         SET status = COALESCE($2, status),
+            approval_status = COALESCE($3, approval_status),
             updated_at = now()
       WHERE products.id = $1
       RETURNING products.*,
                 (SELECT brand_name FROM designers WHERE designers.id = products.designer_id) AS designer_brand_name,
                 (SELECT approval_status FROM designers WHERE designers.id = products.designer_id) AS designer_approval_status`,
-    [productId, input.status ?? null],
+    [productId, input.status ?? null, input.approvalStatus ?? null],
   );
 }
 
@@ -636,14 +640,15 @@ export async function createProductForDesigner(input: {
   imageHash?: string | null;
   mood?: string | null;
   status?: Product["status"];
+  approvalStatus?: ApprovalStatus;
 }) {
   if (!hasDatabase()) throw new Error("DATABASE_URL is required for product creation.");
   const imageUrls = normalizeProductImages(input.imageUrls, input.imageUrl);
   return one<Product>(
     `INSERT INTO products (
-       designer_id, name, category, price, supply_price, color, description, image_url, image_urls, tryon_image_url, image_hash, mood, status
+       designer_id, name, category, price, supply_price, color, description, image_url, image_urls, tryon_image_url, image_hash, mood, status, approval_status
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12, $13)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12, $13, $14)
      RETURNING *`,
     [
       input.designerId,
@@ -659,6 +664,7 @@ export async function createProductForDesigner(input: {
       input.imageHash || null,
       input.mood || null,
       input.status || "active",
+      input.approvalStatus || initialProductApprovalStatus(process.env.AUTO_APPROVE_PRODUCTS),
     ],
   );
 }
@@ -2063,6 +2069,7 @@ export async function getPublicBeautyProducts(limit = 100): Promise<PublicBeauty
        FROM products
        JOIN designers ON designers.id = products.designer_id
       WHERE products.status = 'active'
+        AND products.approval_status = 'approved'
         AND designers.approval_status = 'approved'
         AND EXISTS (
           SELECT 1

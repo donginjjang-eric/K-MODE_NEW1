@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS products (
   image_hash text,
   mood text,
   status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'hidden')),
+  approval_status text NOT NULL DEFAULT 'approved' CHECK (approval_status IN ('pending', 'approved', 'rejected', 'disabled')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -74,6 +75,8 @@ CREATE TABLE IF NOT EXISTS products (
 -- 기존 DB 마이그레이션: 컬럼이 없으면 추가 (price=판매가, supply_price=공급가)
 ALTER TABLE products ADD COLUMN IF NOT EXISTS supply_price text;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS image_urls jsonb NOT NULL DEFAULT '[]'::jsonb;
+-- 현재 운영 정책은 자동 승인. 기존 상품도 승인 완료로 안전하게 백필된다.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS approval_status text NOT NULL DEFAULT 'approved';
 
 CREATE TABLE IF NOT EXISTS model_templates (
   id text PRIMARY KEY DEFAULT gen_random_uuid()::text,

@@ -42,6 +42,9 @@ export default function AdminProductsManager({ products }: { products: AdminProd
   const [statusMap, setStatusMap] = useState<Record<string, Status>>(
     () => Object.fromEntries(products.map((p) => [p.id, p.status as Status])),
   );
+  const [approvalMap, setApprovalMap] = useState<Record<string, string>>(
+    () => Object.fromEntries(products.map((p) => [p.id, p.approval_status || "approved"])),
+  );
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
   const [productFieldFilter, setProductFieldFilter] = useState<"all" | ProductField>("all");
@@ -155,6 +158,24 @@ export default function AdminProductsManager({ products }: { products: AdminProd
     setStatus([p.id], st === "active" ? "draft" : "active");
   };
 
+  const approveOne = async (productId: string) => {
+    setBusy(true);
+    setNotice("");
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approvalStatus: "approved" }),
+      });
+      if (!response.ok) throw new Error("상품 승인에 실패했어요.");
+      setApprovalMap((current) => ({ ...current, [productId]: "approved" }));
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "상품 승인에 실패했어요.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const toggleSelect = (id: string) => {
     setSelected((cur) => {
       const copy = new Set(cur);
@@ -264,6 +285,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
                 const st = statusMap[p.id];
                 const field = productField(p);
                 const isPublic = st === "active";
+                const isApproved = approvalMap[p.id] === "approved";
                 const checked = selectedOnPage.has(p.id);
                 return viewMode === "grid" ? (
                   <article className={`st-pcard apm-card${checked ? " is-checked" : ""}`} key={p.id}>
@@ -278,6 +300,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
                     </div>
                     <div className="b">
                       <span className={`apm-field-badge is-${field}`} title={FIELD_LABEL[field].ko}>{FIELD_LABEL[field].en}</span>
+                      <span className={`status-badge ${isApproved ? "approved" : "pending"}`}>{isApproved ? "승인 완료" : "승인 대기"}</span>
                       <div className="c">
                         {p.designer_id ? <Link href={`/dashboard/admin/designers/${p.designer_id}`}>{p.designer_brand_name || "Unknown"}</Link> : (p.designer_brand_name || "Unknown")}
                       </div>
@@ -294,6 +317,7 @@ export default function AdminProductsManager({ products }: { products: AdminProd
                       >
                         {st === "hidden" ? "숨김 상품" : isPublic ? "비공개로 전환" : "공개로 전환"}
                       </button>
+                      {!isApproved ? <button className="apm-action primary" type="button" disabled={busy} onClick={() => approveOne(p.id)}>승인하기</button> : null}
                     </div>
                   </article>
                 ) : (
@@ -306,9 +330,11 @@ export default function AdminProductsManager({ products }: { products: AdminProd
                     <div className="apm-row-brand">{p.designer_brand_name || "Unknown"}</div>
                     <div className="apm-row-cat">{groupCategory(p.category)}</div>
                     <span className={`status-badge ${isPublic ? "approved" : st === "hidden" ? "disabled" : "pending"}`}>{STATUS_LABEL[st]}</span>
+                    <span className={`status-badge ${isApproved ? "approved" : "pending"}`}>{isApproved ? "승인 완료" : "승인 대기"}</span>
                     <button className={`apm-action ${isPublic ? "danger" : "primary"}`} type="button" disabled={busy || st === "hidden"} onClick={() => toggleOne(p)}>
                       {st === "hidden" ? "숨김" : isPublic ? "비공개로" : "공개로"}
                     </button>
+                    {!isApproved ? <button className="apm-action primary" type="button" disabled={busy} onClick={() => approveOne(p.id)}>승인하기</button> : null}
                   </div>
                 );
               })}
