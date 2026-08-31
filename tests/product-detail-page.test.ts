@@ -39,8 +39,8 @@ test("public modal renders shopping information, long detail content, and collab
   assert.match(html, /beautySheetPrice/);
   assert.match(html, /beautySheetDetailImages/);
   assert.match(html, /제품 상세정보/);
-  assert.match(html, /platform\.css\?v=20260831-product-detail/);
-  assert.match(html, /beauty-products\.js\?v=20260831-product-detail/);
+  assert.match(html, /platform\.css\?v=20260831-product-detail-2/);
+  assert.match(html, /beauty-products\.js\?v=20260831-product-detail-2/);
   assert.match(script, /detailImageUrls/);
   assert.match(script, /beautySheetDetailImages/);
   assert.match(css, /\.beauty-sheet-detail-images/);
