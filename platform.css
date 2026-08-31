@@ -731,8 +731,10 @@ body.dark-theme .brand img {
 .beauty-product-sheet-visual {
   position: relative;
   min-height: 640px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   padding: 46px;
   background: #ede5d8;
@@ -764,13 +766,14 @@ body.dark-theme .brand img {
   box-shadow: 0 20px 48px rgba(51, 38, 20, .12);
 }
 .beauty-product-sheet-thumbs {
-  position: absolute;
-  right: 24px;
-  bottom: 24px;
-  left: 24px;
+  position: static;
+  width: 100%;
   display: flex;
   justify-content: center;
   gap: 8px;
+  margin-top: 18px;
+  overflow-x: auto;
+  padding: 2px;
 }
 .beauty-product-sheet-thumbs[hidden] { display: none; }
 .beauty-product-sheet-thumbs button {
@@ -1073,7 +1076,7 @@ body.dark-theme .brand img {
     font-size: clamp(28px, 8vw, 36px);
     line-height: 1.08;
   }
-  .beauty-product-sheet-thumbs { right: 14px; bottom: 14px; left: 14px; overflow-x: auto; justify-content: flex-start; }
+  .beauty-product-sheet-thumbs { justify-content: flex-start; margin-top: 14px; }
   .beauty-product-sheet-thumbs button { flex: 0 0 46px; width: 46px; height: 46px; }
   .beauty-sheet-detail { padding: 48px 0 86px; }
   .beauty-sheet-detail > .eyebrow, .beauty-sheet-detail h3 { padding-right: 20px; padding-left: 20px; }
