@@ -47,7 +47,7 @@ test("public product sheet includes gallery controls and restrained title sizes"
     readFile("platform.css", "utf8"),
   ]);
   assert.match(html, /beautySheetThumbs/);
-  assert.match(html, /platform\.css\?v=20260831-square-gallery/);
+  assert.match(html, /platform\.css\?v=20260831-compact-info/);
   assert.match(html, /beauty-products\.js\?v=20260831-product-detail-2/);
   assert.match(script, /imageUrls/);
   assert.match(script, /beautySheetThumbs/);
@@ -57,6 +57,9 @@ test("public product sheet includes gallery controls and restrained title sizes"
   assert.match(css, /\.beauty-product-sheet-visual img\s*\{[^}]*aspect-ratio:\s*1/s);
   assert.match(css, /\.beauty-product-sheet-visual img\s*\{[^}]*object-fit:\s*contain/s);
   assert.match(css, /\.beauty-product-sheet-top\s*\{[^}]*align-items:\s*stretch/s);
-  assert.match(css, /clamp\(30px,\s*3\.2vw,\s*48px\)/);
+  assert.match(css, /\.beauty-product-sheet-content\s*\{[^}]*padding:\s*48px 54px 28px/s);
+  assert.match(css, /\.beauty-product-sheet-content h2\s*\{[^}]*clamp\(30px,\s*2\.8vw,\s*42px\)/s);
+  assert.match(css, /\.beauty-sheet-description\s*\{[^}]*margin:\s*16px 0 18px/s);
+  assert.match(css, /\.beauty-sheet-facts > div\s*\{[^}]*padding:\s*10px 0/s);
   assert.match(css, /clamp\(28px,\s*8vw,\s*36px\)/);
 });

@@ -799,35 +799,35 @@ body.dark-theme .brand img {
 
 .beauty-product-sheet-content {
   min-width: 0;
-  padding: 70px 54px 44px;
+  padding: 48px 54px 28px;
 }
 
 .beauty-product-sheet-content h2 {
   margin: 0;
-  font-size: clamp(30px, 3.2vw, 48px);
-  line-height: 1.02;
+  font-size: clamp(30px, 2.8vw, 42px);
+  line-height: 1.04;
   font-weight: var(--fw-medium);
   letter-spacing: -.045em;
   overflow-wrap: anywhere;
 }
 
 .beauty-sheet-description {
-  margin: 24px 0 30px;
+  margin: 16px 0 18px;
   color: var(--muted);
   font-size: var(--fs-body);
-  line-height: 1.72;
+  line-height: 1.58;
 }
-.beauty-sheet-commerce { margin: 0 0 22px; border-top: 2px solid #111; border-bottom: 1px solid var(--line); }
-.beauty-sheet-commerce > div { display: grid; grid-template-columns: 110px 1fr; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.beauty-sheet-commerce { margin: 0 0 14px; border-top: 2px solid #111; border-bottom: 1px solid var(--line); }
+.beauty-sheet-commerce > div { display: grid; grid-template-columns: 110px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .beauty-sheet-commerce > div:last-child { border-bottom: 0; }
 .beauty-sheet-commerce dt { color: var(--muted); font-size: 12px; }
 .beauty-sheet-commerce dd { margin: 0; font-size: 15px; font-weight: 850; }
-.beauty-sheet-collab { margin: 0 0 22px; padding: 18px; border-radius: 12px; background: #111; color: #fff; }
+.beauty-sheet-collab { margin: 0 0 14px; padding: 14px 16px; border-radius: 12px; background: #111; color: #fff; }
 .beauty-sheet-collab strong { display: block; font-size: 11px; letter-spacing: .12em; }
-.beauty-sheet-collab p { margin: 8px 0 0; color: rgba(255,255,255,.75); font-size: 13px; line-height: 1.55; }
+.beauty-sheet-collab p { margin: 5px 0 0; color: rgba(255,255,255,.75); font-size: 13px; line-height: 1.45; }
 
 .beauty-sheet-facts {
-  margin: 0 0 26px;
+  margin: 0 0 16px;
   border-top: 1px solid var(--line);
 }
 
@@ -835,7 +835,7 @@ body.dark-theme .brand img {
   display: grid;
   grid-template-columns: 118px 1fr;
   gap: 18px;
-  padding: 15px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -851,7 +851,7 @@ body.dark-theme .brand img {
 }
 
 .beauty-sheet-note {
-  margin: 0 0 28px;
+  margin: 0 0 16px;
   color: var(--muted);
   font-size: var(--fs-label-sm);
   line-height: 1.62;
