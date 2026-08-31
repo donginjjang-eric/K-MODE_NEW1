@@ -47,12 +47,13 @@ test("public product sheet includes gallery controls and restrained title sizes"
     readFile("platform.css", "utf8"),
   ]);
   assert.match(html, /beautySheetThumbs/);
-  assert.match(html, /platform\.css\?v=20260831-product-gallery-5/);
+  assert.match(html, /platform\.css\?v=20260831-product-gallery-6/);
   assert.match(html, /beauty-products\.js\?v=20260831-product-detail-2/);
   assert.match(script, /imageUrls/);
   assert.match(script, /beautySheetThumbs/);
   assert.match(css, /\.beauty-product-sheet-thumbs/);
   assert.match(css, /\.beauty-product-sheet-thumbs\s*\{[^}]*position:\s*static/s);
+  assert.match(css, /\.beauty-product-sheet-visual\s*\{[^}]*justify-content:\s*flex-start/s);
   assert.match(css, /clamp\(30px,\s*3\.2vw,\s*48px\)/);
   assert.match(css, /clamp\(28px,\s*8vw,\s*36px\)/);
 });

@@ -734,7 +734,7 @@ body.dark-theme .brand img {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   overflow: hidden;
   padding: 46px;
   background: #ede5d8;
