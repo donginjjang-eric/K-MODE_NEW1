@@ -8,21 +8,22 @@ import sharp from "sharp";
 const MAX_EDGE = 1600;
 
 // 업로드 이미지를 표시 크기로 리사이즈 + 재압축 (디자이너가 용량 신경 안 쓰게).
-// 실패 시 원본 유지. 결과가 더 크면 원본 유지.
+// 실패 시 원본 유지. 축소가 필요 없고 결과가 더 크면 원본 유지.
 async function optimizeImage(bytes: Buffer, ext: string): Promise<Buffer> {
   try {
-    let img = sharp(bytes, { failOn: "none" }).rotate();
+    let img = sharp(bytes, { failOn: "none" }).rotate().toColourspace("srgb");
     const meta = await img.metadata();
     const isHeif = meta.format === "heif"; // HEIC/HEIF는 JPEG로 강제 변환됨
-    if ((meta.width || 0) > MAX_EDGE || (meta.height || 0) > MAX_EDGE) {
+    const needsResize = (meta.width || 0) > MAX_EDGE || (meta.height || 0) > MAX_EDGE;
+    if (needsResize) {
       img = img.resize({ width: MAX_EDGE, height: MAX_EDGE, fit: "inside", withoutEnlargement: true });
     }
-    if (ext === ".png") img = img.png({ compressionLevel: 9, palette: true, quality: 82, effort: 8 });
-    else if (ext === ".webp") img = img.webp({ quality: 82 });
-    else img = img.jpeg({ quality: 80, mozjpeg: true });
+    if (ext === ".png") img = img.png({ compressionLevel: 9 }).withIccProfile("srgb");
+    else if (ext === ".webp") img = img.webp({ quality: 92 }).withIccProfile("srgb");
+    else img = img.jpeg({ quality: 92, chromaSubsampling: "4:4:4" }).withIccProfile("srgb");
     const out = await img.toBuffer();
     // 포맷 변환(HEIC→JPEG) 시엔 원본이 더 작아도 변환본을 써야 한다(HEIC 원본은 웹에서 안 열림)
-    if (isHeif) return out;
+    if (isHeif || needsResize) return out;
     return out.length < bytes.length ? out : bytes;
   } catch {
     return bytes;
